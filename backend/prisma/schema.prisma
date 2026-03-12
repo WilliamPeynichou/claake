@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  CREATOR
+  ADMIN
+}
+
+enum AgentStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  fullName  String?  @map("full_name")
+  avatarUrl String?  @map("avatar_url")
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  agents Agent[]
+
+  @@map("users")
+}
+
+model Agent {
+  id          String      @id @default(uuid())
+  name        String
+  description String
+  category    String
+  price       Float
+  imageUrl    String?     @map("image_url")
+  status      AgentStatus @default(DRAFT)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  creator   User   @relation(fields: [creatorId], references: [id])
+  creatorId String @map("creator_id")
+
+  @@map("agents")
+}

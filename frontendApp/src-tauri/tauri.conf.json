@@ -1,0 +1,23 @@
+{
+	"$schema": "https://raw.githubusercontent.com/nicehash/tauri/dev/core/tauri-config-schema/schema.json",
+	"productName": "AgentPlace",
+	"version": "0.1.0",
+	"identifier": "com.agentplace.app",
+	"build": {
+		"frontendDist": "../dist",
+		"devUrl": "http://localhost:5173",
+		"beforeDevCommand": "npm run dev",
+		"beforeBuildCommand": "npm run build"
+	},
+	"app": {
+		"title": "AgentPlace",
+		"windows": [
+			{
+				"title": "AgentPlace",
+				"width": 1200,
+				"height": 800,
+				"resizable": true
+			}
+		]
+	}
+}
