@@ -1,6 +1,8 @@
 "use client";
 
-import type { Agent, ChatMessage } from "@agentplace/shared";
+import type { Agent } from "@agentplace/shared";
+import { MAX_SANDBOX_INTERACTIONS } from "@agentplace/shared";
+import { useChat } from "@agentplace/shared/hooks";
 import { AlertCircle, Bot, Key, Loader2, Send, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,22 +11,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { apiClient } from "@/lib/api";
 
 interface ChatInterfaceProps {
 	agent: Agent;
 }
 
 export function ChatInterface({ agent }: ChatInterfaceProps) {
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
-	const [input, setInput] = useState("");
 	const [apiKey, setApiKey] = useState("");
 	const [showKeyInput, setShowKeyInput] = useState(true);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [sandboxCount, setSandboxCount] = useState(0);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	const maxSandbox = 3;
+	const {
+		messages,
+		input,
+		setInput,
+		loading,
+		error,
+		sandboxCount,
+		sandboxLimitReached,
+		sendMessage,
+	} = useChat({ agent, apiClient, apiKey: apiKey || undefined });
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,68 +42,12 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
 		setShowKeyInput(false);
 	}
 
-	async function sendMessage(e: React.FormEvent) {
+	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!input.trim()) return;
-
-		if (!apiKey && sandboxCount >= maxSandbox) {
-			setError(
-				"Vous avez atteint la limite de 3 interactions sandbox. Ajoutez votre clé API pour continuer.",
-			);
+		if (sandboxLimitReached) {
 			setShowKeyInput(true);
-			return;
 		}
-
-		const userMessage: ChatMessage = {
-			id: crypto.randomUUID(),
-			role: "user",
-			content: input.trim(),
-			timestamp: new Date().toISOString(),
-		};
-
-		setMessages((prev) => [...prev, userMessage]);
-		setInput("");
-		setLoading(true);
-		setError(null);
-
-		try {
-			const res = await fetch("/api/chat", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					agent_id: agent.id,
-					message: userMessage.content,
-					api_key: apiKey || undefined,
-					history: messages.map((m) => ({ role: m.role, content: m.content })),
-					system_prompt: agent.long_description ?? agent.description,
-					model: agent.model,
-				}),
-			});
-
-			const data = await res.json();
-
-			if (!res.ok) {
-				setError(data.error ?? "Erreur lors de l'envoi du message.");
-				return;
-			}
-
-			const assistantMessage: ChatMessage = {
-				id: crypto.randomUUID(),
-				role: "assistant",
-				content: data.content ?? data.message ?? "Réponse reçue.",
-				timestamp: new Date().toISOString(),
-			};
-
-			setMessages((prev) => [...prev, assistantMessage]);
-
-			if (!apiKey) {
-				setSandboxCount((c) => c + 1);
-			}
-		} catch {
-			setError("Impossible de contacter le serveur.");
-		} finally {
-			setLoading(false);
-		}
+		sendMessage();
 	}
 
 	return (
@@ -133,9 +84,9 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
 						</div>
 						{!apiKey && (
 							<p className="text-xs text-muted-foreground">
-								Sans clé API, vous avez {maxSandbox - sandboxCount} interaction
-								{maxSandbox - sandboxCount > 1 ? "s" : ""} sandbox restante
-								{maxSandbox - sandboxCount > 1 ? "s" : ""}.
+								Sans clé API, vous avez {MAX_SANDBOX_INTERACTIONS - sandboxCount} interaction
+								{MAX_SANDBOX_INTERACTIONS - sandboxCount > 1 ? "s" : ""} sandbox restante
+								{MAX_SANDBOX_INTERACTIONS - sandboxCount > 1 ? "s" : ""}.
 							</p>
 						)}
 					</div>
@@ -204,7 +155,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
 
 			{/* Input */}
 			<div className="border-t p-4">
-				<form onSubmit={sendMessage} className="flex gap-2">
+				<form onSubmit={handleSubmit} className="flex gap-2">
 					<Textarea
 						placeholder="Écrivez votre message..."
 						value={input}
@@ -212,7 +163,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
 						onKeyDown={(e) => {
 							if (e.key === "Enter" && !e.shiftKey) {
 								e.preventDefault();
-								sendMessage(e);
+								handleSubmit(e);
 							}
 						}}
 						className="min-h-[44px] max-h-[120px] resize-none"

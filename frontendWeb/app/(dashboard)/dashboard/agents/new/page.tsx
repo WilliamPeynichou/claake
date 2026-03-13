@@ -1,5 +1,6 @@
 "use client";
 
+import { AGENT_CATEGORIES, AI_MODELS, EXECUTION_MODES } from "@agentplace/shared";
 import { ArrowLeft, ArrowRight, Check, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { AGENT_CATEGORIES } from "@/lib/mock-data";
 
 const steps = ["Fichier .agentjson", "Métadonnées", "Configuration", "Tarification", "Validation"];
 
@@ -213,28 +213,28 @@ export default function NewAgentPage() {
 									value={formData.model}
 									onChange={(e) => updateField("model", e.target.value)}
 								>
-									<option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
-									<option value="claude-opus-4-20250514">Claude Opus 4</option>
-									<option value="gpt-4o">GPT-4o</option>
-									<option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-									<option value="mistral-large">Mistral Large</option>
+									{AI_MODELS.map((m) => (
+										<option key={m.id} value={m.id}>
+											{m.name}
+										</option>
+									))}
 								</select>
 							</div>
 							<div className="space-y-2">
 								<Label>Mode d&apos;exécution</Label>
 								<div className="grid grid-cols-3 gap-3">
-									{(["cloud", "local", "hybrid"] as const).map((m) => (
+									{EXECUTION_MODES.map((m) => (
 										<button
-											key={m}
+											key={m.id}
 											type="button"
-											onClick={() => updateField("mode", m)}
+											onClick={() => updateField("mode", m.id)}
 											className={`rounded-md border p-3 text-left text-sm transition-colors ${
-												formData.mode === m
+												formData.mode === m.id
 													? "border-primary bg-primary/5"
 													: "border-input hover:bg-accent"
 											}`}
 										>
-											<div className="font-medium capitalize">{m}</div>
+											<div className="font-medium">{m.name}</div>
 										</button>
 									))}
 								</div>

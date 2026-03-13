@@ -1,4 +1,27 @@
-import type { Agent } from "../types";
+import type { Agent, UserProfile } from "../types";
+
+export interface ChatRequest {
+	agent_id: string;
+	message: string;
+	api_key?: string;
+	history: Array<{ role: string; content: string }>;
+	system_prompt?: string;
+	model: string;
+}
+
+export interface ChatResponse {
+	content: string;
+}
+
+export interface AgentListResponse {
+	agents: Agent[];
+	total: number;
+}
+
+export interface AgentSearchParams {
+	q?: string;
+	category?: string;
+}
 
 export function createApiClient(baseUrl: string) {
 	async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -7,17 +30,70 @@ export function createApiClient(baseUrl: string) {
 			...init,
 		});
 		if (!res.ok) {
-			throw new Error(`API error: ${res.status} ${res.statusText}`);
+			const body = await res.json().catch(() => ({}));
+			throw new ApiError(res.status, body.error ?? `API error: ${res.status} ${res.statusText}`);
 		}
 		return res.json();
 	}
 
+	function withAuth(token: string, init?: RequestInit): RequestInit {
+		return {
+			...init,
+			headers: {
+				...init?.headers,
+				Authorization: `Bearer ${token}`,
+			},
+		};
+	}
+
 	return {
 		agents: {
-			list: () => fetchJson<Agent[]>("/agents"),
+			list: (params?: AgentSearchParams) => {
+				const qs = new URLSearchParams();
+				if (params?.q) qs.set("q", params.q);
+				if (params?.category) qs.set("category", params.category);
+				const query = qs.toString();
+				return fetchJson<AgentListResponse>(`/agents${query ? `?${query}` : ""}`);
+			},
 			get: (id: string) => fetchJson<Agent>(`/agents/${id}`),
+			create: (agent: Partial<Agent>, token: string) =>
+				fetchJson<Agent>(
+					"/agents",
+					withAuth(token, {
+						method: "POST",
+						body: JSON.stringify(agent),
+					}),
+				),
+		},
+		chat: {
+			send: (req: ChatRequest) =>
+				fetchJson<ChatResponse>("/chat", {
+					method: "POST",
+					body: JSON.stringify(req),
+				}),
+		},
+		auth: {
+			profile: (token: string) => fetchJson<UserProfile>("/auth/profile", withAuth(token)),
+			updateProfile: (data: Partial<UserProfile>, token: string) =>
+				fetchJson<UserProfile>(
+					"/auth/profile",
+					withAuth(token, {
+						method: "PATCH",
+						body: JSON.stringify(data),
+					}),
+				),
 		},
 	};
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
+
+export class ApiError extends Error {
+	constructor(
+		public status: number,
+		message: string,
+	) {
+		super(message);
+		this.name = "ApiError";
+	}
+}

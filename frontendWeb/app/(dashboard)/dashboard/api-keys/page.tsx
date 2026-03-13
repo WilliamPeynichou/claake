@@ -1,49 +1,30 @@
 "use client";
 
+import { AI_PROVIDERS } from "@agentplace/shared";
+import { useApiKeys } from "@agentplace/shared/hooks";
 import { Eye, EyeOff, Key, Plus, Shield, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-interface StoredKey {
-	id: string;
-	provider: string;
-	label: string;
-	key: string;
-}
+import { webStorage } from "@/lib/storage";
 
 export default function ApiKeysPage() {
-	const [keys, setKeys] = useState<StoredKey[]>([]);
+	const { keys, addKey, removeKey, maskKey } = useApiKeys({ storage: webStorage });
 	const [showForm, setShowForm] = useState(false);
 	const [provider, setProvider] = useState("anthropic");
 	const [label, setLabel] = useState("");
 	const [keyValue, setKeyValue] = useState("");
 	const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
 
-	function addKey() {
+	async function handleAddKey() {
 		if (!keyValue.trim()) return;
-		const newKey: StoredKey = {
-			id: crypto.randomUUID(),
-			provider,
-			label: label || provider,
-			key: keyValue,
-		};
-		setKeys((prev) => [...prev, newKey]);
+		await addKey(provider, label, keyValue);
 		setProvider("anthropic");
 		setLabel("");
 		setKeyValue("");
 		setShowForm(false);
-	}
-
-	function removeKey(id: string) {
-		setKeys((prev) => prev.filter((k) => k.id !== id));
-		setVisibleKeys((prev) => {
-			const next = new Set(prev);
-			next.delete(id);
-			return next;
-		});
 	}
 
 	function toggleVisibility(id: string) {
@@ -53,11 +34,6 @@ export default function ApiKeysPage() {
 			else next.add(id);
 			return next;
 		});
-	}
-
-	function maskKey(key: string) {
-		if (key.length <= 8) return "••••••••";
-		return `${key.slice(0, 4)}••••••••${key.slice(-4)}`;
 	}
 
 	return (
@@ -95,10 +71,11 @@ export default function ApiKeysPage() {
 								value={provider}
 								onChange={(e) => setProvider(e.target.value)}
 							>
-								<option value="anthropic">Anthropic (Claude)</option>
-								<option value="openai">OpenAI (GPT)</option>
-								<option value="google">Google (Gemini)</option>
-								<option value="mistral">Mistral</option>
+								{AI_PROVIDERS.map((p) => (
+									<option key={p.id} value={p.id}>
+										{p.name}
+									</option>
+								))}
 							</select>
 						</div>
 						<div className="space-y-2">
@@ -121,7 +98,7 @@ export default function ApiKeysPage() {
 							/>
 						</div>
 						<div className="flex gap-2">
-							<Button onClick={addKey}>Enregistrer</Button>
+							<Button onClick={handleAddKey}>Enregistrer</Button>
 							<Button variant="outline" onClick={() => setShowForm(false)}>
 								Annuler
 							</Button>

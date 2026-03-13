@@ -1,39 +1,35 @@
-import { AGENT_CATEGORIES, MOCK_AGENTS } from "@agentplace/shared";
+import {
+	AGENT_CATEGORIES,
+	MOCK_AGENTS,
+	getAgentsByCategory as sharedGetByCategory,
+	getAgentById as sharedGetById,
+	getFeaturedAgents as sharedGetFeatured,
+	getTrendingAgents as sharedGetTrending,
+	searchAgents as sharedSearchAgents,
+} from "@agentplace/shared";
 
-export { MOCK_AGENTS, AGENT_CATEGORIES };
+export { AGENT_CATEGORIES, MOCK_AGENTS };
 
+/**
+ * Wrappers that use MOCK_AGENTS — delegates to shared pure functions.
+ * Once the backend is live, these will be replaced by API calls via hooks.
+ */
 export function getAgentsByCategory(category: string) {
-	return MOCK_AGENTS.filter((a) => a.category === category);
+	return sharedGetByCategory(MOCK_AGENTS, category);
 }
 
 export function getFeaturedAgents() {
-	return MOCK_AGENTS.sort((a, b) => b.downloads_count - a.downloads_count).slice(0, 3);
+	return sharedGetFeatured(MOCK_AGENTS);
 }
 
 export function getTrendingAgents() {
-	return MOCK_AGENTS.sort((a, b) => b.average_rating - a.average_rating).slice(0, 4);
+	return sharedGetTrending(MOCK_AGENTS);
 }
 
 export function searchAgents(query: string, category?: string) {
-	let results = MOCK_AGENTS.filter((a) => a.status === "published");
-
-	if (query) {
-		const q = query.toLowerCase();
-		results = results.filter(
-			(a) =>
-				a.name.toLowerCase().includes(q) ||
-				a.description.toLowerCase().includes(q) ||
-				a.tags.some((t) => t.toLowerCase().includes(q)),
-		);
-	}
-
-	if (category && category !== "all") {
-		results = results.filter((a) => a.category === category);
-	}
-
-	return results;
+	return sharedSearchAgents(MOCK_AGENTS, query, category);
 }
 
 export function getAgentById(id: string) {
-	return MOCK_AGENTS.find((a) => a.id === id) ?? null;
+	return sharedGetById(MOCK_AGENTS, id);
 }
