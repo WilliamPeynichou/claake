@@ -1,0 +1,48 @@
+import type { AgentCategory } from "@agentplace/shared";
+import {
+	BarChart3,
+	Code,
+	GraduationCap,
+	Megaphone,
+	Palette,
+	PenTool,
+	Sparkles,
+	Zap,
+} from "lucide-react";
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+	Zap,
+	Code,
+	PenTool,
+	BarChart3,
+	Palette,
+	Megaphone,
+	GraduationCap,
+	Sparkles,
+};
+
+interface CategoryCardProps {
+	category: AgentCategory;
+}
+
+export function CategoryCard({ category }: CategoryCardProps) {
+	const Icon = iconMap[category.icon] ?? Sparkles;
+
+	return (
+		<Link href={`/catalogue?category=${category.slug}`}>
+			<Card className="transition-shadow hover:shadow-md">
+				<CardContent className="flex items-center gap-4 p-4">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+						<Icon className="h-5 w-5 text-primary" />
+					</div>
+					<div>
+						<h3 className="text-sm font-semibold">{category.name}</h3>
+						<p className="text-xs text-muted-foreground">{category.description}</p>
+					</div>
+				</CardContent>
+			</Card>
+		</Link>
+	);
+}
