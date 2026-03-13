@@ -1,30 +1,35 @@
+"use client";
+
 import type { Agent } from "@agentplace/shared";
 import { Bot, Download, Star } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n/context";
 
 interface AgentCardProps {
 	agent: Agent;
 }
 
 export function AgentCard({ agent }: AgentCardProps) {
+	const { t } = useI18n();
+
 	return (
 		<Link href={`/agents/${agent.id}`}>
-			<Card className="h-full transition-shadow hover:shadow-md">
+			<Card className="h-full border-border/60 transition-all hover:border-brand/40">
 				<CardHeader className="pb-3">
 					<div className="flex items-start justify-between">
-						<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-							<Bot className="h-6 w-6 text-primary" />
+						<div className="flex h-12 w-12 items-center justify-center border border-brand/20 bg-brand-subtle">
+							<Bot className="h-6 w-6 text-brand" />
 						</div>
 						<Badge variant="secondary" className="text-xs">
-							{agent.price_type === "free" ? "Gratuit" : `${agent.price}€`}
+							{agent.price_type === "free" ? t("agent.free") : `${agent.price}€`}
 						</Badge>
 					</div>
 					<div className="mt-3">
-						<h3 className="font-semibold leading-tight">{agent.name}</h3>
+						<h3 className="font-sans text-sm font-medium leading-tight">{agent.name}</h3>
 						<p className="mt-1 text-xs text-muted-foreground">
-							par {agent.creator_name ?? "Anonyme"}
+							{t("agent.by")} {agent.creator_name ?? t("agent.anonymous")}
 						</p>
 					</div>
 				</CardHeader>

@@ -1,58 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
-    --primary: 0 0% 13%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 13%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 13%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 9%;
-    --radius: 0.625rem;
-  }
+	:root {
+		/* Claake brand — from logo (#2a7a44) */
+		--brand: 147 48% 32%;
+		--brand-light: 141 44% 43%;
+		--brand-dark: 147 51% 24%;
+		--brand-subtle: 150 30% 93%;
 
-  .dark {
-    --background: 0 0% 9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 13%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 13%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 13%;
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 18%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 18%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 0 0% 83%;
-  }
+		/* Warm neutrals — NEVER pure white or cold grey */
+		--background: 40 20% 98%;
+		--foreground: 36 12% 11%;
 
-  * {
-    @apply border-border;
-  }
+		--card: 38 18% 94%;
+		--card-foreground: 36 12% 11%;
 
-  body {
-    @apply bg-background text-foreground;
-  }
+		--popover: 40 20% 98%;
+		--popover-foreground: 36 12% 11%;
+
+		--primary: 147 48% 32%;
+		--primary-foreground: 40 20% 98%;
+
+		--secondary: 38 18% 94%;
+		--secondary-foreground: 36 12% 11%;
+
+		--muted: 38 18% 94%;
+		--muted-foreground: 35 10% 53%;
+
+		--accent: 38 18% 94%;
+		--accent-foreground: 36 12% 11%;
+
+		--destructive: 0 84% 60%;
+		--destructive-foreground: 40 20% 98%;
+
+		--border: 37 14% 88%;
+		--input: 37 14% 88%;
+		--ring: 147 48% 32%;
+		--radius: 0px;
+	}
+
+	.dark {
+		--background: 40 8% 8%;
+		--foreground: 37 14% 88%;
+
+		--card: 40 6% 12%;
+		--card-foreground: 37 14% 88%;
+
+		--popover: 40 6% 12%;
+		--popover-foreground: 37 14% 88%;
+
+		--primary: 141 44% 43%;
+		--primary-foreground: 40 8% 8%;
+
+		--secondary: 40 6% 15%;
+		--secondary-foreground: 37 14% 88%;
+
+		--muted: 40 6% 15%;
+		--muted-foreground: 35 8% 54%;
+
+		--accent: 40 6% 15%;
+		--accent-foreground: 37 14% 88%;
+
+		--destructive: 0 62% 30%;
+		--destructive-foreground: 37 14% 88%;
+
+		--border: 40 6% 18%;
+		--input: 40 6% 18%;
+		--ring: 141 44% 43%;
+	}
+
+	* {
+		@apply border-border;
+	}
+
+	body {
+		@apply bg-background text-foreground;
+		font-family: 'DM Sans', system-ui, sans-serif;
+	}
+
+	h1, h2, h3, h4, h5, h6 {
+		font-family: 'DM Serif Display', Georgia, serif;
+		font-weight: 400;
+	}
+}
+
+/* Claake grain overlay */
+.grain-overlay {
+	position: relative;
+}
+.grain-overlay::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+	opacity: 0.03;
+	pointer-events: none;
+	mix-blend-mode: multiply;
+}
+
+/* Claake reveal animations */
+.reveal {
+	opacity: 0;
+	transform: translateY(40px);
+	transition: opacity 1200ms cubic-bezier(0.16, 1, 0.3, 1),
+	            transform 1200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+/* Stagger delays for reveal cascade */
+.reveal-delay-1 { transition-delay: 100ms; }
+.reveal-delay-2 { transition-delay: 200ms; }
+.reveal-delay-3 { transition-delay: 300ms; }
+.reveal-delay-4 { transition-delay: 400ms; }
+
+/* Label/nav style */
+.label-caps {
+	font-family: 'DM Sans', system-ui, sans-serif;
+	font-size: clamp(0.7rem, 0.8vw, 0.75rem);
+	font-weight: 500;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
 }

@@ -1,3 +1,5 @@
+"use client";
+
 import type { AgentCategory } from "@agentplace/shared";
 import {
 	BarChart3,
@@ -32,13 +34,13 @@ export function CategoryCard({ category }: CategoryCardProps) {
 
 	return (
 		<Link href={`/catalogue?category=${category.slug}`}>
-			<Card className="transition-shadow hover:shadow-md">
+			<Card className="border-border/60 transition-all hover:border-brand/40">
 				<CardContent className="flex items-center gap-4 p-4">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-						<Icon className="h-5 w-5 text-primary" />
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center border border-brand/20 bg-brand-subtle">
+						<Icon className="h-5 w-5 text-brand" />
 					</div>
 					<div>
-						<h3 className="text-sm font-semibold">{category.name}</h3>
+						<h3 className="font-sans text-sm font-medium">{category.name}</h3>
 						<p className="text-xs text-muted-foreground">{category.description}</p>
 					</div>
 				</CardContent>
