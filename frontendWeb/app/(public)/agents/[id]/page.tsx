@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { AgentDetailChat } from "./agent-detail-chat";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
 const serverApiClient = createApiClient(API_URL);
 
 export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
