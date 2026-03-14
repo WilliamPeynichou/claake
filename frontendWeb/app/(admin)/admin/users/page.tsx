@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient } from "@/lib/api";
+import { getAccessToken } from "@/lib/auth";
 
 const roleLabel: Record<string, string> = {
 	user: "Utilisateur",
@@ -25,11 +26,25 @@ export default function AdminUsersPage() {
 	const [users, setUsers] = useState<UserWithAgentsCount[]>([]);
 
 	useEffect(() => {
-		// TODO: pass real auth token
-		apiClient.users
-			.list("")
-			.then(setUsers)
-			.catch(() => {});
+		let isMounted = true;
+
+		async function loadUsers() {
+			const token = await getAccessToken();
+			if (!token) return;
+
+			try {
+				const nextUsers = await apiClient.users.list(token);
+				if (isMounted) {
+					setUsers(nextUsers);
+				}
+			} catch {}
+		}
+
+		loadUsers();
+
+		return () => {
+			isMounted = false;
+		};
 	}, []);
 
 	return (

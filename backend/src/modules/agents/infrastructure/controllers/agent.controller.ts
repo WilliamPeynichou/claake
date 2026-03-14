@@ -1,4 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
+import { CurrentUser } from "../../../../common/decorators/current-user.decorator.js";
+import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
+import type { CurrentUserType } from "../../../../common/types/current-user.type.js";
 import type { CreateAgentDto } from "../../application/dtos/create-agent.dto.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
@@ -31,8 +34,8 @@ export class AgentController {
 	}
 
 	@Post()
-	async create(@Body() dto: CreateAgentDto) {
-		// TODO: extract creator ID from auth token
-		return this.createAgent.execute(dto, "placeholder");
+	@UseGuards(SupabaseAuthGuard)
+	async create(@Body() dto: CreateAgentDto, @CurrentUser() user: CurrentUserType) {
+		return this.createAgent.execute(dto, user.id);
 	}
 }

@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AuthModule } from "../auth/auth.module.js";
 import { CreateAgentUseCase } from "./application/usecases/create-agent.usecase.js";
 import { GetAgentUseCase } from "./application/usecases/get-agent.usecase.js";
 import { ListAgentsUseCase } from "./application/usecases/list-agents.usecase.js";
@@ -7,6 +8,7 @@ import { AgentController } from "./infrastructure/controllers/agent.controller.j
 import { PrismaAgentRepository } from "./infrastructure/repositories/prisma-agent.repository.js";
 
 @Module({
+	imports: [AuthModule],
 	controllers: [AgentController],
 	providers: [
 		ListAgentsUseCase,

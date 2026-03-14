@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AuthModule } from "../auth/auth.module.js";
 import { GetUserProfileUseCase } from "./application/usecases/get-user-profile.usecase.js";
 import { ListUsersUseCase } from "./application/usecases/list-users.usecase.js";
 import { USER_REPOSITORY } from "./domain/ports/user.repository.port.js";
@@ -6,6 +7,7 @@ import { UserController } from "./infrastructure/controllers/user.controller.js"
 import { PrismaUserRepository } from "./infrastructure/repositories/prisma-user.repository.js";
 
 @Module({
+	imports: [AuthModule],
 	controllers: [UserController],
 	providers: [
 		ListUsersUseCase,

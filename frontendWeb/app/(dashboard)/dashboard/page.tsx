@@ -5,16 +5,31 @@ import { Bot, Download, MessageSquare, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient } from "@/lib/api";
+import { getAccessToken } from "@/lib/auth";
 
 export default function DashboardPage() {
 	const [stats, setStats] = useState<DashboardStats | null>(null);
 
 	useEffect(() => {
-		// TODO: pass real auth token
-		apiClient.stats
-			.dashboard("")
-			.then(setStats)
-			.catch(() => {});
+		let isMounted = true;
+
+		async function loadStats() {
+			const token = await getAccessToken();
+			if (!token) return;
+
+			try {
+				const nextStats = await apiClient.stats.dashboard(token);
+				if (isMounted) {
+					setStats(nextStats);
+				}
+			} catch {}
+		}
+
+		loadStats();
+
+		return () => {
+			isMounted = false;
+		};
 	}, []);
 
 	const statCards = [
