@@ -1,0 +1,78 @@
+import { Injectable } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
+import { PrismaService } from "../../../../prisma/prisma.service.js";
+import type { AgentEntity } from "../../domain/entities/agent.entity.js";
+import type {
+	AgentListParams,
+	AgentRepositoryPort,
+} from "../../domain/ports/agent.repository.port.js";
+import { AgentMapper } from "../mappers/agent.mapper.js";
+
+@Injectable()
+export class PrismaAgentRepository implements AgentRepositoryPort {
+	constructor(private readonly prisma: PrismaService) {}
+
+	async findAll(params: AgentListParams): Promise<{ agents: AgentEntity[]; total: number }> {
+		const where: Prisma.AgentWhereInput = {};
+
+		if (params.publishedOnly !== false) {
+			where.status = "PUBLISHED";
+		}
+
+		if (params.category && params.category !== "all") {
+			where.category = params.category;
+		}
+
+		if (params.q) {
+			const q = params.q.toLowerCase();
+			where.OR = [
+				{ name: { contains: q, mode: "insensitive" } },
+				{ description: { contains: q, mode: "insensitive" } },
+				{ tags: { hasSome: [q] } },
+			];
+		}
+
+		const [agents, total] = await Promise.all([
+			this.prisma.agent.findMany({
+				where,
+				include: { creator: { select: { fullName: true } } },
+				orderBy: { createdAt: "desc" },
+			}),
+			this.prisma.agent.count({ where }),
+		]);
+
+		return {
+			agents: agents.map(AgentMapper.toDomain),
+			total,
+		};
+	}
+
+	async findById(id: string): Promise<AgentEntity | null> {
+		const agent = await this.prisma.agent.findUnique({
+			where: { id },
+			include: { creator: { select: { fullName: true } } },
+		});
+		return agent ? AgentMapper.toDomain(agent) : null;
+	}
+
+	async create(data: Partial<AgentEntity>): Promise<AgentEntity> {
+		const agent = await this.prisma.agent.create({
+			data: {
+				name: data.name!,
+				slug: data.slug!,
+				description: data.description!,
+				longDescription: data.longDescription,
+				category: data.category!,
+				tags: data.tags ?? [],
+				price: data.price ?? 0,
+				priceType: (data.priceType as any) ?? "FREE",
+				model: data.model!,
+				mode: (data.mode as any) ?? "CLOUD",
+				version: data.version ?? "1.0.0",
+				creatorId: data.creatorId!,
+			},
+			include: { creator: { select: { fullName: true } } },
+		});
+		return AgentMapper.toDomain(agent);
+	}
+}

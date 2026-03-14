@@ -1,0 +1,27 @@
+export class AgentEntity {
+	constructor(
+		public readonly id: string,
+		public readonly name: string,
+		public readonly slug: string,
+		public readonly description: string,
+		public readonly longDescription: string | null,
+		public readonly category: string,
+		public readonly tags: string[],
+		public readonly price: number,
+		public readonly priceType: string,
+		public readonly imageUrl: string | null,
+		public readonly screenshots: string[],
+		public readonly creatorId: string,
+		public readonly creatorName: string | null,
+		public readonly model: string,
+		public readonly mode: string,
+		public readonly version: string,
+		public readonly status: string,
+		public readonly downloadsCount: number,
+		public readonly averageRating: number,
+		public readonly reviewsCount: number,
+		public readonly sandboxUses: number,
+		public readonly createdAt: Date,
+		public readonly updatedAt: Date,
+	) {}
+}

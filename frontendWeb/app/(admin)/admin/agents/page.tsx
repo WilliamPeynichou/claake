@@ -1,9 +1,13 @@
+"use client";
+
+import type { Agent } from "@agentplace/shared";
 import { Eye, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MOCK_AGENTS } from "@/lib/mock-data";
+import { apiClient } from "@/lib/api";
 
 const statusLabel: Record<string, string> = {
 	published: "Publié",
@@ -20,6 +24,15 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 };
 
 export default function AdminAgentsPage() {
+	const [agents, setAgents] = useState<Agent[]>([]);
+
+	useEffect(() => {
+		apiClient.agents
+			.list({ all: true })
+			.then((res) => setAgents(res.agents))
+			.catch(() => {});
+	}, []);
+
 	return (
 		<div>
 			<h1 className="text-3xl font-bold">Gestion des agents</h1>
@@ -27,7 +40,7 @@ export default function AdminAgentsPage() {
 
 			<Card className="mt-8">
 				<CardHeader>
-					<CardTitle className="text-lg">Tous les agents ({MOCK_AGENTS.length})</CardTitle>
+					<CardTitle className="text-lg">Tous les agents ({agents.length})</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<div className="overflow-x-auto">
@@ -43,7 +56,7 @@ export default function AdminAgentsPage() {
 								</tr>
 							</thead>
 							<tbody>
-								{MOCK_AGENTS.map((agent) => (
+								{agents.map((agent) => (
 									<tr key={agent.id} className="border-b last:border-0">
 										<td className="py-3 font-medium">{agent.name}</td>
 										<td className="py-3 text-muted-foreground">{agent.creator_name}</td>

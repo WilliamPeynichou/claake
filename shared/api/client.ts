@@ -1,4 +1,4 @@
-import type { Agent, UserProfile } from "../types";
+import type { Agent, AgentCategory, UserProfile } from "../types";
 
 export interface ChatRequest {
 	agent_id: string;
@@ -21,6 +21,25 @@ export interface AgentListResponse {
 export interface AgentSearchParams {
 	q?: string;
 	category?: string;
+	all?: boolean;
+}
+
+export interface DashboardStats {
+	agents_used: number;
+	conversations: number;
+	agents_published: number;
+	average_rating: string;
+}
+
+export interface AdminStats {
+	published_agents: number;
+	users: number;
+	pending_review: number;
+	chat_sessions: number;
+}
+
+export interface UserWithAgentsCount extends UserProfile {
+	agents_count: number;
 }
 
 export function createApiClient(baseUrl: string) {
@@ -33,7 +52,12 @@ export function createApiClient(baseUrl: string) {
 			const body = await res.json().catch(() => ({}));
 			throw new ApiError(res.status, body.error ?? `API error: ${res.status} ${res.statusText}`);
 		}
-		return res.json();
+		const json = await res.json();
+		// Unwrap { data: ... } envelope from ResponseTransformInterceptor
+		if (json && typeof json === "object" && "data" in json) {
+			return json.data as T;
+		}
+		return json as T;
 	}
 
 	function withAuth(token: string, init?: RequestInit): RequestInit {
@@ -52,6 +76,7 @@ export function createApiClient(baseUrl: string) {
 				const qs = new URLSearchParams();
 				if (params?.q) qs.set("q", params.q);
 				if (params?.category) qs.set("category", params.category);
+				if (params?.all) qs.set("all", "true");
 				const query = qs.toString();
 				return fetchJson<AgentListResponse>(`/agents${query ? `?${query}` : ""}`);
 			},
@@ -64,6 +89,16 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(agent),
 					}),
 				),
+		},
+		categories: {
+			list: () => fetchJson<AgentCategory[]>("/categories"),
+		},
+		stats: {
+			dashboard: (token: string) => fetchJson<DashboardStats>("/stats/dashboard", withAuth(token)),
+			admin: (token: string) => fetchJson<AdminStats>("/stats/admin", withAuth(token)),
+		},
+		users: {
+			list: (token: string) => fetchJson<UserWithAgentsCount[]>("/users", withAuth(token)),
 		},
 		chat: {
 			send: (req: ChatRequest) =>

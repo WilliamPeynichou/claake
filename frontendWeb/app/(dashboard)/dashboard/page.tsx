@@ -1,41 +1,56 @@
-import { Bot, Download, MessageSquare, Star } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
 
-const stats = [
-	{
-		title: "Agents utilisés",
-		value: "3",
-		icon: Bot,
-		description: "Agents dans votre bibliothèque",
-	},
-	{
-		title: "Conversations",
-		value: "12",
-		icon: MessageSquare,
-		description: "Sessions de chat ce mois",
-	},
-	{
-		title: "Agents publiés",
-		value: "0",
-		icon: Download,
-		description: "Agents créés par vous",
-	},
-	{
-		title: "Note moyenne",
-		value: "—",
-		icon: Star,
-		description: "Note de vos agents",
-	},
-];
+import type { DashboardStats } from "@agentplace/shared";
+import { Bot, Download, MessageSquare, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiClient } from "@/lib/api";
 
 export default function DashboardPage() {
+	const [stats, setStats] = useState<DashboardStats | null>(null);
+
+	useEffect(() => {
+		// TODO: pass real auth token
+		apiClient.stats
+			.dashboard("")
+			.then(setStats)
+			.catch(() => {});
+	}, []);
+
+	const statCards = [
+		{
+			title: "Agents utilisés",
+			value: String(stats?.agents_used ?? "—"),
+			icon: Bot,
+			description: "Agents dans votre bibliothèque",
+		},
+		{
+			title: "Conversations",
+			value: String(stats?.conversations ?? "—"),
+			icon: MessageSquare,
+			description: "Sessions de chat ce mois",
+		},
+		{
+			title: "Agents publiés",
+			value: String(stats?.agents_published ?? "—"),
+			icon: Download,
+			description: "Agents créés par vous",
+		},
+		{
+			title: "Note moyenne",
+			value: stats?.average_rating ?? "—",
+			icon: Star,
+			description: "Note de vos agents",
+		},
+	];
+
 	return (
 		<div>
 			<h1 className="text-3xl font-bold">Tableau de bord</h1>
 			<p className="mt-2 text-muted-foreground">Bienvenue sur votre espace personnel AgentPlace.</p>
 
 			<div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				{stats.map((stat) => (
+				{statCards.map((stat) => (
 					<Card key={stat.title}>
 						<CardHeader className="flex flex-row items-center justify-between pb-2">
 							<CardTitle className="text-sm font-medium text-muted-foreground">

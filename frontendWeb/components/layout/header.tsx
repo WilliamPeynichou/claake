@@ -79,11 +79,7 @@ export function Header() {
 
 					{/* Dark mode toggle */}
 					<Button variant="ghost" size="icon" onClick={toggleTheme} title="Toggle theme">
-						{theme === "light" ? (
-							<Moon className="h-4 w-4" />
-						) : (
-							<Sun className="h-4 w-4" />
-						)}
+						{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
 					</Button>
 
 					{user ? (
@@ -122,11 +118,7 @@ export function Header() {
 				{/* Mobile hamburger */}
 				<div className="flex items-center gap-2 md:hidden">
 					<Button variant="ghost" size="icon" onClick={toggleTheme}>
-						{theme === "light" ? (
-							<Moon className="h-4 w-4" />
-						) : (
-							<Sun className="h-4 w-4" />
-						)}
+						{theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
 					</Button>
 					<button type="button" onClick={() => setMobileOpen(!mobileOpen)}>
 						{mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}

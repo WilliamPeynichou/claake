@@ -1,21 +1,51 @@
-import { Bot, ShieldCheck, TrendingUp, Users } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
 
-const stats = [
-	{ title: "Agents publiés", value: "6", icon: Bot, change: "+2 cette semaine" },
-	{ title: "Utilisateurs", value: "12", icon: Users, change: "+5 cette semaine" },
-	{ title: "En attente de revue", value: "0", icon: ShieldCheck, change: "File vide" },
-	{ title: "Sessions de chat", value: "48", icon: TrendingUp, change: "+15 cette semaine" },
-];
+import type { AdminStats } from "@agentplace/shared";
+import { Bot, ShieldCheck, TrendingUp, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiClient } from "@/lib/api";
 
 export default function AdminDashboardPage() {
+	const [stats, setStats] = useState<AdminStats | null>(null);
+
+	useEffect(() => {
+		// TODO: pass real auth token
+		apiClient.stats
+			.admin("")
+			.then(setStats)
+			.catch(() => {});
+	}, []);
+
+	const statCards = [
+		{
+			title: "Agents publiés",
+			value: String(stats?.published_agents ?? "—"),
+			icon: Bot,
+			change: "",
+		},
+		{ title: "Utilisateurs", value: String(stats?.users ?? "—"), icon: Users, change: "" },
+		{
+			title: "En attente de revue",
+			value: String(stats?.pending_review ?? "—"),
+			icon: ShieldCheck,
+			change: "",
+		},
+		{
+			title: "Sessions de chat",
+			value: String(stats?.chat_sessions ?? "—"),
+			icon: TrendingUp,
+			change: "",
+		},
+	];
+
 	return (
 		<div>
 			<h1 className="text-3xl font-bold">Administration</h1>
 			<p className="mt-2 text-muted-foreground">Vue d&apos;ensemble de la plateforme AgentPlace.</p>
 
 			<div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				{stats.map((stat) => (
+				{statCards.map((stat) => (
 					<Card key={stat.title}>
 						<CardHeader className="flex flex-row items-center justify-between pb-2">
 							<CardTitle className="text-sm font-medium text-muted-foreground">
@@ -25,7 +55,7 @@ export default function AdminDashboardPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">{stat.value}</div>
-							<p className="text-xs text-muted-foreground">{stat.change}</p>
+							{stat.change && <p className="text-xs text-muted-foreground">{stat.change}</p>}
 						</CardContent>
 					</Card>
 				))}

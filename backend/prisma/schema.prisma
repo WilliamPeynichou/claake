@@ -20,11 +20,25 @@ enum AgentStatus {
   REJECTED
 }
 
+enum PriceType {
+  FREE
+  ONE_TIME
+  SUBSCRIPTION
+  PAY_PER_USE
+}
+
+enum ExecutionMode {
+  LOCAL
+  CLOUD
+  HYBRID
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   fullName  String?  @map("full_name")
   avatarUrl String?  @map("avatar_url")
+  bio       String?
   role      UserRole @default(USER)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -35,18 +49,42 @@ model User {
 }
 
 model Agent {
-  id          String      @id @default(uuid())
-  name        String
-  description String
-  category    String
-  price       Float
-  imageUrl    String?     @map("image_url")
-  status      AgentStatus @default(DRAFT)
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  id              String        @id @default(uuid())
+  name            String
+  slug            String        @unique
+  description     String
+  longDescription String?       @map("long_description")
+  category        String
+  tags            String[]
+  price           Float
+  priceType       PriceType     @default(FREE) @map("price_type")
+  imageUrl        String?       @map("image_url")
+  screenshots     String[]
+  model           String        @default("claude-sonnet-4-20250514")
+  mode            ExecutionMode @default(CLOUD)
+  version         String        @default("1.0.0")
+  status          AgentStatus   @default(DRAFT)
+  downloadsCount  Int           @default(0) @map("downloads_count")
+  averageRating   Float         @default(0) @map("average_rating")
+  reviewsCount    Int           @default(0) @map("reviews_count")
+  sandboxUses     Int           @default(0) @map("sandbox_uses")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   creator   User   @relation(fields: [creatorId], references: [id])
   creatorId String @map("creator_id")
 
   @@map("agents")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String
+  icon        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("categories")
 }

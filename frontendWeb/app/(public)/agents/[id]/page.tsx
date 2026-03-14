@@ -1,3 +1,4 @@
+import { ApiError, createApiClient } from "@agentplace/shared";
 import { ArrowLeft, Bot, Cloud, Download, HardDrive, Star, Tag, User } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -5,15 +6,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { getAgentById } from "@/lib/mock-data";
 import { AgentDetailChat } from "./agent-detail-chat";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+const serverApiClient = createApiClient(API_URL);
 
 export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
-	const agent = getAgentById(id);
 
-	if (!agent) {
-		notFound();
+	let agent;
+	try {
+		agent = await serverApiClient.agents.get(id);
+	} catch (e) {
+		if (e instanceof ApiError && e.status === 404) {
+			notFound();
+		}
+		throw e;
 	}
 
 	const modeIcon =

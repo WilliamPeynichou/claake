@@ -1,9 +1,10 @@
 "use client";
 
-import { AGENT_CATEGORIES, AI_MODELS, EXECUTION_MODES } from "@agentplace/shared";
+import type { AgentCategory } from "@agentplace/shared";
+import { AI_MODELS, EXECUTION_MODES } from "@agentplace/shared";
 import { ArrowLeft, ArrowRight, Check, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,12 +12,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { apiClient } from "@/lib/api";
 
 const steps = ["Fichier .agentjson", "Métadonnées", "Configuration", "Tarification", "Validation"];
 
 export default function NewAgentPage() {
 	const router = useRouter();
+	const [categories, setCategories] = useState<AgentCategory[]>([]);
 	const [currentStep, setCurrentStep] = useState(0);
+
+	useEffect(() => {
+		apiClient.categories
+			.list()
+			.then(setCategories)
+			.catch(() => {});
+	}, []);
 	const [formData, setFormData] = useState({
 		name: "",
 		description: "",
@@ -183,7 +193,7 @@ export default function NewAgentPage() {
 									onChange={(e) => updateField("category", e.target.value)}
 								>
 									<option value="">Sélectionner une catégorie</option>
-									{AGENT_CATEGORIES.map((cat) => (
+									{categories.map((cat) => (
 										<option key={cat.id} value={cat.slug}>
 											{cat.name}
 										</option>

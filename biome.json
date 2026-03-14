@@ -1,5 +1,10 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
+	"javascript": {
+		"parser": {
+			"unsafeParameterDecoratorsEnabled": true
+		}
+	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",
@@ -13,6 +18,12 @@
 			"correctness": {
 				"noUnusedImports": "warn",
 				"noUnusedVariables": "warn"
+			},
+			"style": {
+				"useImportType": "off"
+			},
+			"complexity": {
+				"noStaticOnlyClass": "off"
 			}
 		}
 	},
@@ -36,7 +47,8 @@
 			"!!**/*.config.mjs",
 			"!!**/*.config.ts",
 			"!!**/components/ui",
-			"!!**/.claude"
+			"!!**/.claude",
+			"!!**/dist"
 		]
 	}
 }

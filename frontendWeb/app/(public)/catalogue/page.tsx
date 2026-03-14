@@ -1,17 +1,35 @@
 "use client";
 
+import type { Agent, AgentCategory } from "@agentplace/shared";
+import { searchAgents } from "@agentplace/shared";
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AgentCard } from "@/components/agents/agent-card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { AGENT_CATEGORIES, searchAgents } from "@/lib/mock-data";
+import { apiClient } from "@/lib/api";
 
 export default function CataloguePage() {
 	const [query, setQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState("all");
+	const [agents, setAgents] = useState<Agent[]>([]);
+	const [categories, setCategories] = useState<AgentCategory[]>([]);
 
-	const results = useMemo(() => searchAgents(query, selectedCategory), [query, selectedCategory]);
+	useEffect(() => {
+		apiClient.agents
+			.list()
+			.then((res) => setAgents(res.agents))
+			.catch(() => {});
+		apiClient.categories
+			.list()
+			.then(setCategories)
+			.catch(() => {});
+	}, []);
+
+	const results = useMemo(
+		() => searchAgents(agents, query, selectedCategory),
+		[agents, query, selectedCategory],
+	);
 
 	return (
 		<div className="container mx-auto px-4 py-8">
@@ -39,7 +57,7 @@ export default function CataloguePage() {
 				<button type="button" onClick={() => setSelectedCategory("all")}>
 					<Badge variant={selectedCategory === "all" ? "default" : "outline"}>Tous</Badge>
 				</button>
-				{AGENT_CATEGORIES.map((cat) => (
+				{categories.map((cat) => (
 					<button key={cat.id} type="button" onClick={() => setSelectedCategory(cat.slug)}>
 						<Badge variant={selectedCategory === cat.slug ? "default" : "outline"}>
 							{cat.name}
