@@ -19,11 +19,13 @@ export class CreateAgentUseCase {
 			longDescription: dto.long_description ?? null,
 			category: dto.category,
 			tags: dto.tags,
-			price: dto.price,
-			priceType: (dto.price_type ?? "free").toUpperCase(),
-			model: dto.model,
-			mode: (dto.mode ?? "cloud").toUpperCase(),
-			version: dto.version ?? "1.0.0",
+			models: dto.models,
+			mode: (dto.mode ?? "CLOUD").toUpperCase(),
+			configUrl: dto.config_url ?? null,
+			pricingModel: (dto.pricing_model ?? "FREE").toUpperCase(),
+			price: dto.price ?? 0,
+			creditCost: dto.credit_cost ?? 1,
+			permissions: dto.permissions ?? null,
 			creatorId,
 		});
 		return AgentTransformer.toDto(agent);

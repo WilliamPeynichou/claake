@@ -7,21 +7,34 @@ export class AgentEntity {
 		public readonly longDescription: string | null,
 		public readonly category: string,
 		public readonly tags: string[],
-		public readonly price: number,
-		public readonly priceType: string,
+		public readonly models: string[],
+		public readonly mode: string,
+		public readonly configUrl: string | null,
 		public readonly imageUrl: string | null,
 		public readonly screenshots: string[],
+		public readonly pricingModel: string,
+		public readonly price: number,
+		public readonly creditCost: number,
+		public readonly status: string,
+		public readonly permissions: Record<string, unknown> | null,
+		public readonly downloadCount: number,
+		public readonly rating: number,
+		public readonly reviewCount: number,
 		public readonly creatorId: string,
 		public readonly creatorName: string | null,
-		public readonly model: string,
-		public readonly mode: string,
-		public readonly version: string,
-		public readonly status: string,
-		public readonly downloadsCount: number,
-		public readonly averageRating: number,
-		public readonly reviewsCount: number,
-		public readonly sandboxUses: number,
 		public readonly createdAt: Date,
 		public readonly updatedAt: Date,
 	) {}
+
+	isOwnedBy(userId: string): boolean {
+		return this.creatorId === userId;
+	}
+
+	isFree(): boolean {
+		return this.pricingModel === "FREE";
+	}
+
+	isPublished(): boolean {
+		return this.status === "APPROVED";
+	}
 }

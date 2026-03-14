@@ -62,7 +62,7 @@ export function useChat({ agent, apiClient, apiKey }: UseChatOptions): UseChatRe
 				api_key: apiKey || undefined,
 				history: messagesRef.current.map((m) => ({ role: m.role, content: m.content })),
 				system_prompt: agent.long_description ?? agent.description,
-				model: agent.model,
+				model: agent.models[0] ?? "claude-sonnet-4-20250514",
 			});
 
 			const assistantMessage: ChatMessage = {

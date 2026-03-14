@@ -16,7 +16,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		const where: Prisma.AgentWhereInput = {};
 
 		if (params.publishedOnly !== false) {
-			where.status = "PUBLISHED";
+			where.status = "APPROVED";
 		}
 
 		if (params.category && params.category !== "all") {
@@ -35,7 +35,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		const [agents, total] = await Promise.all([
 			this.prisma.agent.findMany({
 				where,
-				include: { creator: { select: { fullName: true } } },
+				include: { creator: { select: { displayName: true } } },
 				orderBy: { createdAt: "desc" },
 			}),
 			this.prisma.agent.count({ where }),
@@ -50,7 +50,15 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 	async findById(id: string): Promise<AgentEntity | null> {
 		const agent = await this.prisma.agent.findUnique({
 			where: { id },
-			include: { creator: { select: { fullName: true } } },
+			include: { creator: { select: { displayName: true } } },
+		});
+		return agent ? AgentMapper.toDomain(agent) : null;
+	}
+
+	async findBySlug(slug: string): Promise<AgentEntity | null> {
+		const agent = await this.prisma.agent.findUnique({
+			where: { slug },
+			include: { creator: { select: { displayName: true } } },
 		});
 		return agent ? AgentMapper.toDomain(agent) : null;
 	}
@@ -64,14 +72,16 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 				longDescription: data.longDescription,
 				category: data.category!,
 				tags: data.tags ?? [],
-				price: data.price ?? 0,
-				priceType: (data.priceType as any) ?? "FREE",
-				model: data.model!,
+				models: data.models ?? ["claude-sonnet-4-20250514"],
 				mode: (data.mode as any) ?? "CLOUD",
-				version: data.version ?? "1.0.0",
+				configUrl: data.configUrl,
+				pricingModel: (data.pricingModel as any) ?? "FREE",
+				price: data.price ?? 0,
+				creditCost: data.creditCost ?? 1,
+				permissions: (data.permissions as any) ?? undefined,
 				creatorId: data.creatorId!,
 			},
-			include: { creator: { select: { fullName: true } } },
+			include: { creator: { select: { displayName: true } } },
 		});
 		return AgentMapper.toDomain(agent);
 	}

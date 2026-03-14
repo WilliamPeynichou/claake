@@ -38,7 +38,7 @@ export default function DashboardPage() {
 		},
 		{
 			title: "Note moyenne",
-			value: stats?.average_rating ?? "—",
+			value: stats?.rating ?? "—",
 			icon: Star,
 			description: "Note de vos agents",
 		},

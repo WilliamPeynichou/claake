@@ -10,14 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient } from "@/lib/api";
 
 const statusLabel: Record<string, string> = {
-	published: "Publié",
+	approved: "Publié",
 	pending: "En attente",
 	draft: "Brouillon",
 	rejected: "Rejeté",
 };
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-	published: "default",
+	approved: "default",
 	pending: "secondary",
 	draft: "outline",
 	rejected: "destructive",
@@ -66,7 +66,7 @@ export default function AdminAgentsPage() {
 												{statusLabel[agent.status]}
 											</Badge>
 										</td>
-										<td className="py-3">{agent.average_rating.toFixed(1)}</td>
+										<td className="py-3">{agent.rating.toFixed(1)}</td>
 										<td className="py-3">
 											<div className="flex gap-1">
 												<Button variant="ghost" size="icon" asChild>

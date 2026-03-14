@@ -61,13 +61,13 @@ export default function AdminUsersPage() {
 											<div className="flex items-center gap-2">
 												<Avatar className="h-8 w-8">
 													<AvatarFallback className="text-xs">
-														{(user.full_name ?? "?")
+														{(user.display_name ?? "?")
 															.split(" ")
 															.map((n) => n[0])
 															.join("")}
 													</AvatarFallback>
 												</Avatar>
-												<span className="font-medium">{user.full_name}</span>
+												<span className="font-medium">{user.display_name}</span>
 											</div>
 										</td>
 										<td className="py-3 text-muted-foreground">{user.email}</td>

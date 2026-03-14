@@ -67,7 +67,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
 				{showKeyInput && (
 					<div className="mt-3 space-y-2 rounded-md border bg-muted/50 p-3">
 						<Label htmlFor="apiKey" className="text-xs">
-							Clé API ({agent.model.includes("claude") ? "Anthropic" : "OpenAI"})
+							Clé API ({agent.models[0]?.includes("claude") ? "Anthropic" : "OpenAI"})
 						</Label>
 						<div className="flex gap-2">
 							<Input

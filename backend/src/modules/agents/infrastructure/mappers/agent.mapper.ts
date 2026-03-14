@@ -1,7 +1,7 @@
 import type { Agent, User } from "@prisma/client";
 import { AgentEntity } from "../../domain/entities/agent.entity.js";
 
-type AgentWithCreator = Agent & { creator: Pick<User, "fullName"> };
+type AgentWithCreator = Agent & { creator: Pick<User, "displayName"> };
 
 export class AgentMapper {
 	static toDomain(raw: AgentWithCreator): AgentEntity {
@@ -13,20 +13,21 @@ export class AgentMapper {
 			raw.longDescription,
 			raw.category,
 			raw.tags,
-			raw.price,
-			raw.priceType,
+			raw.models,
+			raw.mode,
+			raw.configUrl,
 			raw.imageUrl,
 			raw.screenshots,
-			raw.creatorId,
-			raw.creator.fullName,
-			raw.model,
-			raw.mode,
-			raw.version,
+			raw.pricingModel,
+			Number(raw.price),
+			raw.creditCost,
 			raw.status,
-			raw.downloadsCount,
-			raw.averageRating,
-			raw.reviewsCount,
-			raw.sandboxUses,
+			raw.permissions as Record<string, unknown> | null,
+			raw.downloadCount,
+			Number(raw.rating),
+			raw.reviewCount,
+			raw.creatorId,
+			raw.creator.displayName,
 			raw.createdAt,
 			raw.updatedAt,
 		);

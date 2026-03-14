@@ -11,10 +11,11 @@ export class UserTransformer {
 		return {
 			id: entity.id,
 			email: entity.email,
-			full_name: entity.fullName,
+			display_name: entity.displayName,
 			avatar_url: entity.avatarUrl,
 			bio: entity.bio,
 			role: roleMap[entity.role] ?? "user",
+			has_stripe_account: entity.hasStripeAccount(),
 			agents_count: entity.agentsCount,
 			created_at: entity.createdAt.toISOString(),
 			updated_at: entity.updatedAt.toISOString(),

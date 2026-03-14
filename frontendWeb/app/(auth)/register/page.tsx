@@ -51,7 +51,7 @@ export default function RegisterPage() {
 				password,
 				options: {
 					data: {
-						full_name: fullName,
+						display_name: fullName,
 						role: accountType,
 					},
 				},

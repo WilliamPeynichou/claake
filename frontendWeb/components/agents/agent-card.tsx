@@ -23,7 +23,7 @@ export function AgentCard({ agent }: AgentCardProps) {
 							<Bot className="h-6 w-6 text-brand" />
 						</div>
 						<Badge variant="secondary" className="text-xs">
-							{agent.price_type === "free" ? t("agent.free") : `${agent.price}€`}
+							{agent.pricing_model === "free" ? t("agent.free") : `${agent.price}€`}
 						</Badge>
 					</div>
 					<div className="mt-3">
@@ -47,12 +47,12 @@ export function AgentCard({ agent }: AgentCardProps) {
 					<div className="flex w-full items-center justify-between">
 						<div className="flex items-center gap-1">
 							<Star className="h-3.5 w-3.5 fill-current text-yellow-500" />
-							<span>{agent.average_rating.toFixed(1)}</span>
-							<span className="text-muted-foreground/60">({agent.reviews_count})</span>
+							<span>{agent.rating.toFixed(1)}</span>
+							<span className="text-muted-foreground/60">({agent.review_count})</span>
 						</div>
 						<div className="flex items-center gap-1">
 							<Download className="h-3.5 w-3.5" />
-							<span>{agent.downloads_count}</span>
+							<span>{agent.download_count}</span>
 						</div>
 					</div>
 				</CardFooter>

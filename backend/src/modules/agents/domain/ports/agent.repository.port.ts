@@ -11,5 +11,6 @@ export interface AgentListParams {
 export interface AgentRepositoryPort {
 	findAll(params: AgentListParams): Promise<{ agents: AgentEntity[]; total: number }>;
 	findById(id: string): Promise<AgentEntity | null>;
+	findBySlug(slug: string): Promise<AgentEntity | null>;
 	create(data: Partial<AgentEntity>): Promise<AgentEntity>;
 }

@@ -28,7 +28,7 @@ export interface DashboardStats {
 	agents_used: number;
 	conversations: number;
 	agents_published: number;
-	average_rating: string;
+	rating: string;
 }
 
 export interface AdminStats {

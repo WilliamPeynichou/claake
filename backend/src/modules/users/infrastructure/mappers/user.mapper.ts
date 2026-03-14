@@ -6,10 +6,11 @@ export class UserMapper {
 		return new UserEntity(
 			raw.id,
 			raw.email,
-			raw.fullName,
+			raw.displayName,
 			raw.avatarUrl,
 			raw.bio,
 			raw.role,
+			raw.stripeAccountId,
 			raw._count.agents,
 			raw.createdAt,
 			raw.updatedAt,

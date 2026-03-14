@@ -8,7 +8,7 @@ export class GetAdminStatsUseCase {
 
 	async execute(): Promise<AdminStatsDto> {
 		const [publishedAgents, users, pendingReview] = await Promise.all([
-			this.prisma.agent.count({ where: { status: "PUBLISHED" } }),
+			this.prisma.agent.count({ where: { status: "APPROVED" } }),
 			this.prisma.user.count(),
 			this.prisma.agent.count({ where: { status: "PENDING" } }),
 		]);
