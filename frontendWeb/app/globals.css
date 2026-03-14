@@ -121,6 +121,15 @@
 .reveal-delay-3 { transition-delay: 300ms; }
 .reveal-delay-4 { transition-delay: 400ms; }
 
+/* Hide scrollbar for carousel */
+.scrollbar-hide {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+	display: none;
+}
+
 /* Label/nav style */
 .label-caps {
 	font-family: 'DM Sans', system-ui, sans-serif;
