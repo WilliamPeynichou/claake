@@ -1,10 +1,10 @@
 "use client";
 
-import type { AgentCategory } from "@claake/shared";
+import type { AgentCategory, ValidationResult } from "@claake/shared";
 import { AI_MODELS, EXECUTION_MODES } from "@claake/shared";
-import { ArrowLeft, ArrowRight, Check, Upload } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Check, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,13 +13,19 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 const steps = ["Fichier .agentjson", "Métadonnées", "Configuration", "Tarification", "Validation"];
 
 export default function NewAgentPage() {
 	const router = useRouter();
+	const { token } = useAuth();
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
 	const [currentStep, setCurrentStep] = useState(0);
+	const [submitting, setSubmitting] = useState(false);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [validation, setValidation] = useState<ValidationResult | null>(null);
 
 	useEffect(() => {
 		apiClient.categories
@@ -46,8 +52,75 @@ export default function NewAgentPage() {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	}
 
-	function handleSubmit() {
-		setSubmitted(true);
+	async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		try {
+			const text = await file.text();
+			const parsed = JSON.parse(text);
+
+			setFormData((prev) => ({
+				...prev,
+				name: parsed.name ?? prev.name,
+				description: parsed.description ?? prev.description,
+				longDescription: parsed.long_description ?? parsed.longDescription ?? prev.longDescription,
+				category: parsed.category ?? prev.category,
+				tags: Array.isArray(parsed.tags) ? parsed.tags.join(", ") : prev.tags,
+				model: parsed.model ?? parsed.models?.[0] ?? prev.model,
+				mode: parsed.mode ?? prev.mode,
+				systemPrompt: parsed.system_prompt ?? parsed.systemPrompt ?? prev.systemPrompt,
+				endpoint: parsed.endpoint ?? parsed.config_url ?? prev.endpoint,
+			}));
+
+			// Auto-advance to metadata step
+			setCurrentStep(1);
+		} catch {
+			setSubmitError("Fichier .agentjson invalide.");
+		}
+	}
+
+	async function handleSubmit() {
+		if (!token) {
+			setSubmitError("Vous devez être connecté.");
+			return;
+		}
+
+		setSubmitting(true);
+		setSubmitError(null);
+
+		try {
+			const slug = formData.name
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/^-|-$/g, "");
+
+			const result = await apiClient.agents.create(
+				{
+					name: formData.name,
+					slug,
+					description: formData.description,
+					long_description: formData.longDescription || null,
+					category: formData.category,
+					tags: formData.tags
+						.split(",")
+						.map((t) => t.trim())
+						.filter(Boolean),
+					models: [formData.model],
+					mode: formData.mode,
+					config_url: formData.endpoint || null,
+					system_prompt: formData.systemPrompt || null,
+				} as any,
+				token,
+			);
+
+			setValidation(result.validation);
+			setSubmitted(true);
+		} catch (err) {
+			setSubmitError(err instanceof Error ? err.message : "Erreur lors de la soumission.");
+		} finally {
+			setSubmitting(false);
+		}
 	}
 
 	if (submitted) {
@@ -61,6 +134,46 @@ export default function NewAgentPage() {
 					Votre agent <strong>{formData.name}</strong> a été soumis pour validation. Vous recevrez
 					une notification une fois la revue terminée.
 				</p>
+
+				{/* Validation feedback */}
+				{validation && (
+					<div className="mt-6 w-full max-w-md text-left">
+						{validation.errors.length > 0 && (
+							<div className="mb-3 rounded-md border border-destructive/50 bg-destructive/10 p-3">
+								<p className="mb-1 text-sm font-medium text-destructive">Erreurs</p>
+								{validation.errors.map((err) => (
+									<p key={err} className="flex items-start gap-1 text-sm text-destructive">
+										<AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+										{err}
+									</p>
+								))}
+							</div>
+						)}
+						{validation.warnings.length > 0 && (
+							<div className="rounded-md border border-yellow-500/50 bg-yellow-50 p-3 dark:bg-yellow-900/20">
+								<p className="mb-1 text-sm font-medium text-yellow-700 dark:text-yellow-400">
+									Avertissements
+								</p>
+								{validation.warnings.map((w) => (
+									<p
+										key={w}
+										className="text-sm text-yellow-600 dark:text-yellow-300"
+									>
+										{w}
+									</p>
+								))}
+							</div>
+						)}
+						{validation.valid && validation.warnings.length === 0 && (
+							<div className="rounded-md border border-green-500/50 bg-green-50 p-3 dark:bg-green-900/20">
+								<p className="text-sm text-green-700 dark:text-green-400">
+									Validation automatique réussie. Votre agent est en attente de publication.
+								</p>
+							</div>
+						)}
+					</div>
+				)}
+
 				<div className="mt-8 flex gap-4">
 					<Button variant="outline" onClick={() => router.push("/dashboard/agents")}>
 						Voir mes agents
@@ -68,6 +181,7 @@ export default function NewAgentPage() {
 					<Button
 						onClick={() => {
 							setSubmitted(false);
+							setValidation(null);
 							setCurrentStep(0);
 							setFormData({
 								name: "",
@@ -136,16 +250,40 @@ export default function NewAgentPage() {
 									Uploadez votre fichier de définition d&apos;agent ou créez-en un manuellement.
 								</p>
 							</div>
-							<div className="flex items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors hover:bg-muted/50">
+							<div
+								className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors hover:bg-muted/50"
+								onClick={() => fileInputRef.current?.click()}
+								onKeyDown={() => {}}
+								role="button"
+								tabIndex={0}
+							>
 								<div className="text-center">
 									<Upload className="mx-auto h-8 w-8 text-muted-foreground" />
 									<p className="mt-2 text-sm font-medium">Glissez votre fichier .agentjson ici</p>
 									<p className="text-xs text-muted-foreground">ou cliquez pour sélectionner</p>
-									<Button variant="outline" size="sm" className="mt-4">
+									<input
+										ref={fileInputRef}
+										type="file"
+										accept=".agentjson,.json"
+										onChange={handleFileUpload}
+										className="hidden"
+									/>
+									<Button
+										variant="outline"
+										size="sm"
+										className="mt-4"
+										onClick={(e) => {
+											e.stopPropagation();
+											fileInputRef.current?.click();
+										}}
+									>
 										Sélectionner un fichier
 									</Button>
 								</div>
 							</div>
+							{submitError && (
+								<p className="text-sm text-destructive">{submitError}</p>
+							)}
 							<Separator />
 							<p className="text-center text-sm text-muted-foreground">
 								Pas de fichier ? Remplissez les informations manuellement à l&apos;étape suivante.
@@ -317,10 +455,27 @@ export default function NewAgentPage() {
 								</div>
 								<Separator />
 								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">System Prompt</span>
+									<span className="text-xs">
+										{formData.systemPrompt
+											? `${formData.systemPrompt.length} caractères`
+											: "Non renseigné"}
+									</span>
+								</div>
+								<Separator />
+								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">Prix</span>
 									<Badge>Gratuit</Badge>
 								</div>
 							</div>
+
+							{submitError && (
+								<div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+									<AlertCircle className="h-4 w-4 shrink-0" />
+									{submitError}
+								</div>
+							)}
+
 							<p className="text-xs text-muted-foreground">
 								Votre agent sera soumis à une validation automatique (schéma, sécurité, permissions)
 								puis publié si tout est conforme. En cas d&apos;alerte, une revue manuelle sera
@@ -345,9 +500,9 @@ export default function NewAgentPage() {
 								<ArrowRight className="ml-2 h-4 w-4" />
 							</Button>
 						) : (
-							<Button onClick={handleSubmit}>
+							<Button onClick={handleSubmit} disabled={submitting}>
 								<Upload className="mr-2 h-4 w-4" />
-								Soumettre l&apos;agent
+								{submitting ? "Soumission..." : "Soumettre l'agent"}
 							</Button>
 						)}
 					</div>

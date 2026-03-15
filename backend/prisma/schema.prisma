@@ -58,6 +58,18 @@ enum SecurityScanStatus {
   MANUAL_REVIEW
 }
 
+enum MessageContentType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
 // ─── Users & Teams ──────────────────────────────────────────────────────────
 
 model User {
@@ -85,6 +97,7 @@ model User {
   pipelines     Pipeline[]
   favorites     Favorite[]
   usageCredits  UsageCredit[]
+  chatSessions  ChatSession[]
 
   @@index([email])
   @@map("users")
@@ -132,6 +145,8 @@ model Agent {
   createdAt       DateTime                     @default(now()) @map("created_at")
   updatedAt       DateTime                     @updatedAt @map("updated_at")
 
+  systemPrompt String? @map("system_prompt")
+
   creatorId String @map("creator_id")
   creator   User   @relation(fields: [creatorId], references: [id])
 
@@ -140,6 +155,7 @@ model Agent {
   subscriptions Subscription[]
   reviews       Review[]
   favorites     Favorite[]
+  chatSessions  ChatSession[]
 
   @@index([slug])
   @@index([creatorId])
@@ -316,4 +332,40 @@ model Category {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("categories")
+}
+
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+model ChatSession {
+  id        String   @id @default(uuid())
+  title     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  agentId String @map("agent_id")
+  agent   Agent  @relation(fields: [agentId], references: [id])
+
+  messages ChatMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id          String             @id @default(uuid())
+  role        MessageRole
+  contentType MessageContentType @default(TEXT) @map("content_type")
+  content     String
+  mediaUrl    String?            @map("media_url")
+  metadata    Json?
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  sessionId String      @map("session_id")
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
 }

@@ -1,5 +1,5 @@
 import { ValidationPipe } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
+import { NestFactory, Reflector } from "@nestjs/core";
 import { AppModule } from "./app.module.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor.js";
@@ -30,8 +30,9 @@ async function bootstrap() {
 		}),
 	);
 
+	const reflector = app.get(Reflector);
 	app.useGlobalFilters(new AllExceptionsFilter());
-	app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseTransformInterceptor());
+	app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseTransformInterceptor(reflector));
 
 	const port = process.env.PORT ?? 3001;
 	await app.listen(port);

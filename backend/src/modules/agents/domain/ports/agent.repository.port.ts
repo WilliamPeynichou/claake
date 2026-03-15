@@ -6,6 +6,7 @@ export interface AgentListParams {
 	q?: string;
 	category?: string;
 	publishedOnly?: boolean;
+	creatorId?: string;
 }
 
 export interface AgentRepositoryPort {
@@ -13,4 +14,5 @@ export interface AgentRepositoryPort {
 	findById(id: string): Promise<AgentEntity | null>;
 	findBySlug(slug: string): Promise<AgentEntity | null>;
 	create(data: Partial<AgentEntity>): Promise<AgentEntity>;
+	updateStatus(id: string, status: string, scanStatus?: string): Promise<void>;
 }

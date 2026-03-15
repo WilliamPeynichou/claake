@@ -30,6 +30,7 @@ export class AgentMapper {
 			raw.creator.displayName,
 			raw.createdAt,
 			raw.updatedAt,
+			raw.systemPrompt,
 		);
 	}
 }

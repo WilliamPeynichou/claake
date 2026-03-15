@@ -34,6 +34,10 @@ export class CreateAgentDto {
 	config_url?: string;
 
 	@IsOptional()
+	@IsString()
+	system_prompt?: string;
+
+	@IsOptional()
 	@IsEnum(["FREE", "ONE_TIME", "SUBSCRIPTION", "PAY_PER_USE"])
 	pricing_model?: string;
 

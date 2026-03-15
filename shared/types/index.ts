@@ -32,6 +32,7 @@ export interface Agent {
 	creator_name: string | null;
 	created_at: string;
 	updated_at: string;
+	system_prompt?: string | null;
 }
 
 export interface AgentVersion {
@@ -123,11 +124,28 @@ export interface Pipeline {
 	created_at: string;
 }
 
+export interface ChatSession {
+	id: string;
+	agent_id: string;
+	agent_name: string;
+	agent_image_url: string | null;
+	title: string | null;
+	message_count: number;
+	last_message_preview: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
 export interface ChatMessage {
 	id: string;
-	role: "user" | "assistant";
+	session_id?: string;
+	role: "user" | "assistant" | "system";
+	content_type?: "text" | "image" | "video";
 	content: string;
-	timestamp: string;
+	media_url?: string | null;
+	metadata?: Record<string, unknown> | null;
+	timestamp?: string;
+	created_at?: string;
 }
 
 export interface AgentCategory {
@@ -145,4 +163,11 @@ export interface ApiKeyConfig {
 	label: string;
 	key_preview: string;
 	created_at: string;
+}
+
+export interface ValidationResult {
+	valid: boolean;
+	errors: string[];
+	warnings: string[];
+	requiresManualReview: boolean;
 }

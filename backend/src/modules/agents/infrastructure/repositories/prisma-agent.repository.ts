@@ -15,7 +15,9 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 	async findAll(params: AgentListParams): Promise<{ agents: AgentEntity[]; total: number }> {
 		const where: Prisma.AgentWhereInput = {};
 
-		if (params.publishedOnly !== false) {
+		if (params.creatorId) {
+			where.creatorId = params.creatorId;
+		} else if (params.publishedOnly !== false) {
 			where.status = "APPROVED";
 		}
 
@@ -75,6 +77,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 				models: data.models ?? ["claude-sonnet-4-20250514"],
 				mode: (data.mode as any) ?? "CLOUD",
 				configUrl: data.configUrl,
+				systemPrompt: data.systemPrompt,
 				pricingModel: (data.pricingModel as any) ?? "FREE",
 				price: data.price ?? 0,
 				creditCost: data.creditCost ?? 1,
@@ -84,5 +87,28 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 			include: { creator: { select: { displayName: true } } },
 		});
 		return AgentMapper.toDomain(agent);
+	}
+
+	async updateStatus(id: string, status: string, scanStatus?: string): Promise<void> {
+		await this.prisma.agent.update({
+			where: { id },
+			data: {
+				status: status as any,
+			},
+		});
+
+		if (scanStatus) {
+			// Update the latest version's scan status
+			const latestVersion = await this.prisma.agentVersion.findFirst({
+				where: { agentId: id },
+				orderBy: { createdAt: "desc" },
+			});
+			if (latestVersion) {
+				await this.prisma.agentVersion.update({
+					where: { id: latestVersion.id },
+					data: { securityScanStatus: scanStatus as any },
+				});
+			}
+		}
 	}
 }

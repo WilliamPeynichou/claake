@@ -5,17 +5,19 @@ import { Bot, Download, MessageSquare, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function DashboardPage() {
+	const { token } = useAuth();
 	const [stats, setStats] = useState<DashboardStats | null>(null);
 
 	useEffect(() => {
-		// TODO: pass real auth token
+		if (!token) return;
 		apiClient.stats
-			.dashboard("")
+			.dashboard(token)
 			.then(setStats)
 			.catch(() => {});
-	}, []);
+	}, [token]);
 
 	const statCards = [
 		{
@@ -28,7 +30,7 @@ export default function DashboardPage() {
 			title: "Conversations",
 			value: String(stats?.conversations ?? "—"),
 			icon: MessageSquare,
-			description: "Sessions de chat ce mois",
+			description: "Sessions de chat",
 		},
 		{
 			title: "Agents publiés",

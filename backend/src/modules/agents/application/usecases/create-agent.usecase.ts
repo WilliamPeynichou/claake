@@ -22,6 +22,7 @@ export class CreateAgentUseCase {
 			models: dto.models,
 			mode: (dto.mode ?? "CLOUD").toUpperCase(),
 			configUrl: dto.config_url ?? null,
+			systemPrompt: dto.system_prompt ?? null,
 			pricingModel: (dto.pricing_model ?? "FREE").toUpperCase(),
 			price: dto.price ?? 0,
 			creditCost: dto.credit_cost ?? 1,

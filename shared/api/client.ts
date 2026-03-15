@@ -1,17 +1,12 @@
-import type { AdminPermissions, Agent, AgentCategory, UserProfile } from "../types";
-
-export interface ChatRequest {
-	agent_id: string;
-	message: string;
-	api_key?: string;
-	history: Array<{ role: string; content: string }>;
-	system_prompt?: string;
-	model: string;
-}
-
-export interface ChatResponse {
-	content: string;
-}
+import type {
+	AdminPermissions,
+	Agent,
+	AgentCategory,
+	ChatMessage,
+	ChatSession,
+	UserProfile,
+	ValidationResult,
+} from "../types";
 
 export interface AgentListResponse {
 	agents: Agent[];
@@ -81,12 +76,27 @@ export function createApiClient(baseUrl: string) {
 				return fetchJson<AgentListResponse>(`/agents${query ? `?${query}` : ""}`);
 			},
 			get: (id: string) => fetchJson<Agent>(`/agents/${id}`),
+			mine: (token: string) =>
+				fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
 			create: (agent: Partial<Agent>, token: string) =>
-				fetchJson<Agent>(
+				fetchJson<Agent & { validation: ValidationResult }>(
 					"/agents",
 					withAuth(token, {
 						method: "POST",
 						body: JSON.stringify(agent),
+					}),
+				),
+			review: (
+				agentId: string,
+				decision: "approve" | "reject",
+				token: string,
+				reason?: string,
+			) =>
+				fetchJson<{ status: string; reason?: string }>(
+					`/agents/${agentId}/review`,
+					withAuth(token, {
+						method: "PATCH",
+						body: JSON.stringify({ decision, reason }),
 					}),
 				),
 		},
@@ -114,11 +124,38 @@ export function createApiClient(baseUrl: string) {
 				),
 		},
 		chat: {
-			send: (req: ChatRequest) =>
-				fetchJson<ChatResponse>("/chat", {
+			createSession: (agentId: string, token: string) =>
+				fetchJson<{ id: string; agent_id: string; created_at: string }>(
+					"/chat/sessions",
+					withAuth(token, {
+						method: "POST",
+						body: JSON.stringify({ agent_id: agentId }),
+					}),
+				),
+			listSessions: (token: string, limit = 20, offset = 0) =>
+				fetchJson<{ sessions: ChatSession[]; total: number }>(
+					`/chat/sessions?limit=${limit}&offset=${offset}`,
+					withAuth(token),
+				),
+			getMessages: (sessionId: string, token: string, limit = 50, offset = 0) =>
+				fetchJson<{ messages: ChatMessage[]; total: number }>(
+					`/chat/sessions/${sessionId}/messages?limit=${limit}&offset=${offset}`,
+					withAuth(token),
+				),
+			sendMessageSSE: (sessionId: string, content: string, token: string) =>
+				fetch(`${baseUrl}/chat/sessions/${sessionId}/messages`, {
 					method: "POST",
-					body: JSON.stringify(req),
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ content }),
 				}),
+			deleteSession: (sessionId: string, token: string) =>
+				fetchJson<{ deleted: boolean }>(
+					`/chat/sessions/${sessionId}`,
+					withAuth(token, { method: "DELETE" }),
+				),
 		},
 		auth: {
 			profile: (token: string) => fetchJson<UserProfile>("/auth/profile", withAuth(token)),

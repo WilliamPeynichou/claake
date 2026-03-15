@@ -40,4 +40,19 @@ export class PrismaUserRepository implements UserRepositoryPort {
 		});
 		return UserMapper.toDomain(user);
 	}
+
+	async updateProfile(
+		id: string,
+		data: { displayName?: string; bio?: string },
+	): Promise<UserEntity> {
+		const user = await this.prisma.user.update({
+			where: { id },
+			data: {
+				displayName: data.displayName,
+				bio: data.bio,
+			},
+			include: { _count: { select: { agents: true } } },
+		});
+		return UserMapper.toDomain(user);
+	}
 }

@@ -24,6 +24,7 @@ export class AgentEntity {
 		public readonly creatorName: string | null,
 		public readonly createdAt: Date,
 		public readonly updatedAt: Date,
+		public readonly systemPrompt: string | null = null,
 	) {}
 
 	isOwnedBy(userId: string): boolean {

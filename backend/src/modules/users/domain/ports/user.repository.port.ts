@@ -10,4 +10,8 @@ export interface UserRepositoryPort {
 		role: string,
 		adminPermissions: AdminPermissions | null,
 	): Promise<UserEntity>;
+	updateProfile(
+		id: string,
+		data: { displayName?: string; bio?: string },
+	): Promise<UserEntity>;
 }
