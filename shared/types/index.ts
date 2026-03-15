@@ -1,3 +1,12 @@
+export interface AdminPermissions {
+	canManageUsers: boolean;
+	canManageAgents: boolean;
+	canManageCategories: boolean;
+	canManageReviews: boolean;
+	canViewStats: boolean;
+	canViewActivity: boolean;
+}
+
 export interface Agent {
 	id: string;
 	name: string;
@@ -42,7 +51,8 @@ export interface UserProfile {
 	display_name: string | null;
 	avatar_url: string | null;
 	bio: string | null;
-	role: "user" | "developer" | "admin";
+	role: "user" | "developer" | "admin" | "super_admin";
+	admin_permissions: AdminPermissions | null;
 	has_stripe_account: boolean;
 	agents_count: number;
 	created_at: string;

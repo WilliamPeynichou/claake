@@ -1,6 +1,6 @@
 "use client";
 
-import type { AgentCategory } from "@agentplace/shared";
+import type { AgentCategory } from "@claake/shared";
 import {
 	BarChart3,
 	Code,

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Agent } from "@agentplace/shared";
+import type { Agent } from "@claake/shared";
 import { ChatInterface } from "@/components/chat/chat-interface";
 
 interface AgentDetailChatProps {

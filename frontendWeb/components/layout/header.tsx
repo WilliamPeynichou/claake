@@ -38,7 +38,12 @@ export function Header() {
 		window.location.href = "/";
 	}
 
-	const isAdmin = user?.user_metadata?.role === "admin";
+	const userRole = user?.user_metadata?.role;
+	const isAdmin =
+		userRole === "admin" ||
+		userRole === "super_admin" ||
+		userRole === "ADMIN" ||
+		userRole === "SUPER_ADMIN";
 
 	return (
 		<header className="border-b border-border/60 bg-background/80 backdrop-blur-sm sticky top-0 z-50">

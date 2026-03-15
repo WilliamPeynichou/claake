@@ -1,13 +1,13 @@
-# AgentPlace — Conventions
+# Claake — Conventions
 
 ## Structure monorepo (npm workspaces)
 ```
 claake/
-├── shared/          # Types et API client partagés (@agentplace/shared)
-├── frontendWeb/     # Next.js 15 — app web (@agentplace/frontend-web)
-├── backend/         # NestJS + Prisma (@agentplace/backend)
-├── frontendApp/     # Tauri + React/Vite — app desktop (@agentplace/frontend-app)
-└── frontendAppMob/  # Expo/React Native — app mobile (@agentplace/frontend-app-mob)
+├── shared/          # Types et API client partagés (@claake/shared)
+├── frontendWeb/     # Next.js 15 — app web (@claake/frontend-web)
+├── backend/         # NestJS + Prisma (@claake/backend)
+├── frontendApp/     # Tauri + React/Vite — app desktop (@claake/frontend-app)
+└── frontendAppMob/  # Expo/React Native — app mobile (@claake/frontend-app-mob)
 ```
 
 ## Stack

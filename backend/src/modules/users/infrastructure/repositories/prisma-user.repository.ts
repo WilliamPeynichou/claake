@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
+import type { UserRole } from "@prisma/client";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
-import type { UserEntity } from "../../domain/entities/user.entity.js";
+import type { AdminPermissions, UserEntity } from "../../domain/entities/user.entity.js";
 import type { UserRepositoryPort } from "../../domain/ports/user.repository.port.js";
 import { UserMapper } from "../mappers/user.mapper.js";
 
@@ -22,5 +23,21 @@ export class PrismaUserRepository implements UserRepositoryPort {
 			include: { _count: { select: { agents: true } } },
 		});
 		return user ? UserMapper.toDomain(user) : null;
+	}
+
+	async updateRole(
+		id: string,
+		role: string,
+		adminPermissions: AdminPermissions | null,
+	): Promise<UserEntity> {
+		const user = await this.prisma.user.update({
+			where: { id },
+			data: {
+				role: role as UserRole,
+				adminPermissions: adminPermissions ?? undefined,
+			},
+			include: { _count: { select: { agents: true } } },
+		});
+		return UserMapper.toDomain(user);
 	}
 }

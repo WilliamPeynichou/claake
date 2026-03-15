@@ -1,7 +1,7 @@
 "use client";
 
-import type { Agent, AgentCategory } from "@agentplace/shared";
-import { searchAgents } from "@agentplace/shared";
+import type { Agent, AgentCategory } from "@claake/shared";
+import { searchAgents } from "@claake/shared";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AgentCard } from "@/components/agents/agent-card";

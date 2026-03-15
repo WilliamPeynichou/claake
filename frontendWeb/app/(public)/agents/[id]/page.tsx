@@ -1,4 +1,4 @@
-import { ApiError, createApiClient } from "@agentplace/shared";
+import { ApiError, createApiClient } from "@claake/shared";
 import { ArrowLeft, Bot, Cloud, Download, HardDrive, Star, Tag, User } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";

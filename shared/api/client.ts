@@ -1,4 +1,4 @@
-import type { Agent, AgentCategory, UserProfile } from "../types";
+import type { AdminPermissions, Agent, AgentCategory, UserProfile } from "../types";
 
 export interface ChatRequest {
 	agent_id: string;
@@ -99,6 +99,19 @@ export function createApiClient(baseUrl: string) {
 		},
 		users: {
 			list: (token: string) => fetchJson<UserWithAgentsCount[]>("/users", withAuth(token)),
+			updateRole: (
+				userId: string,
+				role: string,
+				adminPermissions: AdminPermissions | null,
+				token: string,
+			) =>
+				fetchJson<UserProfile>(
+					`/users/${userId}/role`,
+					withAuth(token, {
+						method: "PATCH",
+						body: JSON.stringify({ role, admin_permissions: adminPermissions }),
+					}),
+				),
 		},
 		chat: {
 			send: (req: ChatRequest) =>

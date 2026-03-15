@@ -1,7 +1,7 @@
 "use client";
 
-import type { Agent, AgentCategory } from "@agentplace/shared";
-import { getFeaturedAgents, getTrendingAgents } from "@agentplace/shared";
+import type { Agent, AgentCategory } from "@claake/shared";
+import { getFeaturedAgents, getTrendingAgents } from "@claake/shared";
 import { ArrowRight, Bot, Puzzle, Shield } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";

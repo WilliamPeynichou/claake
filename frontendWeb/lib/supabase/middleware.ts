@@ -26,7 +26,42 @@ export async function updateSession(request: NextRequest) {
 		},
 	});
 
-	await supabase.auth.getUser();
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+
+	const pathname = request.nextUrl.pathname;
+
+	// Protect dashboard routes — require auth
+	if (pathname.startsWith("/dashboard") && !user) {
+		const url = request.nextUrl.clone();
+		url.pathname = "/login";
+		url.searchParams.set("redirect", pathname);
+		return NextResponse.redirect(url);
+	}
+
+	// Protect admin routes — require auth + admin/super_admin role from metadata
+	if (pathname.startsWith("/admin")) {
+		if (!user) {
+			const url = request.nextUrl.clone();
+			url.pathname = "/login";
+			return NextResponse.redirect(url);
+		}
+
+		const role = user.user_metadata?.role;
+		if (role !== "admin" && role !== "super_admin" && role !== "ADMIN" && role !== "SUPER_ADMIN") {
+			const url = request.nextUrl.clone();
+			url.pathname = "/dashboard";
+			return NextResponse.redirect(url);
+		}
+	}
+
+	// Redirect logged-in users away from auth pages
+	if ((pathname === "/login" || pathname === "/register") && user) {
+		const url = request.nextUrl.clone();
+		url.pathname = "/dashboard";
+		return NextResponse.redirect(url);
+	}
 
 	return supabaseResponse;
 }

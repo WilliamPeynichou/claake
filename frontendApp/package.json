@@ -1,5 +1,5 @@
 {
-	"name": "@agentplace/frontend-app",
+	"name": "@claake/frontend-app",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
@@ -10,7 +10,7 @@
 		"tauri": "tauri"
 	},
 	"dependencies": {
-		"@agentplace/shared": "*",
+		"@claake/shared": "*",
 		"@tauri-apps/api": "^2.6.0",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0"

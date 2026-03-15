@@ -5,13 +5,17 @@ import {
 	UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { type SupabaseClient, createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
 	private readonly supabase: SupabaseClient;
 
-	constructor(private readonly config: ConfigService) {
+	constructor(
+		private readonly config: ConfigService,
+		private readonly prisma: PrismaService,
+	) {
 		this.supabase = createClient(
 			this.config.getOrThrow<string>("SUPABASE_URL"),
 			this.config.getOrThrow<string>("SUPABASE_SERVICE_ROLE_KEY"),
@@ -37,10 +41,16 @@ export class SupabaseAuthGuard implements CanActivate {
 			throw new UnauthorizedException("Invalid or expired token");
 		}
 
+		// Fetch role from DB (source of truth) instead of Supabase metadata
+		const dbUser = await this.prisma.user.findUnique({
+			where: { id: user.id },
+			select: { role: true },
+		});
+
 		request.user = {
 			id: user.id,
 			email: user.email,
-			role: user.user_metadata?.role ?? "USER",
+			role: dbUser?.role ?? "USER",
 		};
 
 		return true;

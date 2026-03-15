@@ -1,4 +1,4 @@
-import { createApiClient } from "@agentplace/shared";
+import { createApiClient } from "@claake/shared";
 
 /**
  * API client singleton for the web frontend.

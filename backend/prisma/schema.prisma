@@ -15,6 +15,7 @@ enum UserRole {
   USER
   CREATOR
   ADMIN
+  SUPER_ADMIN
 }
 
 enum TeamPlan {
@@ -66,6 +67,7 @@ model User {
   avatarUrl        String?  @map("avatar_url")
   bio              String?
   role             UserRole @default(USER)
+  adminPermissions Json?    @map("admin_permissions")
   stripeAccountId  String?  @map("stripe_account_id")
   apiKeysEncrypted Json?    @map("api_keys_encrypted")
   preferences      Json?

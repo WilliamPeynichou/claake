@@ -1,7 +1,7 @@
 "use client";
 
-import { AI_PROVIDERS } from "@agentplace/shared";
-import { useApiKeys } from "@agentplace/shared/hooks";
+import { AI_PROVIDERS } from "@claake/shared";
+import { useApiKeys } from "@claake/shared/hooks";
 import { Eye, EyeOff, Key, Plus, Shield, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

@@ -84,7 +84,7 @@ async function main() {
 	// --- Team ---
 	const team = await prisma.team.create({
 		data: {
-			name: "AgentPlace Devs",
+			name: "Claake Devs",
 			ownerId: "placeholder",
 			plan: "TEAM",
 		},
@@ -146,13 +146,36 @@ async function main() {
 		},
 	});
 
+	await prisma.user.create({
+		data: {
+			email: "superadmin@claake.com",
+			displayName: "Super Admin",
+			role: "SUPER_ADMIN",
+		},
+	});
+	await prisma.user.create({
+		data: {
+			email: "admin@claake.com",
+			displayName: "Admin Modérateur",
+			role: "ADMIN",
+			adminPermissions: {
+				canManageUsers: false,
+				canManageAgents: true,
+				canManageCategories: true,
+				canManageReviews: true,
+				canViewStats: true,
+				canViewActivity: true,
+			},
+		},
+	});
+
 	// Update team owner
 	await prisma.team.update({
 		where: { id: team.id },
 		data: { ownerId: alice.id },
 	});
 
-	console.log("Seeded 7 users + 1 team");
+	console.log("Seeded 9 users + 1 team");
 
 	// --- Agents ---
 	const codeReview = await prisma.agent.create({
@@ -325,7 +348,7 @@ async function main() {
 		{
 			agentId: codeReview.id,
 			version: "1.0.0",
-			configUrl: "https://storage.agentplace.dev/agents/codereview-pro/1.0.0.agentjson",
+			configUrl: "https://storage.claake.dev/agents/codereview-pro/1.0.0.agentjson",
 			changelog: "Version initiale avec support Python, JS, TS.",
 			securityScanStatus: "PASSED" as const,
 			isActive: true,
@@ -334,7 +357,7 @@ async function main() {
 		{
 			agentId: codeReview.id,
 			version: "1.1.0",
-			configUrl: "https://storage.agentplace.dev/agents/codereview-pro/1.1.0.agentjson",
+			configUrl: "https://storage.claake.dev/agents/codereview-pro/1.1.0.agentjson",
 			changelog: "Ajout du support Go et Rust. Amélioration de la détection de failles.",
 			securityScanStatus: "PASSED" as const,
 			isActive: true,
@@ -343,7 +366,7 @@ async function main() {
 		{
 			agentId: dataViz.id,
 			version: "2.1.0",
-			configUrl: "https://storage.agentplace.dev/agents/dataviz-assistant/2.1.0.agentjson",
+			configUrl: "https://storage.claake.dev/agents/dataviz-assistant/2.1.0.agentjson",
 			changelog: "Support Excel natif, nouveaux types de graphiques.",
 			securityScanStatus: "PASSED" as const,
 			isActive: true,
@@ -352,7 +375,7 @@ async function main() {
 		{
 			agentId: contentWriter.id,
 			version: "1.3.0",
-			configUrl: "https://storage.agentplace.dev/agents/contentwriter-ai/1.3.0.agentjson",
+			configUrl: "https://storage.claake.dev/agents/contentwriter-ai/1.3.0.agentjson",
 			changelog: "Amélioration du ton adaptatif, support newsletters.",
 			securityScanStatus: "PASSED" as const,
 			isActive: true,
@@ -361,7 +384,7 @@ async function main() {
 		{
 			agentId: taskMaster.id,
 			version: "1.0.0",
-			configUrl: "https://storage.agentplace.dev/agents/taskmaster/1.0.0.agentjson",
+			configUrl: "https://storage.claake.dev/agents/taskmaster/1.0.0.agentjson",
 			changelog: "Version initiale.",
 			securityScanStatus: "PASSED" as const,
 			isActive: true,
@@ -499,8 +522,7 @@ async function main() {
 			userId: frank.id,
 			agentId: dataViz.id,
 			rating: 5,
-			comment:
-				"Les graphiques générés sont magnifiques. Le support Excel est un game changer.",
+			comment: "Les graphiques générés sont magnifiques. Le support Excel est un game changer.",
 			verifiedPurchase: true,
 			helpfulCount: 8,
 			createdAt: new Date("2026-03-06T09:00:00Z"),

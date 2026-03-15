@@ -1,8 +1,8 @@
 "use client";
 
-import type { Agent } from "@agentplace/shared";
-import { MAX_SANDBOX_INTERACTIONS } from "@agentplace/shared";
-import { useChat } from "@agentplace/shared/hooks";
+import type { Agent } from "@claake/shared";
+import { MAX_SANDBOX_INTERACTIONS } from "@claake/shared";
+import { useChat } from "@claake/shared/hooks";
 import { AlertCircle, Bot, Key, Loader2, Send, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";

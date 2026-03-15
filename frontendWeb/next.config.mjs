@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@agentplace/shared"],
+  transpilePackages: ["@claake/shared"],
+  webpack: (config) => {
+    config.infrastructureLogging = { level: "error" };
+    return config;
+  },
 };
 
 export default nextConfig;

@@ -7,6 +7,7 @@ export class UserTransformer {
 			USER: "user",
 			CREATOR: "developer",
 			ADMIN: "admin",
+			SUPER_ADMIN: "super_admin",
 		};
 		return {
 			id: entity.id,
@@ -15,6 +16,7 @@ export class UserTransformer {
 			avatar_url: entity.avatarUrl,
 			bio: entity.bio,
 			role: roleMap[entity.role] ?? "user",
+			admin_permissions: entity.isAdmin() ? entity.adminPermissions : null,
 			has_stripe_account: entity.hasStripeAccount(),
 			agents_count: entity.agentsCount,
 			created_at: entity.createdAt.toISOString(),

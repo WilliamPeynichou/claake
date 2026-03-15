@@ -1,6 +1,6 @@
 "use client";
 
-import type { DashboardStats } from "@agentplace/shared";
+import type { DashboardStats } from "@claake/shared";
 import { Bot, Download, MessageSquare, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +47,7 @@ export default function DashboardPage() {
 	return (
 		<div>
 			<h1 className="text-3xl font-bold">Tableau de bord</h1>
-			<p className="mt-2 text-muted-foreground">Bienvenue sur votre espace personnel AgentPlace.</p>
+			<p className="mt-2 text-muted-foreground">Bienvenue sur votre espace personnel Claake.</p>
 
 			<div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				{statCards.map((stat) => (

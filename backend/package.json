@@ -1,5 +1,5 @@
 {
-	"name": "@agentplace/backend",
+	"name": "@claake/backend",
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
@@ -18,7 +18,7 @@
 		"prisma:studio": "prisma studio"
 	},
 	"dependencies": {
-		"@agentplace/shared": "*",
+		"@claake/shared": "*",
 		"@nestjs/common": "^11.0.1",
 		"@nestjs/config": "^4.0.3",
 		"@nestjs/core": "^11.0.1",

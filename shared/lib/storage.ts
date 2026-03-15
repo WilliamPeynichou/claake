@@ -44,7 +44,7 @@ export class WebStorage implements StorageAdapter {
 	}
 }
 
-const STORAGE_PREFIX = "agentplace_";
+const STORAGE_PREFIX = "claake_";
 
 export function prefixedKey(key: string): string {
 	return `${STORAGE_PREFIX}${key}`;

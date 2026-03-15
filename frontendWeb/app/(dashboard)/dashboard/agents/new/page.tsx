@@ -1,7 +1,7 @@
 "use client";
 
-import type { AgentCategory } from "@agentplace/shared";
-import { AI_MODELS, EXECUTION_MODES } from "@agentplace/shared";
+import type { AgentCategory } from "@claake/shared";
+import { AI_MODELS, EXECUTION_MODES } from "@claake/shared";
 import { ArrowLeft, ArrowRight, Check, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

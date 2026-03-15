@@ -1,6 +1,6 @@
 "use client";
 
-import type { Agent } from "@agentplace/shared";
+import type { Agent } from "@claake/shared";
 import { Bot, Download, Star } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";

@@ -1,4 +1,5 @@
 import type { User } from "@prisma/client";
+import type { AdminPermissions } from "../../domain/entities/user.entity.js";
 import { UserEntity } from "../../domain/entities/user.entity.js";
 
 export class UserMapper {
@@ -10,6 +11,7 @@ export class UserMapper {
 			raw.avatarUrl,
 			raw.bio,
 			raw.role,
+			raw.adminPermissions as AdminPermissions | null,
 			raw.stripeAccountId,
 			raw._count.agents,
 			raw.createdAt,
