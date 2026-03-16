@@ -5,6 +5,8 @@ export interface StreamTextParams {
 	systemPrompt: string | null;
 	messages: Array<{ role: string; content: string }>;
 	maxTokens?: number;
+	apiKey?: string;
+	baseUrl?: string;
 }
 
 export interface AIProviderPort {

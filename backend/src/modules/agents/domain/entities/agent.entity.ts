@@ -25,6 +25,14 @@ export class AgentEntity {
 		public readonly createdAt: Date,
 		public readonly updatedAt: Date,
 		public readonly systemPrompt: string | null = null,
+		public readonly cloudStrategy: string | null = null,
+		public readonly endpointUrl: string | null = null,
+		public readonly endpointFormat: string | null = null,
+		public readonly sellerApiKeyEncrypted: string | null = null,
+		public readonly sellerApiProvider: string | null = null,
+		public readonly requiredUserProvider: string | null = null,
+		public readonly dockerImage: string | null = null,
+		public readonly downloadUrl: string | null = null,
 	) {}
 
 	isOwnedBy(userId: string): boolean {
@@ -37,5 +45,17 @@ export class AgentEntity {
 
 	isPublished(): boolean {
 		return this.status === "APPROVED";
+	}
+
+	isCloudCapable(): boolean {
+		return this.mode === "CLOUD" || this.mode === "HYBRID";
+	}
+
+	isLocalCapable(): boolean {
+		return this.mode === "LOCAL" || this.mode === "HYBRID";
+	}
+
+	requiresUserApiKey(): boolean {
+		return this.cloudStrategy === "USER_API_KEY";
 	}
 }

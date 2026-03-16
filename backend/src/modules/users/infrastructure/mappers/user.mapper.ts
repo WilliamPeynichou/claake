@@ -4,6 +4,9 @@ import { UserEntity } from "../../domain/entities/user.entity.js";
 
 export class UserMapper {
 	static toDomain(raw: User & { _count: { agents: number } }): UserEntity {
+		const portfolioLinks = Array.isArray(raw.portfolioLinks)
+			? (raw.portfolioLinks as { label: string; url: string }[])
+			: [];
 		return new UserEntity(
 			raw.id,
 			raw.email,
@@ -16,6 +19,7 @@ export class UserMapper {
 			raw._count.agents,
 			raw.createdAt,
 			raw.updatedAt,
+			portfolioLinks,
 		);
 	}
 }

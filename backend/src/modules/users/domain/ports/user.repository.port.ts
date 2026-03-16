@@ -14,4 +14,6 @@ export interface UserRepositoryPort {
 		id: string,
 		data: { displayName?: string; bio?: string },
 	): Promise<UserEntity>;
+	getApiKeysEncrypted(userId: string): Promise<string | null>;
+	setApiKeysEncrypted(userId: string, data: string | null): Promise<void>;
 }

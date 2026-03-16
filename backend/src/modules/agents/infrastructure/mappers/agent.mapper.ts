@@ -31,6 +31,14 @@ export class AgentMapper {
 			raw.createdAt,
 			raw.updatedAt,
 			raw.systemPrompt,
+			raw.cloudStrategy,
+			raw.endpointUrl,
+			raw.endpointFormat,
+			raw.sellerApiKeyEncrypted,
+			raw.sellerApiProvider,
+			raw.requiredUserProvider,
+			raw.dockerImage,
+			raw.downloadUrl,
 		);
 	}
 }

@@ -55,4 +55,20 @@ export class PrismaUserRepository implements UserRepositoryPort {
 		});
 		return UserMapper.toDomain(user);
 	}
+
+	async getApiKeysEncrypted(userId: string): Promise<string | null> {
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: { apiKeysEncrypted: true },
+		});
+		if (!user?.apiKeysEncrypted) return null;
+		return JSON.stringify(user.apiKeysEncrypted);
+	}
+
+	async setApiKeysEncrypted(userId: string, data: string | null): Promise<void> {
+		await this.prisma.user.update({
+			where: { id: userId },
+			data: { apiKeysEncrypted: data ? JSON.parse(data) : null },
+		});
+	}
 }

@@ -1,6 +1,6 @@
 import { AgentEntity } from "./agent.entity";
 
-function makeAgent(overrides: Partial<ConstructorParameters<typeof AgentEntity>> = {}): AgentEntity {
+function makeAgent(overrides: Partial<ConstructorParameters<typeof AgentEntity>> = [] as any): AgentEntity {
 	const defaults: ConstructorParameters<typeof AgentEntity> = [
 		"agent-1",
 		"Test Agent",

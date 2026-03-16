@@ -17,7 +17,6 @@ export class AIProviderFactory implements AIProviderFactoryPort {
 		if (model.includes("gpt") || model.includes("o1")) {
 			return this.openai;
 		}
-		// Default to Anthropic
 		return this.anthropic;
 	}
 }

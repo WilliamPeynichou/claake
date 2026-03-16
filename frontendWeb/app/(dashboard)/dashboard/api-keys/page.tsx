@@ -2,21 +2,22 @@
 
 import { AI_PROVIDERS } from "@claake/shared";
 import { useApiKeys } from "@claake/shared/hooks";
-import { Eye, EyeOff, Key, Plus, Shield, Trash2 } from "lucide-react";
+import { Key, Plus, Shield, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { webStorage } from "@/lib/storage";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function ApiKeysPage() {
-	const { keys, addKey, removeKey, maskKey } = useApiKeys({ storage: webStorage });
+	const { token } = useAuth();
+	const { keys, addKey, removeKey } = useApiKeys(apiClient, token);
 	const [showForm, setShowForm] = useState(false);
 	const [provider, setProvider] = useState("anthropic");
 	const [label, setLabel] = useState("");
 	const [keyValue, setKeyValue] = useState("");
-	const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
 
 	async function handleAddKey() {
 		if (!keyValue.trim()) return;
@@ -25,15 +26,6 @@ export default function ApiKeysPage() {
 		setLabel("");
 		setKeyValue("");
 		setShowForm(false);
-	}
-
-	function toggleVisibility(id: string) {
-		setVisibleKeys((prev) => {
-			const next = new Set(prev);
-			if (next.has(id)) next.delete(id);
-			else next.add(id);
-			return next;
-		});
 	}
 
 	return (
@@ -53,8 +45,7 @@ export default function ApiKeysPage() {
 
 			<div className="mt-4 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
 				<Shield className="h-4 w-4 shrink-0" />
-				Vos clés API sont stockées localement dans votre navigateur et ne sont jamais envoyées à nos
-				serveurs.
+				Vos clés API sont chiffrées et stockées de manière sécurisée côté serveur.
 			</div>
 
 			{showForm && (
@@ -113,7 +104,7 @@ export default function ApiKeysPage() {
 						<Key className="h-12 w-12 text-muted-foreground/30" />
 						<h3 className="mt-4 text-lg font-semibold">Aucune clé API</h3>
 						<p className="mt-2 max-w-sm text-sm text-muted-foreground">
-							Ajoutez une clé API pour utiliser les agents IA directement dans votre navigateur.
+							Ajoutez une clé API pour utiliser les agents IA qui nécessitent votre propre clé.
 						</p>
 					</div>
 				) : (
@@ -123,24 +114,15 @@ export default function ApiKeysPage() {
 								<div className="flex items-center gap-3">
 									<Key className="h-5 w-5 text-muted-foreground" />
 									<div>
-										<p className="text-sm font-medium">{k.label}</p>
-										<p className="font-mono text-xs text-muted-foreground">
-											{visibleKeys.has(k.id) ? k.key : maskKey(k.key)}
+										<p className="text-sm font-medium">
+											{k.label} — <span className="text-muted-foreground">{k.provider}</span>
 										</p>
+										<p className="font-mono text-xs text-muted-foreground">{k.key_preview}</p>
 									</div>
 								</div>
-								<div className="flex items-center gap-1">
-									<Button variant="ghost" size="icon" onClick={() => toggleVisibility(k.id)}>
-										{visibleKeys.has(k.id) ? (
-											<EyeOff className="h-4 w-4" />
-										) : (
-											<Eye className="h-4 w-4" />
-										)}
-									</Button>
-									<Button variant="ghost" size="icon" onClick={() => removeKey(k.id)}>
-										<Trash2 className="h-4 w-4 text-destructive" />
-									</Button>
-								</div>
+								<Button variant="ghost" size="icon" onClick={() => removeKey(k.id)}>
+									<Trash2 className="h-4 w-4 text-destructive" />
+								</Button>
 							</CardContent>
 						</Card>
 					))

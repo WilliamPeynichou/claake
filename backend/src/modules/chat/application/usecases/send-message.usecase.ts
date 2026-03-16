@@ -6,20 +6,21 @@ import {
 import type { ChatMessageEntity } from "../../domain/entities/chat-message.entity.js";
 import { ChatSessionEntity } from "../../domain/entities/chat-session.entity.js";
 import {
-	AI_PROVIDER_FACTORY,
-	type AIProviderFactoryPort,
-} from "../../domain/ports/ai-provider.port.js";
-import {
 	CHAT_SESSION_REPOSITORY,
 	type ChatSessionRepositoryPort,
 } from "../../domain/ports/chat-session.repository.port.js";
+import {
+	EXECUTION_STRATEGY_RESOLVER,
+	type ExecutionStrategyResolver,
+} from "../services/execution-strategy.resolver.js";
 
 @Injectable()
 export class SendMessageUseCase {
 	constructor(
 		@Inject(CHAT_SESSION_REPOSITORY) private readonly chatRepo: ChatSessionRepositoryPort,
 		@Inject(AGENT_REPOSITORY) private readonly agentRepo: AgentRepositoryPort,
-		@Inject(AI_PROVIDER_FACTORY) private readonly aiFactory: AIProviderFactoryPort,
+		@Inject(EXECUTION_STRATEGY_RESOLVER)
+		private readonly strategyResolver: ExecutionStrategyResolver,
 	) {}
 
 	async execute(
@@ -60,14 +61,16 @@ export class SendMessageUseCase {
 			content: m.content,
 		}));
 
-		// Get AI provider and stream
+		// Resolve execution strategy for this agent
+		const { provider, extraParams } = await this.strategyResolver.resolve(agent, userId);
+
 		const model = agent.models[0] ?? "claude-sonnet-4-20250514";
-		const provider = this.aiFactory.getProvider(model);
 		const stream = provider.streamText({
 			model,
 			systemPrompt: agent.systemPrompt ?? agent.longDescription ?? agent.description,
 			messages: formattedHistory,
 			maxTokens: 4096,
+			...extraParams,
 		});
 
 		const onComplete = async (fullText: string): Promise<ChatMessageEntity> => {

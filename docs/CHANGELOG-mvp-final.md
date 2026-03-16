@@ -1,3 +1,4 @@
+
 # MVP Final — Corrections & Compléments (2026-03-15)
 
 ## Corrections

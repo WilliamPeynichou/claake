@@ -45,6 +45,29 @@ enum ExecutionMode {
   HYBRID
 }
 
+enum CloudStrategy {
+  SELLER_ENDPOINT
+  SELLER_API_KEY
+  USER_API_KEY
+}
+
+enum EndpointFormat {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  MISTRAL
+  COHERE
+  DEEPSEEK
+  GROQ
+  XAI
+  PERPLEXITY
+  META
+  TOGETHER
+  FIREWORKS
+  HUGGINGFACE
+  CLAAKE
+}
+
 enum SubscriptionStatus {
   ACTIVE
   CANCELLED
@@ -78,6 +101,7 @@ model User {
   displayName      String?  @map("display_name")
   avatarUrl        String?  @map("avatar_url")
   bio              String?
+  portfolioLinks   Json?    @map("portfolio_links")
   role             UserRole @default(USER)
   adminPermissions Json?    @map("admin_permissions")
   stripeAccountId  String?  @map("stripe_account_id")
@@ -146,6 +170,15 @@ model Agent {
   updatedAt       DateTime                     @updatedAt @map("updated_at")
 
   systemPrompt String? @map("system_prompt")
+
+  cloudStrategy       CloudStrategy?  @map("cloud_strategy")
+  endpointUrl         String?         @map("endpoint_url")
+  endpointFormat      EndpointFormat? @map("endpoint_format")
+  sellerApiKeyEncrypted String?       @map("seller_api_key_encrypted")
+  sellerApiProvider   String?         @map("seller_api_provider")
+  requiredUserProvider String?        @map("required_user_provider")
+  dockerImage         String?         @map("docker_image")
+  downloadUrl         String?         @map("download_url")
 
   creatorId String @map("creator_id")
   creator   User   @relation(fields: [creatorId], references: [id])
@@ -252,8 +285,9 @@ model Review {
   id               String   @id @default(uuid())
   rating           Int      @db.SmallInt
   comment          String?
-  verifiedPurchase Boolean  @default(false) @map("verified_purchase")
-  helpfulCount     Int      @default(0) @map("helpful_count")
+  verifiedPurchase    Boolean  @default(false) @map("verified_purchase")
+  verifiedInteraction Boolean  @default(false) @map("verified_interaction")
+  helpfulCount        Int      @default(0) @map("helpful_count")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -265,6 +299,24 @@ model Review {
   @@unique([userId, agentId])
   @@index([agentId])
   @@map("reviews")
+}
+
+// ─── Activity Logs ──────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  actorId    String   @map("actor_id")
+  actorEmail String   @map("actor_email")
+  action     String
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("activity_logs")
 }
 
 // ─── Collections & Favoris ──────────────────────────────────────────────────

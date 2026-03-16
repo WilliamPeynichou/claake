@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { AgentDetailChat } from "./agent-detail-chat";
+import { AgentDetailReviews } from "./agent-detail-reviews";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
 const serverApiClient = createApiClient(API_URL);
@@ -50,10 +51,13 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 								<Badge variant="secondary">{agent.status}</Badge>
 							</div>
 							<div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
-								<span className="flex items-center gap-1">
-									<User className="h-3.5 w-3.5" />
-									{agent.creator_name ?? "Anonyme"}
-								</span>
+								<Link
+								href={`/creators/${agent.creator_id}`}
+								className="flex items-center gap-1 hover:text-foreground"
+							>
+								<User className="h-3.5 w-3.5" />
+								{agent.creator_name ?? "Anonyme"}
+							</Link>
 								<span className="flex items-center gap-1">
 									<Star className="h-3.5 w-3.5 fill-current text-yellow-500" />
 									{agent.rating.toFixed(1)} ({agent.review_count} avis)
@@ -87,6 +91,11 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 
 					{/* Chat */}
 					<AgentDetailChat agent={agent} />
+
+					<Separator />
+
+					{/* Reviews */}
+					<AgentDetailReviews agentId={agent.id} />
 				</div>
 
 				{/* Sidebar */}

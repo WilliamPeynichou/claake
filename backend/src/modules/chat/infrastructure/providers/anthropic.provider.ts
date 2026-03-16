@@ -1,16 +1,13 @@
 import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import type { AIProviderPort, StreamTextParams } from "../../domain/ports/ai-provider.port.js";
 
 @Injectable()
 export class AnthropicProvider implements AIProviderPort {
-	private readonly apiKey: string;
-
-	constructor(private readonly config: ConfigService) {
-		this.apiKey = this.config.getOrThrow<string>("ANTHROPIC_API_KEY");
-	}
-
 	async *streamText(params: StreamTextParams): AsyncIterable<string> {
+		if (!params.apiKey) {
+			throw new Error("No API key provided for Anthropic provider");
+		}
+
 		const messages = params.messages.map((m) => ({
 			role: m.role as "user" | "assistant",
 			content: m.content,
@@ -31,7 +28,7 @@ export class AnthropicProvider implements AIProviderPort {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				"x-api-key": this.apiKey,
+				"x-api-key": params.apiKey,
 				"anthropic-version": "2023-06-01",
 			},
 			body: JSON.stringify(body),

@@ -7,6 +7,23 @@ export interface AdminPermissions {
 	canViewActivity: boolean;
 }
 
+export type CloudStrategy = "seller_endpoint" | "seller_api_key" | "user_api_key";
+export type EndpointFormat =
+	| "openai"
+	| "anthropic"
+	| "google"
+	| "mistral"
+	| "cohere"
+	| "deepseek"
+	| "groq"
+	| "xai"
+	| "perplexity"
+	| "meta"
+	| "together"
+	| "fireworks"
+	| "huggingface"
+	| "claake";
+
 export interface Agent {
 	id: string;
 	name: string;
@@ -33,6 +50,11 @@ export interface Agent {
 	created_at: string;
 	updated_at: string;
 	system_prompt?: string | null;
+	cloud_strategy: CloudStrategy | null;
+	endpoint_format: EndpointFormat | null;
+	required_user_provider: string | null;
+	docker_image: string | null;
+	download_url: string | null;
 }
 
 export interface AgentVersion {
@@ -85,7 +107,9 @@ export interface Review {
 	rating: number;
 	comment: string | null;
 	verified_purchase: boolean;
+	verified_interaction: boolean;
 	helpful_count: number;
+	user_name: string | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -170,4 +194,29 @@ export interface ValidationResult {
 	errors: string[];
 	warnings: string[];
 	requiresManualReview: boolean;
+}
+
+export interface CreatorProfile {
+	id: string;
+	display_name: string | null;
+	avatar_url: string | null;
+	bio: string | null;
+	portfolio_links: { label: string; url: string }[];
+	published_agents: Agent[];
+	stats: {
+		total_agents: number;
+		total_reviews: number;
+		average_rating: number;
+	};
+}
+
+export interface ActivityLog {
+	id: string;
+	actor_id: string;
+	actor_email: string;
+	action: string;
+	target_type: string;
+	target_id: string;
+	metadata: Record<string, unknown> | null;
+	created_at: string;
 }

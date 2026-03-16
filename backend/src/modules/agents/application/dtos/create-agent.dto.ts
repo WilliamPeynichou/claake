@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUrl, Min } from "class-validator";
 
 export class CreateAgentDto {
 	@IsString()
@@ -53,4 +53,51 @@ export class CreateAgentDto {
 
 	@IsOptional()
 	permissions?: Record<string, unknown>;
+
+	@IsOptional()
+	@IsEnum(["SELLER_ENDPOINT", "SELLER_API_KEY", "USER_API_KEY"])
+	cloud_strategy?: string;
+
+	@IsOptional()
+	@IsUrl()
+	endpoint_url?: string;
+
+	@IsOptional()
+	@IsEnum([
+		"OPENAI",
+		"ANTHROPIC",
+		"GOOGLE",
+		"MISTRAL",
+		"COHERE",
+		"DEEPSEEK",
+		"GROQ",
+		"XAI",
+		"PERPLEXITY",
+		"META",
+		"TOGETHER",
+		"FIREWORKS",
+		"HUGGINGFACE",
+		"CLAAKE",
+	])
+	endpoint_format?: string;
+
+	@IsOptional()
+	@IsString()
+	seller_api_key?: string;
+
+	@IsOptional()
+	@IsString()
+	seller_api_provider?: string;
+
+	@IsOptional()
+	@IsString()
+	required_user_provider?: string;
+
+	@IsOptional()
+	@IsString()
+	docker_image?: string;
+
+	@IsOptional()
+	@IsUrl()
+	download_url?: string;
 }

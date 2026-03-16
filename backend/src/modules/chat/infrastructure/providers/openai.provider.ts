@@ -1,16 +1,13 @@
 import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import type { AIProviderPort, StreamTextParams } from "../../domain/ports/ai-provider.port.js";
 
 @Injectable()
 export class OpenAIProvider implements AIProviderPort {
-	private readonly apiKey: string;
-
-	constructor(private readonly config: ConfigService) {
-		this.apiKey = this.config.getOrThrow<string>("OPENAI_API_KEY");
-	}
-
 	async *streamText(params: StreamTextParams): AsyncIterable<string> {
+		if (!params.apiKey) {
+			throw new Error("No API key provided for OpenAI provider");
+		}
+
 		const messages: Array<{ role: string; content: string }> = [];
 
 		if (params.systemPrompt) {
@@ -18,11 +15,13 @@ export class OpenAIProvider implements AIProviderPort {
 		}
 		messages.push(...params.messages);
 
-		const res = await fetch("https://api.openai.com/v1/chat/completions", {
+		const baseUrl = params.baseUrl ?? "https://api.openai.com";
+
+		const res = await fetch(`${baseUrl}/v1/chat/completions`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				Authorization: `Bearer ${this.apiKey}`,
+				Authorization: `Bearer ${params.apiKey}`,
 			},
 			body: JSON.stringify({
 				model: params.model,

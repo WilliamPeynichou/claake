@@ -23,4 +23,9 @@ export class AgentResponseDto {
 	creator_name!: string | null;
 	created_at!: string;
 	updated_at!: string;
+	cloud_strategy!: string | null;
+	endpoint_format!: string | null;
+	required_user_provider!: string | null;
+	docker_image!: string | null;
+	download_url!: string | null;
 }

@@ -1,9 +1,16 @@
 import type {
+	ActivityLog,
 	AdminPermissions,
 	Agent,
 	AgentCategory,
+	ApiKeyConfig,
 	ChatMessage,
 	ChatSession,
+	Collection,
+	CreatorProfile,
+	Favorite,
+	Purchase,
+	Review,
 	UserProfile,
 	ValidationResult,
 } from "../types";
@@ -17,6 +24,13 @@ export interface AgentSearchParams {
 	q?: string;
 	category?: string;
 	all?: boolean;
+	pricing_model?: string;
+	mode?: string;
+	min_rating?: number;
+	tags?: string[];
+	sort_by?: string;
+	page?: number;
+	limit?: number;
 }
 
 export interface DashboardStats {
@@ -72,6 +86,13 @@ export function createApiClient(baseUrl: string) {
 				if (params?.q) qs.set("q", params.q);
 				if (params?.category) qs.set("category", params.category);
 				if (params?.all) qs.set("all", "true");
+				if (params?.pricing_model) qs.set("pricing_model", params.pricing_model);
+				if (params?.mode) qs.set("mode", params.mode);
+				if (params?.min_rating) qs.set("min_rating", String(params.min_rating));
+				if (params?.tags?.length) qs.set("tags", params.tags.join(","));
+				if (params?.sort_by) qs.set("sort_by", params.sort_by);
+				if (params?.page) qs.set("page", String(params.page));
+				if (params?.limit) qs.set("limit", String(params.limit));
 				const query = qs.toString();
 				return fetchJson<AgentListResponse>(`/agents${query ? `?${query}` : ""}`);
 			},
@@ -99,6 +120,13 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify({ decision, reason }),
 					}),
 				),
+			downloadInfo: (agentId: string, token: string) =>
+				fetchJson<{
+					docker_image: string | null;
+					download_url: string | null;
+					models: string[];
+					system_prompt: string | null;
+				}>(`/agents/${agentId}/download-info`, withAuth(token)),
 		},
 		categories: {
 			list: () => fetchJson<AgentCategory[]>("/categories"),
@@ -167,6 +195,142 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(data),
 					}),
 				),
+			apiKeys: {
+				list: (token: string) =>
+					fetchJson<ApiKeyConfig[]>("/auth/api-keys", withAuth(token)),
+				add: (provider: string, label: string, key: string, token: string) =>
+					fetchJson<ApiKeyConfig>(
+						"/auth/api-keys",
+						withAuth(token, {
+							method: "POST",
+							body: JSON.stringify({ provider, label, key }),
+						}),
+					),
+				remove: (keyId: string, token: string) =>
+					fetchJson<{ deleted: boolean }>(
+						`/auth/api-keys/${keyId}`,
+						withAuth(token, { method: "DELETE" }),
+					),
+			},
+		},
+		favorites: {
+			toggle: (agentId: string, token: string) =>
+				fetchJson<{ favorited: boolean }>(
+					`/favorites/${agentId}`,
+					withAuth(token, { method: "POST" }),
+				),
+			list: (token: string) => fetchJson<Favorite[]>("/favorites", withAuth(token)),
+			check: (agentId: string, token: string) =>
+				fetchJson<{ favorited: boolean }>(
+					`/favorites/check/${agentId}`,
+					withAuth(token),
+				),
+		},
+		collections: {
+			list: (token: string) => fetchJson<Collection[]>("/collections", withAuth(token)),
+			get: (id: string, token: string) =>
+				fetchJson<Collection>(`/collections/${id}`, withAuth(token)),
+			create: (data: { name: string; description?: string; is_public?: boolean }, token: string) =>
+				fetchJson<Collection>(
+					"/collections",
+					withAuth(token, {
+						method: "POST",
+						body: JSON.stringify(data),
+					}),
+				),
+			update: (id: string, data: { name?: string; description?: string; is_public?: boolean }, token: string) =>
+				fetchJson<Collection>(
+					`/collections/${id}`,
+					withAuth(token, {
+						method: "PATCH",
+						body: JSON.stringify(data),
+					}),
+				),
+			delete: (id: string, token: string) =>
+				fetchJson<{ deleted: boolean }>(
+					`/collections/${id}`,
+					withAuth(token, { method: "DELETE" }),
+				),
+			addAgent: (id: string, agentId: string, token: string) =>
+				fetchJson<Collection>(
+					`/collections/${id}/agents/${agentId}`,
+					withAuth(token, { method: "POST" }),
+				),
+			removeAgent: (id: string, agentId: string, token: string) =>
+				fetchJson<Collection>(
+					`/collections/${id}/agents/${agentId}`,
+					withAuth(token, { method: "DELETE" }),
+				),
+		},
+		reviews: {
+			list: (agentId: string, page = 1, limit = 10) =>
+				fetchJson<{ reviews: Review[]; total: number }>(
+					`/agents/${agentId}/reviews?page=${page}&limit=${limit}`,
+				),
+			create: (agentId: string, data: { rating: number; comment?: string }, token: string) =>
+				fetchJson<Review>(
+					`/agents/${agentId}/reviews`,
+					withAuth(token, {
+						method: "POST",
+						body: JSON.stringify(data),
+					}),
+				),
+			update: (agentId: string, reviewId: string, data: { rating?: number; comment?: string }, token: string) =>
+				fetchJson<Review>(
+					`/agents/${agentId}/reviews/${reviewId}`,
+					withAuth(token, {
+						method: "PATCH",
+						body: JSON.stringify(data),
+					}),
+				),
+			delete: (agentId: string, reviewId: string, token: string) =>
+				fetchJson<{ deleted: boolean }>(
+					`/agents/${agentId}/reviews/${reviewId}`,
+					withAuth(token, { method: "DELETE" }),
+				),
+		},
+		payments: {
+			checkout: (agentId: string, token: string) =>
+				fetchJson<{ url: string }>(
+					"/payments/checkout",
+					withAuth(token, {
+						method: "POST",
+						body: JSON.stringify({ agent_id: agentId }),
+					}),
+				),
+			purchases: (token: string) =>
+				fetchJson<Purchase[]>("/payments/purchases", withAuth(token)),
+			checkAccess: (agentId: string, token: string) =>
+				fetchJson<{ has_access: boolean }>(
+					`/payments/access/${agentId}`,
+					withAuth(token),
+				),
+			connectOnboard: (token: string) =>
+				fetchJson<{ url: string }>(
+					"/payments/connect/onboard",
+					withAuth(token, { method: "POST" }),
+				),
+			connectStatus: (token: string) =>
+				fetchJson<{ connected: boolean; details_submitted: boolean }>(
+					"/payments/connect/status",
+					withAuth(token),
+				),
+		},
+		creators: {
+			get: (id: string) => fetchJson<CreatorProfile>(`/creators/${id}`),
+		},
+		activity: {
+			list: (token: string, params?: { action?: string; page?: number; limit?: number }) => {
+				const qs = new URLSearchParams();
+				if (params?.action) qs.set("action", params.action);
+				if (params?.page) qs.set("page", String(params.page));
+				if (params?.limit) qs.set("limit", String(params.limit));
+				const query = qs.toString();
+				return fetchJson<{ logs: ActivityLog[]; total: number }>(
+					`/admin/activity${query ? `?${query}` : ""}`,
+					withAuth(token),
+				);
+			},
 		},
 	};
 }

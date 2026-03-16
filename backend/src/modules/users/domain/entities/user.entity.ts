@@ -29,6 +29,7 @@ export class UserEntity {
 		public readonly agentsCount: number,
 		public readonly createdAt: Date,
 		public readonly updatedAt: Date,
+		public readonly portfolioLinks: { label: string; url: string }[] = [],
 	) {}
 
 	isCreator(): boolean {

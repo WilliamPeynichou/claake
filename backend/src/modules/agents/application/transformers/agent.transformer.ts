@@ -28,6 +28,11 @@ export class AgentTransformer {
 			creator_name: entity.creatorName,
 			created_at: entity.createdAt.toISOString(),
 			updated_at: entity.updatedAt.toISOString(),
+			cloud_strategy: entity.cloudStrategy?.toLowerCase() ?? null,
+			endpoint_format: entity.endpointFormat?.toLowerCase() ?? null,
+			required_user_provider: entity.requiredUserProvider,
+			docker_image: entity.dockerImage,
+			download_url: entity.downloadUrl,
 		};
 	}
 }
