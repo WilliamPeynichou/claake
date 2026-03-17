@@ -38,7 +38,7 @@ export function Header() {
 		window.location.href = "/";
 	}
 
-	const userRole = user?.user_metadata?.role;
+	const userRole = user?.app_metadata?.role;
 	const isAdmin =
 		userRole === "admin" ||
 		userRole === "super_admin" ||
@@ -56,6 +56,7 @@ export function Header() {
 							width={110}
 							height={32}
 							priority
+							style={{ height: "auto" }}
 							className="dark:brightness-0 dark:invert"
 						/>
 					</Link>

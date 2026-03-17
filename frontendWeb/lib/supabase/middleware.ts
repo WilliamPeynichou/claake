@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
 			return NextResponse.redirect(url);
 		}
 
-		const role = user.user_metadata?.role;
+		const role = user.app_metadata?.role;
 		if (role !== "admin" && role !== "super_admin" && role !== "ADMIN" && role !== "SUPER_ADMIN") {
 			const url = request.nextUrl.clone();
 			url.pathname = "/dashboard";

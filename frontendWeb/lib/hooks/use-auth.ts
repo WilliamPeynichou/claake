@@ -30,7 +30,7 @@ export function useAuth(): AuthState {
 				user: session?.user ?? null,
 				token: session?.access_token ?? null,
 				loading: false,
-				role: session?.user?.user_metadata?.role ?? null,
+				role: session?.user?.app_metadata?.role ?? null,
 			});
 		}
 
@@ -43,7 +43,7 @@ export function useAuth(): AuthState {
 				user: session?.user ?? null,
 				token: session?.access_token ?? null,
 				loading: false,
-				role: session?.user?.user_metadata?.role ?? null,
+				role: session?.user?.app_metadata?.role ?? null,
 			});
 		});
 
