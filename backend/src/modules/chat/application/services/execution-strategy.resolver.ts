@@ -7,6 +7,7 @@ import type { AgentEntity } from "../../../agents/domain/entities/agent.entity.j
 import type { AIProviderPort, StreamTextParams } from "../../domain/ports/ai-provider.port.js";
 import { AnthropicProvider } from "../../infrastructure/providers/anthropic.provider.js";
 import { EndpointProxyProvider } from "../../infrastructure/providers/endpoint-proxy.provider.js";
+import { MockProvider } from "../../infrastructure/providers/mock.provider.js";
 import { OpenAIProvider } from "../../infrastructure/providers/openai.provider.js";
 import {
 	MANAGE_API_KEYS_USE_CASE,
@@ -26,11 +27,17 @@ export class ExecutionStrategyResolver {
 		private readonly anthropic: AnthropicProvider,
 		private readonly openai: OpenAIProvider,
 		private readonly endpointProxy: EndpointProxyProvider,
+		private readonly mock: MockProvider,
 		@Inject(ENCRYPTION_SERVICE) private readonly encryption: EncryptionServicePort,
 		@Inject(MANAGE_API_KEYS_USE_CASE) private readonly apiKeys: ManageApiKeysPort,
 	) {}
 
 	async resolve(agent: AgentEntity, userId: string): Promise<ResolvedStrategy> {
+		// Mock mode — for testing without a real API key
+		if (agent.models.includes("mock")) {
+			return { provider: this.mock, extraParams: {} };
+		}
+
 		if (!agent.isCloudCapable()) {
 			throw new BadRequestException(
 				"Cet agent fonctionne uniquement en mode LOCAL. Téléchargez-le pour l'utiliser.",

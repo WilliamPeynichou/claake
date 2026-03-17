@@ -17,6 +17,7 @@ import { ChatController } from "./infrastructure/controllers/chat.controller.js"
 import { AIProviderFactory } from "./infrastructure/providers/ai-provider.factory.js";
 import { AnthropicProvider } from "./infrastructure/providers/anthropic.provider.js";
 import { EndpointProxyProvider } from "./infrastructure/providers/endpoint-proxy.provider.js";
+import { MockProvider } from "./infrastructure/providers/mock.provider.js";
 import { OpenAIProvider } from "./infrastructure/providers/openai.provider.js";
 import { PrismaChatRepository } from "./infrastructure/repositories/prisma-chat.repository.js";
 import { ManageApiKeysUseCase } from "../users/application/usecases/manage-api-keys.usecase.js";
@@ -33,6 +34,7 @@ import { ManageApiKeysUseCase } from "../users/application/usecases/manage-api-k
 		AnthropicProvider,
 		OpenAIProvider,
 		EndpointProxyProvider,
+		MockProvider,
 		AIProviderFactory,
 		ExecutionStrategyResolver,
 		ManageApiKeysUseCase,

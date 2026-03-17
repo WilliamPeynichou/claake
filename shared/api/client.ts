@@ -54,8 +54,11 @@ export interface UserWithAgentsCount extends UserProfile {
 export function createApiClient(baseUrl: string) {
 	async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 		const res = await fetch(`${baseUrl}${path}`, {
-			headers: { "Content-Type": "application/json" },
 			...init,
+			headers: {
+				"Content-Type": "application/json",
+				...init?.headers,
+			},
 		});
 		if (!res.ok) {
 			const body = await res.json().catch(() => ({}));

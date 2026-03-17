@@ -1,49 +1,29 @@
 "use client";
 
-import type { User } from "@supabase/supabase-js";
 import { Globe, LayoutDashboard, LogOut, Menu, Moon, Shield, Sun, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n/context";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/lib/theme/context";
 
 export function Header() {
-	const [user, setUser] = useState<User | null>(null);
+	const { user, role } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const { t, locale, setLocale } = useI18n();
 	const { theme, toggleTheme } = useTheme();
 
-	useEffect(() => {
-		const supabase = createClient();
-		supabase.auth.getUser().then(({ data }) => {
-			setUser(data.user);
-		});
-
-		const {
-			data: { subscription },
-		} = supabase.auth.onAuthStateChange((_event, session) => {
-			setUser(session?.user ?? null);
-		});
-
-		return () => subscription.unsubscribe();
-	}, []);
+	const isAdmin =
+		role === "admin" || role === "super_admin" || role === "ADMIN" || role === "SUPER_ADMIN";
 
 	async function handleLogout() {
 		const supabase = createClient();
 		await supabase.auth.signOut();
-		setUser(null);
 		window.location.href = "/";
 	}
-
-	const userRole = user?.app_metadata?.role;
-	const isAdmin =
-		userRole === "admin" ||
-		userRole === "super_admin" ||
-		userRole === "ADMIN" ||
-		userRole === "SUPER_ADMIN";
 
 	return (
 		<header className="border-b border-border/60 bg-background/80 backdrop-blur-sm sticky top-0 z-50">

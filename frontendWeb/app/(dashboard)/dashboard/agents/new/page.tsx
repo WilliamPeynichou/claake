@@ -40,7 +40,9 @@ export default function NewAgentPage() {
 		category: "",
 		tags: "",
 		model: "claude-sonnet-4-20250514",
-		mode: "cloud" as "local" | "cloud" | "hybrid",
+		mode: "CLOUD" as "LOCAL" | "CLOUD" | "HYBRID",
+		cloudStrategy: "USER_API_KEY" as "USER_API_KEY" | "SELLER_API_KEY" | "SELLER_ENDPOINT",
+		requiredUserProvider: "anthropic",
 		systemPrompt: "",
 		endpoint: "",
 		priceType: "free",
@@ -68,7 +70,9 @@ export default function NewAgentPage() {
 				category: parsed.category ?? prev.category,
 				tags: Array.isArray(parsed.tags) ? parsed.tags.join(", ") : prev.tags,
 				model: parsed.model ?? parsed.models?.[0] ?? prev.model,
-				mode: parsed.mode ?? prev.mode,
+				mode: (parsed.mode?.toUpperCase() ?? prev.mode) as "LOCAL" | "CLOUD" | "HYBRID",
+				cloudStrategy: parsed.cloud_strategy ?? prev.cloudStrategy,
+				requiredUserProvider: parsed.required_user_provider ?? prev.requiredUserProvider,
 				systemPrompt: parsed.system_prompt ?? parsed.systemPrompt ?? prev.systemPrompt,
 				endpoint: parsed.endpoint ?? parsed.config_url ?? prev.endpoint,
 			}));
@@ -100,7 +104,7 @@ export default function NewAgentPage() {
 					name: formData.name,
 					slug,
 					description: formData.description,
-					long_description: formData.longDescription || null,
+					long_description: formData.longDescription || undefined,
 					category: formData.category,
 					tags: formData.tags
 						.split(",")
@@ -108,8 +112,16 @@ export default function NewAgentPage() {
 						.filter(Boolean),
 					models: [formData.model],
 					mode: formData.mode,
-					config_url: formData.endpoint || null,
-					system_prompt: formData.systemPrompt || null,
+					cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
+					required_user_provider:
+						formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
+					endpoint_url:
+						formData.cloudStrategy === "SELLER_ENDPOINT"
+							? formData.endpoint || undefined
+							: undefined,
+					config_url: formData.endpoint || undefined,
+					system_prompt: formData.systemPrompt || undefined,
+					pricing_model: "FREE",
 				} as any,
 				token,
 			);
@@ -155,10 +167,7 @@ export default function NewAgentPage() {
 									Avertissements
 								</p>
 								{validation.warnings.map((w) => (
-									<p
-										key={w}
-										className="text-sm text-yellow-600 dark:text-yellow-300"
-									>
+									<p key={w} className="text-sm text-yellow-600 dark:text-yellow-300">
 										{w}
 									</p>
 								))}
@@ -190,7 +199,9 @@ export default function NewAgentPage() {
 								category: "",
 								tags: "",
 								model: "claude-sonnet-4-20250514",
-								mode: "cloud",
+								mode: "CLOUD",
+								cloudStrategy: "USER_API_KEY",
+								requiredUserProvider: "anthropic",
 								systemPrompt: "",
 								endpoint: "",
 								priceType: "free",
@@ -281,9 +292,7 @@ export default function NewAgentPage() {
 									</Button>
 								</div>
 							</div>
-							{submitError && (
-								<p className="text-sm text-destructive">{submitError}</p>
-							)}
+							{submitError && <p className="text-sm text-destructive">{submitError}</p>}
 							<Separator />
 							<p className="text-center text-sm text-muted-foreground">
 								Pas de fichier ? Remplissez les informations manuellement à l&apos;étape suivante.
@@ -398,14 +407,68 @@ export default function NewAgentPage() {
 								/>
 								<p className="text-xs text-muted-foreground">Max. 10 000 caractères</p>
 							</div>
-							{formData.mode !== "local" && (
+							{formData.mode !== "LOCAL" && (
 								<div className="space-y-2">
-									<Label htmlFor="endpoint">Endpoint (URL)</Label>
+									<Label>Stratégie d&apos;exécution cloud</Label>
+									<div className="grid grid-cols-3 gap-3">
+										{[
+											{
+												id: "USER_API_KEY",
+												label: "Clé API utilisateur",
+												desc: "L'utilisateur fournit sa propre clé",
+											},
+											{
+												id: "SELLER_API_KEY",
+												label: "Clé API vendeur",
+												desc: "Vous fournissez votre clé API",
+											},
+											{
+												id: "SELLER_ENDPOINT",
+												label: "Endpoint custom",
+												desc: "Votre propre serveur API",
+											},
+										].map((s) => (
+											<button
+												key={s.id}
+												type="button"
+												onClick={() => updateField("cloudStrategy", s.id)}
+												className={`rounded-md border p-3 text-left text-sm transition-colors ${
+													formData.cloudStrategy === s.id
+														? "border-primary bg-primary/5"
+														: "border-input hover:bg-accent"
+												}`}
+											>
+												<div className="font-medium">{s.label}</div>
+												<div className="mt-1 text-xs text-muted-foreground">{s.desc}</div>
+											</button>
+										))}
+									</div>
+								</div>
+							)}
+							{formData.cloudStrategy === "USER_API_KEY" && formData.mode !== "LOCAL" && (
+								<div className="space-y-2">
+									<Label>Provider requis</Label>
+									<select
+										className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+										value={formData.requiredUserProvider}
+										onChange={(e) => updateField("requiredUserProvider", e.target.value)}
+									>
+										<option value="anthropic">Anthropic (Claude)</option>
+										<option value="openai">OpenAI (GPT)</option>
+										<option value="google">Google (Gemini)</option>
+										<option value="mistral">Mistral</option>
+										<option value="groq">Groq</option>
+									</select>
+								</div>
+							)}
+							{formData.cloudStrategy === "SELLER_ENDPOINT" && formData.mode !== "LOCAL" && (
+								<div className="space-y-2">
+									<Label htmlFor="endpoint">URL de l&apos;endpoint</Label>
 									<Input
 										id="endpoint"
 										value={formData.endpoint}
 										onChange={(e) => updateField("endpoint", e.target.value)}
-										placeholder="https://api.example.com/agent"
+										placeholder="https://api.exemple.com/v1/chat"
 									/>
 								</div>
 							)}
