@@ -62,7 +62,12 @@ export function createApiClient(baseUrl: string) {
 		});
 		if (!res.ok) {
 			const body = await res.json().catch(() => ({}));
-			throw new ApiError(res.status, body.error ?? `API error: ${res.status} ${res.statusText}`);
+			// AllExceptionsFilter returns { error: { code, message, statusCode } }
+			const message =
+				typeof body.error === "string"
+					? body.error
+					: body.error?.message ?? `API error: ${res.status} ${res.statusText}`;
+			throw new ApiError(res.status, message);
 		}
 		const json = await res.json();
 		// Unwrap { data: ... } envelope from ResponseTransformInterceptor

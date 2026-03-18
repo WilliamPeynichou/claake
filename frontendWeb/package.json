@@ -3,7 +3,8 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev",
+		"dev": "next dev --turbopack",
+		"analyze": "ANALYZE=true next build",
 		"build": "next build",
 		"start": "next start"
 	},
@@ -22,6 +23,7 @@
 		"tailwind-merge": "^3.5.0"
 	},
 	"devDependencies": {
+		"@next/bundle-analyzer": "^15.0.0",
 		"@types/node": "^20",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",

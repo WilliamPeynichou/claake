@@ -1,5 +1,6 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
+import compression from "compression";
 import helmet from "helmet";
 import { AppModule } from "./app.module.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
@@ -12,22 +13,7 @@ async function bootstrap() {
 		rawBody: true,
 	});
 
-	// Security headers
-	app.use(
-		helmet({
-			contentSecurityPolicy: {
-				directives: {
-					defaultSrc: ["'self'"],
-					scriptSrc: ["'self'"],
-					styleSrc: ["'self'", "'unsafe-inline'"],
-					imgSrc: ["'self'", "data:", "https:"],
-				},
-			},
-			crossOriginEmbedderPolicy: false,
-		}),
-	);
-
-	// CORS
+	// CORS — must be first so OPTIONS preflight is handled before any other middleware
 	const isProduction = process.env.NODE_ENV === "production";
 	app.enableCors({
 		origin: isProduction
@@ -41,7 +27,28 @@ async function bootstrap() {
 					process.env.WEB_URL ?? "",
 				].filter(Boolean),
 		credentials: true,
+		methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 	});
+
+	// Compression
+	app.use(compression());
+
+	// Security headers
+	app.use(
+		helmet({
+			contentSecurityPolicy: {
+				directives: {
+					defaultSrc: ["'self'"],
+					scriptSrc: ["'self'"],
+					styleSrc: ["'self'", "'unsafe-inline'"],
+					imgSrc: ["'self'", "data:", "https:"],
+				},
+			},
+			crossOriginEmbedderPolicy: false,
+			crossOriginResourcePolicy: { policy: "cross-origin" },
+		}),
+	);
 
 	app.setGlobalPrefix("v1");
 

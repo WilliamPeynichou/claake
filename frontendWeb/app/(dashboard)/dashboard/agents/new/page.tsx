@@ -27,11 +27,17 @@ export default function NewAgentPage() {
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [validation, setValidation] = useState<ValidationResult | null>(null);
 
+	const [backendError, setBackendError] = useState<string | null>(null);
+
 	useEffect(() => {
 		apiClient.categories
 			.list()
 			.then(setCategories)
-			.catch(() => {});
+			.catch(() => {
+				setBackendError(
+					"Impossible de contacter le serveur. Vérifiez que le backend est démarré (npm run api).",
+				);
+			});
 	}, []);
 	const [formData, setFormData] = useState({
 		name: "",
@@ -45,6 +51,18 @@ export default function NewAgentPage() {
 		requiredUserProvider: "anthropic",
 		systemPrompt: "",
 		endpoint: "",
+		endpointFormat: "OPENAI" as
+			| "OPENAI"
+			| "ANTHROPIC"
+			| "GOOGLE"
+			| "MISTRAL"
+			| "GROQ"
+			| "HUGGINGFACE"
+			| "CLAAKE",
+		sellerApiKey: "",
+		sellerApiProvider: "anthropic",
+		dockerImage: "",
+		downloadUrl: "",
 		priceType: "free",
 		price: "0",
 	});
@@ -75,6 +93,10 @@ export default function NewAgentPage() {
 				requiredUserProvider: parsed.required_user_provider ?? prev.requiredUserProvider,
 				systemPrompt: parsed.system_prompt ?? parsed.systemPrompt ?? prev.systemPrompt,
 				endpoint: parsed.endpoint ?? parsed.config_url ?? prev.endpoint,
+			endpointFormat: parsed.endpoint_format ?? prev.endpointFormat,
+			sellerApiProvider: parsed.seller_api_provider ?? prev.sellerApiProvider,
+			dockerImage: parsed.docker_image ?? prev.dockerImage,
+			downloadUrl: parsed.download_url ?? prev.downloadUrl,
 			}));
 
 			// Auto-advance to metadata step
@@ -119,10 +141,30 @@ export default function NewAgentPage() {
 						formData.cloudStrategy === "SELLER_ENDPOINT"
 							? formData.endpoint || undefined
 							: undefined,
-					config_url: formData.endpoint || undefined,
-					system_prompt: formData.systemPrompt || undefined,
-					pricing_model: "FREE",
-				} as any,
+					endpoint_format:
+					formData.cloudStrategy === "SELLER_ENDPOINT"
+						? formData.endpointFormat
+						: undefined,
+				seller_api_key:
+					formData.cloudStrategy === "SELLER_API_KEY"
+						? formData.sellerApiKey || undefined
+						: undefined,
+				seller_api_provider:
+					formData.cloudStrategy === "SELLER_API_KEY"
+						? formData.sellerApiProvider || undefined
+						: undefined,
+				docker_image:
+					formData.mode === "LOCAL" || formData.mode === "HYBRID"
+						? formData.dockerImage || undefined
+						: undefined,
+				download_url:
+					formData.mode === "LOCAL" || formData.mode === "HYBRID"
+						? formData.downloadUrl || undefined
+						: undefined,
+				config_url: formData.endpoint || undefined,
+				system_prompt: formData.systemPrompt || undefined,
+				pricing_model: "FREE",
+			} as any,
 				token,
 			);
 
@@ -204,6 +246,11 @@ export default function NewAgentPage() {
 								requiredUserProvider: "anthropic",
 								systemPrompt: "",
 								endpoint: "",
+								endpointFormat: "OPENAI",
+								sellerApiKey: "",
+								sellerApiProvider: "anthropic",
+								dockerImage: "",
+								downloadUrl: "",
 								priceType: "free",
 								price: "0",
 							});
@@ -220,6 +267,13 @@ export default function NewAgentPage() {
 		<div>
 			<h1 className="text-3xl font-bold">Publier un agent</h1>
 			<p className="mt-2 text-muted-foreground">Créez et publiez un nouvel agent IA en 5 étapes.</p>
+
+			{backendError && (
+				<div className="mt-4 flex items-center gap-2 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
+					<AlertCircle className="h-4 w-4 shrink-0" />
+					{backendError}
+				</div>
+			)}
 
 			{/* Step indicator */}
 			<div className="mt-8 flex items-center gap-2">
@@ -384,9 +438,9 @@ export default function NewAgentPage() {
 										<button
 											key={m.id}
 											type="button"
-											onClick={() => updateField("mode", m.id)}
+											onClick={() => updateField("mode", m.id.toUpperCase())}
 											className={`rounded-md border p-3 text-left text-sm transition-colors ${
-												formData.mode === m.id
+												formData.mode === m.id.toUpperCase()
 													? "border-primary bg-primary/5"
 													: "border-input hover:bg-accent"
 											}`}
@@ -462,15 +516,86 @@ export default function NewAgentPage() {
 								</div>
 							)}
 							{formData.cloudStrategy === "SELLER_ENDPOINT" && formData.mode !== "LOCAL" && (
-								<div className="space-y-2">
-									<Label htmlFor="endpoint">URL de l&apos;endpoint</Label>
-									<Input
-										id="endpoint"
-										value={formData.endpoint}
-										onChange={(e) => updateField("endpoint", e.target.value)}
-										placeholder="https://api.exemple.com/v1/chat"
-									/>
-								</div>
+								<>
+									<div className="space-y-2">
+										<Label htmlFor="endpoint">URL de l&apos;endpoint</Label>
+										<Input
+											id="endpoint"
+											value={formData.endpoint}
+											onChange={(e) => updateField("endpoint", e.target.value)}
+											placeholder="https://api.exemple.com/v1/chat"
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label>Format de l&apos;API</Label>
+										<select
+											className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+											value={formData.endpointFormat}
+											onChange={(e) => updateField("endpointFormat", e.target.value)}
+										>
+											<option value="OPENAI">OpenAI compatible</option>
+											<option value="ANTHROPIC">Anthropic</option>
+											<option value="GOOGLE">Google</option>
+											<option value="MISTRAL">Mistral</option>
+											<option value="GROQ">Groq</option>
+											<option value="HUGGINGFACE">HuggingFace</option>
+											<option value="CLAAKE">Claake</option>
+										</select>
+									</div>
+								</>
+							)}
+							{formData.cloudStrategy === "SELLER_API_KEY" && formData.mode !== "LOCAL" && (
+								<>
+									<div className="space-y-2">
+										<Label>Provider</Label>
+										<select
+											className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+											value={formData.sellerApiProvider}
+											onChange={(e) => updateField("sellerApiProvider", e.target.value)}
+										>
+											<option value="anthropic">Anthropic (Claude)</option>
+											<option value="openai">OpenAI (GPT)</option>
+											<option value="google">Google (Gemini)</option>
+											<option value="mistral">Mistral</option>
+											<option value="groq">Groq</option>
+										</select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="sellerApiKey">Clé API vendeur</Label>
+										<Input
+											id="sellerApiKey"
+											type="password"
+											value={formData.sellerApiKey}
+											onChange={(e) => updateField("sellerApiKey", e.target.value)}
+											placeholder="sk-..."
+										/>
+										<p className="text-xs text-muted-foreground">
+											Stockée chiffrée — jamais exposée aux utilisateurs.
+										</p>
+									</div>
+								</>
+							)}
+							{(formData.mode === "LOCAL" || formData.mode === "HYBRID") && (
+								<>
+									<div className="space-y-2">
+										<Label htmlFor="dockerImage">Image Docker</Label>
+										<Input
+											id="dockerImage"
+											value={formData.dockerImage}
+											onChange={(e) => updateField("dockerImage", e.target.value)}
+											placeholder="ghcr.io/moncompte/mon-agent:latest"
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="downloadUrl">URL de téléchargement (optionnel)</Label>
+										<Input
+											id="downloadUrl"
+											value={formData.downloadUrl}
+											onChange={(e) => updateField("downloadUrl", e.target.value)}
+											placeholder="https://releases.exemple.com/agent-v1.0.zip"
+										/>
+									</div>
+								</>
 							)}
 						</div>
 					)}
