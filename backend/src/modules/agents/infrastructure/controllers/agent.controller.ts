@@ -8,6 +8,7 @@ import { GetAgentDownloadInfoUseCase } from "../../application/usecases/get-agen
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
 import { ListAgentsUseCase } from "../../application/usecases/list-agents.usecase.js";
 import { ReviewAgentUseCase } from "../../application/usecases/review-agent.usecase.js";
+import { UpdateAgentUseCase } from "../../application/usecases/update-agent.usecase.js";
 import { ValidateAgentUseCase } from "../../application/usecases/validate-agent.usecase.js";
 
 @Controller("agents")
@@ -16,6 +17,7 @@ export class AgentController {
 		private readonly listAgents: ListAgentsUseCase,
 		private readonly getAgent: GetAgentUseCase,
 		private readonly createAgent: CreateAgentUseCase,
+		private readonly updateAgent: UpdateAgentUseCase,
 		private readonly validateAgent: ValidateAgentUseCase,
 		private readonly reviewAgent: ReviewAgentUseCase,
 		private readonly getDownloadInfo: GetAgentDownloadInfoUseCase,
@@ -71,6 +73,16 @@ export class AgentController {
 		const validation = await this.validateAgent.execute(agent.id);
 
 		return { ...agent, validation };
+	}
+
+	@Patch(":id")
+	@UseGuards(SupabaseAuthGuard)
+	async update(
+		@Param("id") id: string,
+		@Body() dto: Partial<CreateAgentDto>,
+		@Req() req: any,
+	) {
+		return this.updateAgent.execute(id, dto, req.user.id);
 	}
 
 	@Get(":id/download-info")

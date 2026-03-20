@@ -66,7 +66,7 @@ export function createApiClient(baseUrl: string) {
 			const message =
 				typeof body.error === "string"
 					? body.error
-					: body.error?.message ?? `API error: ${res.status} ${res.statusText}`;
+					: (body.error?.message ?? `API error: ${res.status} ${res.statusText}`);
 			throw new ApiError(res.status, message);
 		}
 		const json = await res.json();
@@ -105,8 +105,7 @@ export function createApiClient(baseUrl: string) {
 				return fetchJson<AgentListResponse>(`/agents${query ? `?${query}` : ""}`);
 			},
 			get: (id: string) => fetchJson<Agent>(`/agents/${id}`),
-			mine: (token: string) =>
-				fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
+			mine: (token: string) => fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
 			create: (agent: Partial<Agent>, token: string) =>
 				fetchJson<Agent & { validation: ValidationResult }>(
 					"/agents",
@@ -115,12 +114,15 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(agent),
 					}),
 				),
-			review: (
-				agentId: string,
-				decision: "approve" | "reject",
-				token: string,
-				reason?: string,
-			) =>
+			update: (agentId: string, agent: Partial<Agent>, token: string) =>
+				fetchJson<Agent>(
+					`/agents/${agentId}`,
+					withAuth(token, {
+						method: "PATCH",
+						body: JSON.stringify(agent),
+					}),
+				),
+			review: (agentId: string, decision: "approve" | "reject", token: string, reason?: string) =>
 				fetchJson<{ status: string; reason?: string }>(
 					`/agents/${agentId}/review`,
 					withAuth(token, {
@@ -204,8 +206,7 @@ export function createApiClient(baseUrl: string) {
 					}),
 				),
 			apiKeys: {
-				list: (token: string) =>
-					fetchJson<ApiKeyConfig[]>("/auth/api-keys", withAuth(token)),
+				list: (token: string) => fetchJson<ApiKeyConfig[]>("/auth/api-keys", withAuth(token)),
 				add: (provider: string, label: string, key: string, token: string) =>
 					fetchJson<ApiKeyConfig>(
 						"/auth/api-keys",
@@ -229,10 +230,7 @@ export function createApiClient(baseUrl: string) {
 				),
 			list: (token: string) => fetchJson<Favorite[]>("/favorites", withAuth(token)),
 			check: (agentId: string, token: string) =>
-				fetchJson<{ favorited: boolean }>(
-					`/favorites/check/${agentId}`,
-					withAuth(token),
-				),
+				fetchJson<{ favorited: boolean }>(`/favorites/check/${agentId}`, withAuth(token)),
 		},
 		collections: {
 			list: (token: string) => fetchJson<Collection[]>("/collections", withAuth(token)),
@@ -246,7 +244,11 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(data),
 					}),
 				),
-			update: (id: string, data: { name?: string; description?: string; is_public?: boolean }, token: string) =>
+			update: (
+				id: string,
+				data: { name?: string; description?: string; is_public?: boolean },
+				token: string,
+			) =>
 				fetchJson<Collection>(
 					`/collections/${id}`,
 					withAuth(token, {
@@ -283,7 +285,12 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(data),
 					}),
 				),
-			update: (agentId: string, reviewId: string, data: { rating?: number; comment?: string }, token: string) =>
+			update: (
+				agentId: string,
+				reviewId: string,
+				data: { rating?: number; comment?: string },
+				token: string,
+			) =>
 				fetchJson<Review>(
 					`/agents/${agentId}/reviews/${reviewId}`,
 					withAuth(token, {
@@ -306,13 +313,9 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify({ agent_id: agentId }),
 					}),
 				),
-			purchases: (token: string) =>
-				fetchJson<Purchase[]>("/payments/purchases", withAuth(token)),
+			purchases: (token: string) => fetchJson<Purchase[]>("/payments/purchases", withAuth(token)),
 			checkAccess: (agentId: string, token: string) =>
-				fetchJson<{ has_access: boolean }>(
-					`/payments/access/${agentId}`,
-					withAuth(token),
-				),
+				fetchJson<{ has_access: boolean }>(`/payments/access/${agentId}`, withAuth(token)),
 			connectOnboard: (token: string) =>
 				fetchJson<{ url: string }>(
 					"/payments/connect/onboard",

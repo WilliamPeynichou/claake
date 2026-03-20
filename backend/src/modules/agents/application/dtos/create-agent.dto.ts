@@ -100,4 +100,8 @@ export class CreateAgentDto {
 	@IsOptional()
 	@IsUrl()
 	download_url?: string;
+
+	@IsOptional()
+	@IsUrl()
+	image_url?: string;
 }

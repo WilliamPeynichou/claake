@@ -2,7 +2,8 @@
 
 import type { AgentCategory, ValidationResult } from "@claake/shared";
 import { AI_MODELS, EXECUTION_MODES } from "@claake/shared";
-import { AlertCircle, ArrowLeft, ArrowRight, Check, Upload } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Check, ImagePlus, Upload, X } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -14,20 +15,56 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { uploadAgentConfigFile, uploadAgentImage } from "@/lib/supabase/storage";
 
 const steps = ["Fichier .agentjson", "Métadonnées", "Configuration", "Tarification", "Validation"];
+
+const INITIAL_FORM = {
+	name: "",
+	description: "",
+	longDescription: "",
+	category: "",
+	tags: "",
+	model: "claude-sonnet-4-20250514",
+	mode: "CLOUD" as "LOCAL" | "CLOUD" | "HYBRID",
+	cloudStrategy: "USER_API_KEY" as "USER_API_KEY" | "SELLER_API_KEY" | "SELLER_ENDPOINT",
+	requiredUserProvider: "anthropic",
+	systemPrompt: "",
+	endpoint: "",
+	endpointFormat: "OPENAI" as
+		| "OPENAI"
+		| "ANTHROPIC"
+		| "GOOGLE"
+		| "MISTRAL"
+		| "GROQ"
+		| "HUGGINGFACE"
+		| "CLAAKE",
+	sellerApiKey: "",
+	sellerApiProvider: "anthropic",
+	dockerImage: "",
+	downloadUrl: "",
+	priceType: "free",
+	price: "0",
+};
 
 export default function NewAgentPage() {
 	const router = useRouter();
 	const { token } = useAuth();
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const imageInputRef = useRef<HTMLInputElement>(null);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
 	const [currentStep, setCurrentStep] = useState(0);
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [validation, setValidation] = useState<ValidationResult | null>(null);
-
 	const [backendError, setBackendError] = useState<string | null>(null);
+	const [formData, setFormData] = useState(INITIAL_FORM);
+	const [submitted, setSubmitted] = useState(false);
+
+	// File states
+	const [agentJsonFile, setAgentJsonFile] = useState<File | null>(null);
+	const [imageFile, setImageFile] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
 
 	useEffect(() => {
 		apiClient.categories
@@ -39,34 +76,6 @@ export default function NewAgentPage() {
 				);
 			});
 	}, []);
-	const [formData, setFormData] = useState({
-		name: "",
-		description: "",
-		longDescription: "",
-		category: "",
-		tags: "",
-		model: "claude-sonnet-4-20250514",
-		mode: "CLOUD" as "LOCAL" | "CLOUD" | "HYBRID",
-		cloudStrategy: "USER_API_KEY" as "USER_API_KEY" | "SELLER_API_KEY" | "SELLER_ENDPOINT",
-		requiredUserProvider: "anthropic",
-		systemPrompt: "",
-		endpoint: "",
-		endpointFormat: "OPENAI" as
-			| "OPENAI"
-			| "ANTHROPIC"
-			| "GOOGLE"
-			| "MISTRAL"
-			| "GROQ"
-			| "HUGGINGFACE"
-			| "CLAAKE",
-		sellerApiKey: "",
-		sellerApiProvider: "anthropic",
-		dockerImage: "",
-		downloadUrl: "",
-		priceType: "free",
-		price: "0",
-	});
-	const [submitted, setSubmitted] = useState(false);
 
 	function updateField(field: string, value: string) {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -79,6 +88,8 @@ export default function NewAgentPage() {
 		try {
 			const text = await file.text();
 			const parsed = JSON.parse(text);
+
+			setAgentJsonFile(file);
 
 			setFormData((prev) => ({
 				...prev,
@@ -93,22 +104,64 @@ export default function NewAgentPage() {
 				requiredUserProvider: parsed.required_user_provider ?? prev.requiredUserProvider,
 				systemPrompt: parsed.system_prompt ?? parsed.systemPrompt ?? prev.systemPrompt,
 				endpoint: parsed.endpoint ?? parsed.config_url ?? prev.endpoint,
-			endpointFormat: parsed.endpoint_format ?? prev.endpointFormat,
-			sellerApiProvider: parsed.seller_api_provider ?? prev.sellerApiProvider,
-			dockerImage: parsed.docker_image ?? prev.dockerImage,
-			downloadUrl: parsed.download_url ?? prev.downloadUrl,
+				endpointFormat: parsed.endpoint_format ?? prev.endpointFormat,
+				sellerApiProvider: parsed.seller_api_provider ?? prev.sellerApiProvider,
+				dockerImage: parsed.docker_image ?? prev.dockerImage,
+				downloadUrl: parsed.download_url ?? prev.downloadUrl,
 			}));
 
-			// Auto-advance to metadata step
 			setCurrentStep(1);
 		} catch {
 			setSubmitError("Fichier .agentjson invalide.");
 		}
 	}
 
+	function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		if (!file.type.startsWith("image/")) {
+			setSubmitError("Le fichier doit être une image (PNG, JPG, WebP).");
+			return;
+		}
+
+		if (file.size > 2 * 1024 * 1024) {
+			setSubmitError("L'image ne doit pas dépasser 2 Mo.");
+			return;
+		}
+
+		setImageFile(file);
+		setImagePreview(URL.createObjectURL(file));
+		setSubmitError(null);
+	}
+
+	function removeImage() {
+		setImageFile(null);
+		if (imagePreview) {
+			URL.revokeObjectURL(imagePreview);
+			setImagePreview(null);
+		}
+	}
+
+	function canAdvance(): boolean {
+		switch (currentStep) {
+			case 1:
+				return !!(formData.name && formData.description && formData.category);
+			case 2:
+				return true;
+			default:
+				return true;
+		}
+	}
+
 	async function handleSubmit() {
 		if (!token) {
 			setSubmitError("Vous devez être connecté.");
+			return;
+		}
+
+		if (!formData.name || !formData.description || !formData.category) {
+			setSubmitError("Veuillez remplir les champs obligatoires (nom, description, catégorie).");
 			return;
 		}
 
@@ -120,6 +173,26 @@ export default function NewAgentPage() {
 				.toLowerCase()
 				.replace(/[^a-z0-9]+/g, "-")
 				.replace(/^-|-$/g, "");
+
+			// Upload image if provided
+			let imageUrl: string | undefined;
+			if (imageFile) {
+				try {
+					imageUrl = await uploadAgentImage(imageFile, slug);
+				} catch {
+					// Image upload is optional, continue without it
+				}
+			}
+
+			// Upload .agentjson file if provided
+			let configUrl: string | undefined;
+			if (agentJsonFile) {
+				try {
+					configUrl = await uploadAgentConfigFile(agentJsonFile, slug);
+				} catch {
+					// Config file upload is optional, continue without it
+				}
+			}
 
 			const result = await apiClient.agents.create(
 				{
@@ -134,6 +207,7 @@ export default function NewAgentPage() {
 						.filter(Boolean),
 					models: [formData.model],
 					mode: formData.mode,
+					image_url: imageUrl ?? undefined,
 					cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
 					required_user_provider:
 						formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
@@ -142,29 +216,27 @@ export default function NewAgentPage() {
 							? formData.endpoint || undefined
 							: undefined,
 					endpoint_format:
-					formData.cloudStrategy === "SELLER_ENDPOINT"
-						? formData.endpointFormat
-						: undefined,
-				seller_api_key:
-					formData.cloudStrategy === "SELLER_API_KEY"
-						? formData.sellerApiKey || undefined
-						: undefined,
-				seller_api_provider:
-					formData.cloudStrategy === "SELLER_API_KEY"
-						? formData.sellerApiProvider || undefined
-						: undefined,
-				docker_image:
-					formData.mode === "LOCAL" || formData.mode === "HYBRID"
-						? formData.dockerImage || undefined
-						: undefined,
-				download_url:
-					formData.mode === "LOCAL" || formData.mode === "HYBRID"
-						? formData.downloadUrl || undefined
-						: undefined,
-				config_url: formData.endpoint || undefined,
-				system_prompt: formData.systemPrompt || undefined,
-				pricing_model: "FREE",
-			} as any,
+						formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpointFormat : undefined,
+					seller_api_key:
+						formData.cloudStrategy === "SELLER_API_KEY"
+							? formData.sellerApiKey || undefined
+							: undefined,
+					seller_api_provider:
+						formData.cloudStrategy === "SELLER_API_KEY"
+							? formData.sellerApiProvider || undefined
+							: undefined,
+					docker_image:
+						formData.mode === "LOCAL" || formData.mode === "HYBRID"
+							? formData.dockerImage || undefined
+							: undefined,
+					download_url:
+						formData.mode === "LOCAL" || formData.mode === "HYBRID"
+							? formData.downloadUrl || undefined
+							: undefined,
+					config_url: configUrl || formData.endpoint || undefined,
+					system_prompt: formData.systemPrompt || undefined,
+					pricing_model: "FREE",
+				} as any,
 				token,
 			);
 
@@ -189,7 +261,6 @@ export default function NewAgentPage() {
 					une notification une fois la revue terminée.
 				</p>
 
-				{/* Validation feedback */}
 				{validation && (
 					<div className="mt-6 w-full max-w-md text-left">
 						{validation.errors.length > 0 && (
@@ -234,26 +305,9 @@ export default function NewAgentPage() {
 							setSubmitted(false);
 							setValidation(null);
 							setCurrentStep(0);
-							setFormData({
-								name: "",
-								description: "",
-								longDescription: "",
-								category: "",
-								tags: "",
-								model: "claude-sonnet-4-20250514",
-								mode: "CLOUD",
-								cloudStrategy: "USER_API_KEY",
-								requiredUserProvider: "anthropic",
-								systemPrompt: "",
-								endpoint: "",
-								endpointFormat: "OPENAI",
-								sellerApiKey: "",
-								sellerApiProvider: "anthropic",
-								dockerImage: "",
-								downloadUrl: "",
-								priceType: "free",
-								price: "0",
-							});
+							setFormData(INITIAL_FORM);
+							setAgentJsonFile(null);
+							removeImage();
 						}}
 					>
 						Publier un autre agent
@@ -333,6 +387,9 @@ export default function NewAgentPage() {
 										onChange={handleFileUpload}
 										className="hidden"
 									/>
+									{agentJsonFile && (
+										<p className="mt-2 text-sm text-green-600">{agentJsonFile.name}</p>
+									)}
 									<Button
 										variant="outline"
 										size="sm"
@@ -358,8 +415,64 @@ export default function NewAgentPage() {
 					{currentStep === 1 && (
 						<div className="space-y-4">
 							<h3 className="text-lg font-semibold">Métadonnées</h3>
+
+							{/* Image upload */}
 							<div className="space-y-2">
-								<Label htmlFor="name">Nom de l&apos;agent</Label>
+								<Label>Icône de l&apos;agent</Label>
+								<div className="flex items-center gap-4">
+									{imagePreview ? (
+										<div className="relative">
+											<Image
+												src={imagePreview}
+												alt="Agent icon preview"
+												width={80}
+												height={80}
+												className="rounded-lg border object-cover"
+											/>
+											<button
+												type="button"
+												onClick={removeImage}
+												className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
+											>
+												<X className="h-3 w-3" />
+											</button>
+										</div>
+									) : (
+										<button
+											type="button"
+											onClick={() => imageInputRef.current?.click()}
+											className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed transition-colors hover:bg-muted/50"
+										>
+											<ImagePlus className="h-6 w-6 text-muted-foreground" />
+										</button>
+									)}
+									<div className="text-sm text-muted-foreground">
+										<p>PNG, JPG ou WebP. Max 2 Mo.</p>
+										{!imagePreview && (
+											<Button
+												variant="outline"
+												size="sm"
+												className="mt-1"
+												onClick={() => imageInputRef.current?.click()}
+											>
+												Choisir une image
+											</Button>
+										)}
+									</div>
+									<input
+										ref={imageInputRef}
+										type="file"
+										accept="image/png,image/jpeg,image/webp"
+										onChange={handleImageSelect}
+										className="hidden"
+									/>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="name">
+									Nom de l&apos;agent <span className="text-destructive">*</span>
+								</Label>
 								<Input
 									id="name"
 									value={formData.name}
@@ -368,7 +481,9 @@ export default function NewAgentPage() {
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="description">Description courte</Label>
+								<Label htmlFor="description">
+									Description courte <span className="text-destructive">*</span>
+								</Label>
 								<Input
 									id="description"
 									value={formData.description}
@@ -387,7 +502,9 @@ export default function NewAgentPage() {
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>Catégorie</Label>
+								<Label>
+									Catégorie <span className="text-destructive">*</span>
+								</Label>
 								<select
 									className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
 									value={formData.category}
@@ -622,6 +739,21 @@ export default function NewAgentPage() {
 						<div className="space-y-4">
 							<h3 className="text-lg font-semibold">Validation et soumission</h3>
 							<div className="space-y-3 rounded-md border p-4">
+								{imagePreview && (
+									<>
+										<div className="flex items-center gap-3">
+											<Image
+												src={imagePreview}
+												alt="Agent icon"
+												width={48}
+												height={48}
+												className="rounded-lg border object-cover"
+											/>
+											<span className="text-sm font-medium">{formData.name || "Sans nom"}</span>
+										</div>
+										<Separator />
+									</>
+								)}
 								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">Nom</span>
 									<span className="font-medium">{formData.name || "Non renseigné"}</span>
@@ -641,6 +773,15 @@ export default function NewAgentPage() {
 									<span className="text-muted-foreground">Mode</span>
 									<span className="capitalize">{formData.mode}</span>
 								</div>
+								{formData.mode !== "LOCAL" && (
+									<>
+										<Separator />
+										<div className="flex justify-between text-sm">
+											<span className="text-muted-foreground">Stratégie cloud</span>
+											<span>{formData.cloudStrategy}</span>
+										</div>
+									</>
+								)}
 								<Separator />
 								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">System Prompt</span>
@@ -648,6 +789,13 @@ export default function NewAgentPage() {
 										{formData.systemPrompt
 											? `${formData.systemPrompt.length} caractères`
 											: "Non renseigné"}
+									</span>
+								</div>
+								<Separator />
+								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">Fichier .agentjson</span>
+									<span className="text-xs">
+										{agentJsonFile ? agentJsonFile.name : "Non fourni"}
 									</span>
 								</div>
 								<Separator />
@@ -683,7 +831,7 @@ export default function NewAgentPage() {
 							Précédent
 						</Button>
 						{currentStep < steps.length - 1 ? (
-							<Button onClick={() => setCurrentStep((s) => s + 1)}>
+							<Button onClick={() => setCurrentStep((s) => s + 1)} disabled={!canAdvance()}>
 								Suivant
 								<ArrowRight className="ml-2 h-4 w-4" />
 							</Button>

@@ -21,6 +21,7 @@ export interface AgentRepositoryPort {
 	findById(id: string): Promise<AgentEntity | null>;
 	findBySlug(slug: string): Promise<AgentEntity | null>;
 	create(data: Partial<AgentEntity>): Promise<AgentEntity>;
+	update(id: string, data: Partial<AgentEntity>): Promise<AgentEntity>;
 	updateStatus(id: string, status: string, scanStatus?: string): Promise<void>;
 	updateRating(id: string, rating: number, reviewCount: number): Promise<void>;
 }

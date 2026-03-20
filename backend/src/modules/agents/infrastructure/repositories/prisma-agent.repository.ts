@@ -113,6 +113,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 				models: data.models ?? ["claude-sonnet-4-20250514"],
 				mode: (data.mode as any) ?? "CLOUD",
 				configUrl: data.configUrl,
+				imageUrl: data.imageUrl,
 				systemPrompt: data.systemPrompt,
 				pricingModel: (data.pricingModel as any) ?? "FREE",
 				price: data.price ?? 0,
@@ -128,6 +129,37 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 				dockerImage: data.dockerImage,
 				downloadUrl: data.downloadUrl,
 			},
+			include: { creator: { select: { displayName: true } } },
+		});
+		return AgentMapper.toDomain(agent);
+	}
+
+	async update(id: string, data: Partial<AgentEntity>): Promise<AgentEntity> {
+		const updateData: any = {};
+		if (data.name !== undefined) updateData.name = data.name;
+		if (data.slug !== undefined) updateData.slug = data.slug;
+		if (data.description !== undefined) updateData.description = data.description;
+		if (data.longDescription !== undefined) updateData.longDescription = data.longDescription;
+		if (data.category !== undefined) updateData.category = data.category;
+		if (data.tags !== undefined) updateData.tags = data.tags;
+		if (data.models !== undefined) updateData.models = data.models;
+		if (data.mode !== undefined) updateData.mode = data.mode;
+		if (data.configUrl !== undefined) updateData.configUrl = data.configUrl;
+		if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
+		if (data.systemPrompt !== undefined) updateData.systemPrompt = data.systemPrompt;
+		if (data.pricingModel !== undefined) updateData.pricingModel = data.pricingModel;
+		if (data.cloudStrategy !== undefined) updateData.cloudStrategy = data.cloudStrategy;
+		if (data.endpointUrl !== undefined) updateData.endpointUrl = data.endpointUrl;
+		if (data.endpointFormat !== undefined) updateData.endpointFormat = data.endpointFormat;
+		if (data.sellerApiKeyEncrypted !== undefined) updateData.sellerApiKeyEncrypted = data.sellerApiKeyEncrypted;
+		if (data.sellerApiProvider !== undefined) updateData.sellerApiProvider = data.sellerApiProvider;
+		if (data.requiredUserProvider !== undefined) updateData.requiredUserProvider = data.requiredUserProvider;
+		if (data.dockerImage !== undefined) updateData.dockerImage = data.dockerImage;
+		if (data.downloadUrl !== undefined) updateData.downloadUrl = data.downloadUrl;
+
+		const agent = await this.prisma.agent.update({
+			where: { id },
+			data: updateData,
 			include: { creator: { select: { displayName: true } } },
 		});
 		return AgentMapper.toDomain(agent);

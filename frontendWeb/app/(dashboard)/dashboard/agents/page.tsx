@@ -1,7 +1,7 @@
 "use client";
 
 import type { Agent } from "@claake/shared";
-import { Bot, Eye, Plus } from "lucide-react";
+import { Bot, Eye, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const statusLabels: Record<
+	string,
+	{ label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
 	draft: { label: "Brouillon", variant: "secondary" },
 	pending: { label: "En attente", variant: "outline" },
 	approved: { label: "Publié", variant: "default" },
@@ -97,10 +100,16 @@ export default function MyAgentsPage() {
 												Voir
 											</Link>
 										</Button>
+										{(agent.status === "draft" || agent.status === "rejected") && (
+											<Button variant="outline" size="sm" asChild className="flex-1">
+												<Link href={`/dashboard/agents/${agent.id}/edit`}>
+													<Pencil className="mr-1 h-3.5 w-3.5" />
+													Modifier
+												</Link>
+											</Button>
+										)}
 										<Button variant="outline" size="sm" asChild className="flex-1">
-											<Link href={`/chat?agent=${agent.id}`}>
-												Chat
-											</Link>
+											<Link href={`/chat?agent=${agent.id}`}>Chat</Link>
 										</Button>
 									</div>
 								</CardContent>
