@@ -7,17 +7,18 @@ export class GetAdminStatsUseCase {
 	constructor(private readonly prisma: PrismaService) {}
 
 	async execute(): Promise<AdminStatsDto> {
-		const [publishedAgents, users, pendingReview] = await Promise.all([
-			this.prisma.agent.count({ where: { status: "PUBLISHED" } }),
+		const [publishedAgents, users, pendingReview, chatSessions] = await Promise.all([
+			this.prisma.agent.count({ where: { status: "APPROVED" } }),
 			this.prisma.user.count(),
 			this.prisma.agent.count({ where: { status: "PENDING" } }),
+			this.prisma.chatSession.count(),
 		]);
 
 		return {
 			published_agents: publishedAgents,
 			users,
 			pending_review: pendingReview,
-			chat_sessions: 0,
+			chat_sessions: chatSessions,
 		};
 	}
 }

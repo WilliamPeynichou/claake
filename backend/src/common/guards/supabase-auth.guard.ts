@@ -4,12 +4,23 @@ import {
 	Injectable,
 	UnauthorizedException,
 } from "@nestjs/common";
-import type { ConfigService } from "@nestjs/config";
-import { createClient } from "@supabase/supabase-js";
+import { ConfigService } from "@nestjs/config";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
-	constructor(private readonly config: ConfigService) {}
+	private readonly supabase: SupabaseClient;
+
+	constructor(
+		private readonly config: ConfigService,
+		private readonly prisma: PrismaService,
+	) {
+		this.supabase = createClient(
+			this.config.getOrThrow<string>("SUPABASE_URL"),
+			this.config.getOrThrow<string>("SUPABASE_SERVICE_ROLE_KEY"),
+		);
+	}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
@@ -21,24 +32,34 @@ export class SupabaseAuthGuard implements CanActivate {
 
 		const token = authHeader.slice(7);
 
-		const supabase = createClient(
-			this.config.getOrThrow<string>("SUPABASE_URL"),
-			this.config.getOrThrow<string>("SUPABASE_SERVICE_ROLE_KEY"),
-		);
-
 		const {
 			data: { user },
 			error,
-		} = await supabase.auth.getUser(token);
+		} = await this.supabase.auth.getUser(token);
 
 		if (error || !user) {
 			throw new UnauthorizedException("Invalid or expired token");
 		}
 
+		// Role from Supabase cloud app_metadata (source of truth)
+		const cloudRole = (user.app_metadata?.role as string) ?? null;
+
+		// Upsert user in local DB, syncing role from cloud
+		const dbUser = await this.prisma.user.upsert({
+			where: { id: user.id },
+			create: {
+				id: user.id,
+				email: user.email ?? "",
+				role: (cloudRole as import("@prisma/client").UserRole) ?? "USER",
+			},
+			update: cloudRole ? { role: cloudRole as import("@prisma/client").UserRole } : {},
+			select: { role: true },
+		});
+
 		request.user = {
 			id: user.id,
 			email: user.email,
-			role: user.user_metadata?.role ?? "USER",
+			role: dbUser.role,
 		};
 
 		return true;

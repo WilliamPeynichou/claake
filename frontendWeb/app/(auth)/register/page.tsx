@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,12 +17,10 @@ import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
-	const _router = useRouter();
 	const [fullName, setFullName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-	const [accountType, setAccountType] = useState<"user" | "developer">("user");
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [success, setSuccess] = useState(false);
@@ -51,8 +48,8 @@ export default function RegisterPage() {
 				password,
 				options: {
 					data: {
-						full_name: fullName,
-						role: accountType,
+						display_name: fullName,
+						role: "user",
 					},
 				},
 			});
@@ -100,7 +97,7 @@ export default function RegisterPage() {
 		<Card>
 			<CardHeader className="text-center">
 				<CardTitle className="text-2xl">Inscription</CardTitle>
-				<CardDescription>Créez votre compte AgentPlace</CardDescription>
+				<CardDescription>Créez votre compte Claake</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<form onSubmit={handleRegister} className="space-y-4">
@@ -151,39 +148,6 @@ export default function RegisterPage() {
 							onChange={(e) => setConfirmPassword(e.target.value)}
 							required
 						/>
-					</div>
-					<div className="space-y-2">
-						<Label>Type de compte</Label>
-						<div className="grid grid-cols-2 gap-3">
-							<button
-								type="button"
-								onClick={() => setAccountType("user")}
-								className={`rounded-md border p-3 text-left text-sm transition-colors ${
-									accountType === "user"
-										? "border-primary bg-primary/5"
-										: "border-input hover:bg-accent"
-								}`}
-							>
-								<div className="font-medium">Utilisateur</div>
-								<div className="text-xs text-muted-foreground">
-									Découvrir et utiliser des agents
-								</div>
-							</button>
-							<button
-								type="button"
-								onClick={() => setAccountType("developer")}
-								className={`rounded-md border p-3 text-left text-sm transition-colors ${
-									accountType === "developer"
-										? "border-primary bg-primary/5"
-										: "border-input hover:bg-accent"
-								}`}
-							>
-								<div className="font-medium">Développeur</div>
-								<div className="text-xs text-muted-foreground">
-									Publier et distribuer des agents
-								</div>
-							</button>
-						</div>
 					</div>
 					<Button type="submit" className="w-full" disabled={loading}>
 						{loading ? "Inscription..." : "Créer un compte"}

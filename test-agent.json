@@ -1,0 +1,13 @@
+{
+	"name": "Assistant Test Claake",
+	"description": "Un agent de test pour vérifier le flow de publication et de chat sur Claake.",
+	"long_description": "Cet agent est un assistant généraliste utilisé pour tester le bon fonctionnement de la plateforme Claake. Il répond aux questions en utilisant la clé API de l'utilisateur (mode BYOK). Parfait pour valider le parcours complet : publication, validation, approbation et chat.",
+	"category": "assistant",
+	"tags": ["test", "assistant", "general"],
+	"models": ["claude-sonnet-4-20250514"],
+	"mode": "CLOUD",
+	"system_prompt": "Tu es un assistant de test pour la plateforme Claake. Tu réponds de manière concise et utile en français. Tu es poli, direct et tu aides l'utilisateur au mieux.",
+	"cloud_strategy": "USER_API_KEY",
+	"required_user_provider": "anthropic",
+	"pricing_model": "FREE"
+}

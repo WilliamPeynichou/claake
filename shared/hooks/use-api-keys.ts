@@ -1,88 +1,62 @@
 import { useCallback, useEffect, useState } from "react";
-import { maskApiKey } from "../lib/agents";
-import type { StorageAdapter } from "../lib/storage";
-import { prefixedKey } from "../lib/storage";
-
-export interface StoredApiKey {
-	id: string;
-	provider: string;
-	label: string;
-	key: string;
-}
-
-const STORAGE_KEY = prefixedKey("api_keys");
-
-export interface UseApiKeysOptions {
-	storage: StorageAdapter;
-}
+import type { ApiClient } from "../api/client";
+import type { ApiKeyConfig } from "../types";
 
 export interface UseApiKeysReturn {
-	keys: StoredApiKey[];
+	keys: ApiKeyConfig[];
 	loading: boolean;
-	addKey: (provider: string, label: string, key: string) => Promise<void>;
+	addKey: (provider: string, label: string, key: string) => Promise<ApiKeyConfig | undefined>;
 	removeKey: (id: string) => Promise<void>;
-	getKeyForProvider: (provider: string) => string | undefined;
-	maskKey: (key: string) => string;
+	hasKeyForProvider: (provider: string) => boolean;
+	refresh: () => Promise<void>;
 }
 
-export function useApiKeys({ storage }: UseApiKeysOptions): UseApiKeysReturn {
-	const [keys, setKeys] = useState<StoredApiKey[]>([]);
-	const [loading, setLoading] = useState(true);
+export function useApiKeys(apiClient: ApiClient, token: string | null): UseApiKeysReturn {
+	const [keys, setKeys] = useState<ApiKeyConfig[]>([]);
+	const [loading, setLoading] = useState(false);
+
+	const refresh = useCallback(async () => {
+		if (!token) return;
+		setLoading(true);
+		try {
+			const data = await apiClient.auth.apiKeys.list(token);
+			setKeys(data);
+		} catch {
+			// ignore
+		} finally {
+			setLoading(false);
+		}
+	}, [apiClient, token]);
 
 	useEffect(() => {
-		storage.getItem(STORAGE_KEY).then((raw) => {
-			if (raw) {
-				try {
-					setKeys(JSON.parse(raw));
-				} catch {
-					// corrupted data, reset
-				}
-			}
-			setLoading(false);
-		});
-	}, [storage]);
-
-	const persist = useCallback(
-		async (updated: StoredApiKey[]) => {
-			setKeys(updated);
-			await storage.setItem(STORAGE_KEY, JSON.stringify(updated));
-		},
-		[storage],
-	);
+		refresh();
+	}, [refresh]);
 
 	const addKey = useCallback(
 		async (provider: string, label: string, key: string) => {
-			const newKey: StoredApiKey = {
-				id: crypto.randomUUID(),
-				provider,
-				label: label || provider,
-				key,
-			};
-			await persist([...keys, newKey]);
+			if (!token) return;
+			const created = await apiClient.auth.apiKeys.add(provider, label, key, token);
+			setKeys((prev) => [...prev, created]);
+			return created;
 		},
-		[keys, persist],
+		[apiClient, token],
 	);
 
 	const removeKey = useCallback(
-		async (id: string) => {
-			await persist(keys.filter((k) => k.id !== id));
+		async (keyId: string) => {
+			if (!token) return;
+			await apiClient.auth.apiKeys.remove(keyId, token);
+			setKeys((prev) => prev.filter((k) => k.id !== keyId));
 		},
-		[keys, persist],
+		[apiClient, token],
 	);
 
-	const getKeyForProvider = useCallback(
+	const hasKeyForProvider = useCallback(
 		(provider: string) => {
-			return keys.find((k) => k.provider === provider)?.key;
+			return keys.some((k) => k.provider.toLowerCase() === provider.toLowerCase());
 		},
 		[keys],
 	);
 
-	return {
-		keys,
-		loading,
-		addKey,
-		removeKey,
-		getKeyForProvider,
-		maskKey: maskApiKey,
-	};
+	return { keys, loading, addKey, removeKey, hasKeyForProvider, refresh };
 }

@@ -52,6 +52,18 @@ export const translations = {
 
 		// Footer
 		"footer.rights": "All rights reserved.",
+		"footer.description": "One click to intelligence.",
+		"footer.product": "Product",
+		"footer.legal": "Legal",
+		"footer.contact": "Contact",
+		"footer.catalogue": "Catalogue",
+		"footer.publish": "Publish an agent",
+		"footer.mentions": "Legal Notice",
+		"footer.cgu": "Terms of Use",
+		"footer.cgv": "Terms of Sale",
+		"footer.privacy": "Privacy Policy",
+		"footer.cookies": "Cookie Policy",
+		"footer.developers": "Developer Terms",
 	},
 	fr: {
 		// Nav
@@ -106,6 +118,18 @@ export const translations = {
 
 		// Footer
 		"footer.rights": "Tous droits réservés.",
+		"footer.description": "One click to intelligence.",
+		"footer.product": "Produit",
+		"footer.legal": "Légal",
+		"footer.contact": "Contact",
+		"footer.catalogue": "Catalogue",
+		"footer.publish": "Publier un agent",
+		"footer.mentions": "Mentions légales",
+		"footer.cgu": "CGU",
+		"footer.cgv": "CGV",
+		"footer.privacy": "Confidentialité",
+		"footer.cookies": "Politique cookies",
+		"footer.developers": "Conditions développeur",
 	},
 } as const;
 

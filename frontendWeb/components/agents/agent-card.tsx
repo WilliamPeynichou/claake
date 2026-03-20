@@ -1,8 +1,9 @@
 "use client";
 
-import type { Agent } from "@agentplace/shared";
+import type { Agent } from "@claake/shared";
 import { Bot, Download, Star } from "lucide-react";
 import Link from "next/link";
+import { FavoriteButton } from "@/components/agents/favorite-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n/context";
@@ -22,9 +23,12 @@ export function AgentCard({ agent }: AgentCardProps) {
 						<div className="flex h-12 w-12 items-center justify-center border border-brand/20 bg-brand-subtle">
 							<Bot className="h-6 w-6 text-brand" />
 						</div>
-						<Badge variant="secondary" className="text-xs">
-							{agent.price_type === "free" ? t("agent.free") : `${agent.price}€`}
-						</Badge>
+						<div className="flex items-center gap-1">
+							<FavoriteButton agentId={agent.id} />
+							<Badge variant="secondary" className="text-xs">
+								{agent.pricing_model === "free" ? t("agent.free") : `${agent.price}€`}
+							</Badge>
+						</div>
 					</div>
 					<div className="mt-3">
 						<h3 className="font-sans text-sm font-medium leading-tight">{agent.name}</h3>
@@ -47,12 +51,12 @@ export function AgentCard({ agent }: AgentCardProps) {
 					<div className="flex w-full items-center justify-between">
 						<div className="flex items-center gap-1">
 							<Star className="h-3.5 w-3.5 fill-current text-yellow-500" />
-							<span>{agent.average_rating.toFixed(1)}</span>
-							<span className="text-muted-foreground/60">({agent.reviews_count})</span>
+							<span>{agent.rating.toFixed(1)}</span>
+							<span className="text-muted-foreground/60">({agent.review_count})</span>
 						</div>
 						<div className="flex items-center gap-1">
 							<Download className="h-3.5 w-3.5" />
-							<span>{agent.downloads_count}</span>
+							<span>{agent.download_count}</span>
 						</div>
 					</div>
 				</CardFooter>

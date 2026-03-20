@@ -57,7 +57,7 @@ export default function LoginPage() {
 		<Card>
 			<CardHeader className="text-center">
 				<CardTitle className="text-2xl">Connexion</CardTitle>
-				<CardDescription>Connectez-vous à votre compte AgentPlace</CardDescription>
+				<CardDescription>Connectez-vous à votre compte Claake</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<form onSubmit={handleLogin} className="space-y-4">

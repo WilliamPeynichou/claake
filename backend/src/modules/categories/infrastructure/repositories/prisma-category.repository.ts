@@ -15,11 +15,11 @@ export class PrismaCategoryRepository implements CategoryRepositoryPort {
 
 		const counts = await this.prisma.agent.groupBy({
 			by: ["category"],
-			where: { status: "PUBLISHED" },
-			_count: { id: true },
+			where: { status: "APPROVED" },
+			_count: true,
 		});
 
-		const countMap = new Map(counts.map((c) => [c.category, c._count.id]));
+		const countMap = new Map(counts.map((c) => [c.category, c._count]));
 
 		return categories.map((cat) =>
 			CategoryMapper.toDomain({

@@ -1,21 +1,23 @@
 "use client";
 
-import type { DashboardStats } from "@agentplace/shared";
+import type { DashboardStats } from "@claake/shared";
 import { Bot, Download, MessageSquare, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function DashboardPage() {
+	const { token } = useAuth();
 	const [stats, setStats] = useState<DashboardStats | null>(null);
 
 	useEffect(() => {
-		// TODO: pass real auth token
+		if (!token) return;
 		apiClient.stats
-			.dashboard("")
+			.dashboard(token)
 			.then(setStats)
 			.catch(() => {});
-	}, []);
+	}, [token]);
 
 	const statCards = [
 		{
@@ -28,7 +30,7 @@ export default function DashboardPage() {
 			title: "Conversations",
 			value: String(stats?.conversations ?? "—"),
 			icon: MessageSquare,
-			description: "Sessions de chat ce mois",
+			description: "Sessions de chat",
 		},
 		{
 			title: "Agents publiés",
@@ -38,7 +40,7 @@ export default function DashboardPage() {
 		},
 		{
 			title: "Note moyenne",
-			value: stats?.average_rating ?? "—",
+			value: stats?.rating ?? "—",
 			icon: Star,
 			description: "Note de vos agents",
 		},
@@ -47,7 +49,7 @@ export default function DashboardPage() {
 	return (
 		<div>
 			<h1 className="text-3xl font-bold">Tableau de bord</h1>
-			<p className="mt-2 text-muted-foreground">Bienvenue sur votre espace personnel AgentPlace.</p>
+			<p className="mt-2 text-muted-foreground">Bienvenue sur votre espace personnel Claake.</p>
 
 			<div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				{statCards.map((stat) => (

@@ -1,4 +1,4 @@
-import { ApiError, createApiClient } from "@agentplace/shared";
+import { ApiError, createApiClient } from "@claake/shared";
 import { ArrowLeft, Bot, Cloud, Download, HardDrive, Star, Tag, User } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { AgentDetailChat } from "./agent-detail-chat";
+import { AgentDetailReviews } from "./agent-detail-reviews";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
 const serverApiClient = createApiClient(API_URL);
@@ -47,20 +48,23 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 						<div className="flex-1">
 							<div className="flex items-center gap-3">
 								<h1 className="text-3xl font-bold">{agent.name}</h1>
-								<Badge variant="secondary">v{agent.version}</Badge>
+								<Badge variant="secondary">{agent.status}</Badge>
 							</div>
 							<div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
-								<span className="flex items-center gap-1">
-									<User className="h-3.5 w-3.5" />
-									{agent.creator_name ?? "Anonyme"}
-								</span>
+								<Link
+								href={`/creators/${agent.creator_id}`}
+								className="flex items-center gap-1 hover:text-foreground"
+							>
+								<User className="h-3.5 w-3.5" />
+								{agent.creator_name ?? "Anonyme"}
+							</Link>
 								<span className="flex items-center gap-1">
 									<Star className="h-3.5 w-3.5 fill-current text-yellow-500" />
-									{agent.average_rating.toFixed(1)} ({agent.reviews_count} avis)
+									{agent.rating.toFixed(1)} ({agent.review_count} avis)
 								</span>
 								<span className="flex items-center gap-1">
 									<Download className="h-3.5 w-3.5" />
-									{agent.downloads_count} utilisations
+									{agent.download_count} utilisations
 								</span>
 							</div>
 						</div>
@@ -87,6 +91,11 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 
 					{/* Chat */}
 					<AgentDetailChat agent={agent} />
+
+					<Separator />
+
+					{/* Reviews */}
+					<AgentDetailReviews agentId={agent.id} />
 				</div>
 
 				{/* Sidebar */}
@@ -98,12 +107,12 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 						<CardContent className="space-y-3">
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-muted-foreground">Prix</span>
-								<Badge>{agent.price_type === "free" ? "Gratuit" : `${agent.price}€`}</Badge>
+								<Badge>{agent.pricing_model === "free" ? "Gratuit" : `${agent.price}€`}</Badge>
 							</div>
 							<Separator />
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-muted-foreground">Modèle</span>
-								<span className="font-mono text-xs">{agent.model}</span>
+								<span className="font-mono text-xs">{agent.models.join(", ")}</span>
 							</div>
 							<Separator />
 							<div className="flex items-center justify-between text-sm">
@@ -117,11 +126,6 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-muted-foreground">Catégorie</span>
 								<span className="capitalize">{agent.category}</span>
-							</div>
-							<Separator />
-							<div className="flex items-center justify-between text-sm">
-								<span className="text-muted-foreground">Version</span>
-								<span>{agent.version}</span>
 							</div>
 							<Separator />
 							<div className="flex items-center justify-between text-sm">

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
+import type { UserRole } from "@prisma/client";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
-import type { UserEntity } from "../../domain/entities/user.entity.js";
+import type { AdminPermissions, UserEntity } from "../../domain/entities/user.entity.js";
 import type { UserRepositoryPort } from "../../domain/ports/user.repository.port.js";
 import { UserMapper } from "../mappers/user.mapper.js";
 
@@ -22,5 +23,52 @@ export class PrismaUserRepository implements UserRepositoryPort {
 			include: { _count: { select: { agents: true } } },
 		});
 		return user ? UserMapper.toDomain(user) : null;
+	}
+
+	async updateRole(
+		id: string,
+		role: string,
+		adminPermissions: AdminPermissions | null,
+	): Promise<UserEntity> {
+		const user = await this.prisma.user.update({
+			where: { id },
+			data: {
+				role: role as UserRole,
+				adminPermissions: adminPermissions ?? undefined,
+			},
+			include: { _count: { select: { agents: true } } },
+		});
+		return UserMapper.toDomain(user);
+	}
+
+	async updateProfile(
+		id: string,
+		data: { displayName?: string; bio?: string },
+	): Promise<UserEntity> {
+		const user = await this.prisma.user.update({
+			where: { id },
+			data: {
+				displayName: data.displayName,
+				bio: data.bio,
+			},
+			include: { _count: { select: { agents: true } } },
+		});
+		return UserMapper.toDomain(user);
+	}
+
+	async getApiKeysEncrypted(userId: string): Promise<string | null> {
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: { apiKeysEncrypted: true },
+		});
+		if (!user?.apiKeysEncrypted) return null;
+		return JSON.stringify(user.apiKeysEncrypted);
+	}
+
+	async setApiKeysEncrypted(userId: string, data: string | null): Promise<void> {
+		await this.prisma.user.update({
+			where: { id: userId },
+			data: { apiKeysEncrypted: data ? JSON.parse(data) : null },
+		});
 	}
 }

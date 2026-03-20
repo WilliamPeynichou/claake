@@ -2,7 +2,7 @@ import type { Agent } from "../types";
 
 /** Search and filter agents — reusable across all frontends. */
 export function searchAgents(agents: Agent[], query: string, category?: string): Agent[] {
-	let results = agents.filter((a) => a.status === "published");
+	let results = agents.filter((a) => a.status === "approved");
 
 	if (query) {
 		const q = query.toLowerCase();
@@ -23,20 +23,20 @@ export function searchAgents(agents: Agent[], query: string, category?: string):
 
 export function getFeaturedAgents(agents: Agent[], limit = 3): Agent[] {
 	return [...agents]
-		.filter((a) => a.status === "published")
-		.sort((a, b) => b.downloads_count - a.downloads_count)
+		.filter((a) => a.status === "approved")
+		.sort((a, b) => b.download_count - a.download_count)
 		.slice(0, limit);
 }
 
 export function getTrendingAgents(agents: Agent[], limit = 4): Agent[] {
 	return [...agents]
-		.filter((a) => a.status === "published")
-		.sort((a, b) => b.average_rating - a.average_rating)
+		.filter((a) => a.status === "approved")
+		.sort((a, b) => b.rating - a.rating)
 		.slice(0, limit);
 }
 
 export function getAgentsByCategory(agents: Agent[], category: string): Agent[] {
-	return agents.filter((a) => a.category === category && a.status === "published");
+	return agents.filter((a) => a.category === category && a.status === "approved");
 }
 
 export function getAgentById(agents: Agent[], id: string): Agent | null {

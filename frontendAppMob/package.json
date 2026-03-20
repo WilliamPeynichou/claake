@@ -1,5 +1,5 @@
 {
-	"name": "@agentplace/frontend-app-mob",
+	"name": "@claake/frontend-app-mob",
 	"version": "0.1.0",
 	"private": true,
 	"main": "index.ts",
@@ -10,7 +10,7 @@
 		"web": "expo start --web"
 	},
 	"dependencies": {
-		"@agentplace/shared": "*",
+		"@claake/shared": "*",
 		"expo": "~55.0.6",
 		"expo-status-bar": "~55.0.4",
 		"react": "19.2.0",

@@ -1,26 +1,38 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector"), pg_trgm]
 }
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
 
 enum UserRole {
   USER
   CREATOR
   ADMIN
+  SUPER_ADMIN
+}
+
+enum TeamPlan {
+  FREE
+  TEAM
+  ENTERPRISE
 }
 
 enum AgentStatus {
   DRAFT
   PENDING
-  PUBLISHED
+  APPROVED
   REJECTED
+  SUSPENDED
 }
 
-enum PriceType {
+enum PricingModel {
   FREE
   ONE_TIME
   SUBSCRIPTION
@@ -33,49 +45,333 @@ enum ExecutionMode {
   HYBRID
 }
 
+enum CloudStrategy {
+  SELLER_ENDPOINT
+  SELLER_API_KEY
+  USER_API_KEY
+}
+
+enum EndpointFormat {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  MISTRAL
+  COHERE
+  DEEPSEEK
+  GROQ
+  XAI
+  PERPLEXITY
+  META
+  TOGETHER
+  FIREWORKS
+  HUGGINGFACE
+  CLAAKE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+}
+
+enum SecurityScanStatus {
+  PENDING
+  PASSED
+  FAILED
+  MANUAL_REVIEW
+}
+
+enum MessageContentType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// ─── Users & Teams ──────────────────────────────────────────────────────────
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  fullName  String?  @map("full_name")
-  avatarUrl String?  @map("avatar_url")
-  bio       String?
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(uuid())
+  email            String   @unique
+  displayName      String?  @map("display_name")
+  avatarUrl        String?  @map("avatar_url")
+  bio              String?
+  portfolioLinks   Json?    @map("portfolio_links")
+  role             UserRole @default(USER)
+  adminPermissions Json?    @map("admin_permissions")
+  stripeAccountId  String?  @map("stripe_account_id")
+  apiKeysEncrypted Json?    @map("api_keys_encrypted")
+  preferences      Json?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
-  agents Agent[]
+  teamId String? @map("team_id")
+  team   Team?   @relation(fields: [teamId], references: [id])
 
+  agents        Agent[]
+  purchases     Purchase[]
+  subscriptions Subscription[]
+  reviews       Review[]
+  collections   Collection[]
+  pipelines     Pipeline[]
+  favorites     Favorite[]
+  usageCredits  UsageCredit[]
+  chatSessions  ChatSession[]
+
+  @@index([email])
   @@map("users")
 }
 
+model Team {
+  id               String   @id @default(uuid())
+  name             String
+  ownerId          String   @map("owner_id")
+  plan             TeamPlan @default(FREE)
+  stripeCustomerId String?  @map("stripe_customer_id")
+  ssoConfig        Json?    @map("sso_config")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  members User[]
+
+  @@index([ownerId])
+  @@map("teams")
+}
+
+// ─── Agents ─────────────────────────────────────────────────────────────────
+
 model Agent {
-  id              String        @id @default(uuid())
+  id              String                       @id @default(uuid())
   name            String
-  slug            String        @unique
+  slug            String                       @unique
   description     String
-  longDescription String?       @map("long_description")
+  longDescription String?                      @map("long_description")
   category        String
   tags            String[]
-  price           Float
-  priceType       PriceType     @default(FREE) @map("price_type")
-  imageUrl        String?       @map("image_url")
+  models          String[]                     @default(["claude-sonnet-4-20250514"])
+  mode            ExecutionMode                @default(CLOUD)
+  configUrl       String?                      @map("config_url")
+  imageUrl        String?                      @map("image_url")
   screenshots     String[]
-  model           String        @default("claude-sonnet-4-20250514")
-  mode            ExecutionMode @default(CLOUD)
-  version         String        @default("1.0.0")
-  status          AgentStatus   @default(DRAFT)
-  downloadsCount  Int           @default(0) @map("downloads_count")
-  averageRating   Float         @default(0) @map("average_rating")
-  reviewsCount    Int           @default(0) @map("reviews_count")
-  sandboxUses     Int           @default(0) @map("sandbox_uses")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  pricingModel    PricingModel                 @default(FREE) @map("pricing_model")
+  price           Decimal                      @default(0) @db.Decimal(10, 2)
+  creditCost      Int                          @default(1) @map("credit_cost")
+  status          AgentStatus                  @default(DRAFT)
+  permissions     Json?
+  downloadCount   Int                          @default(0) @map("download_count")
+  rating          Decimal                      @default(0) @db.Decimal(3, 2)
+  reviewCount     Int                          @default(0) @map("review_count")
+  embedding       Unsupported("vector(1536)")?
+  createdAt       DateTime                     @default(now()) @map("created_at")
+  updatedAt       DateTime                     @updatedAt @map("updated_at")
 
-  creator   User   @relation(fields: [creatorId], references: [id])
+  systemPrompt String? @map("system_prompt")
+
+  cloudStrategy       CloudStrategy?  @map("cloud_strategy")
+  endpointUrl         String?         @map("endpoint_url")
+  endpointFormat      EndpointFormat? @map("endpoint_format")
+  sellerApiKeyEncrypted String?       @map("seller_api_key_encrypted")
+  sellerApiProvider   String?         @map("seller_api_provider")
+  requiredUserProvider String?        @map("required_user_provider")
+  dockerImage         String?         @map("docker_image")
+  downloadUrl         String?         @map("download_url")
+
   creatorId String @map("creator_id")
+  creator   User   @relation(fields: [creatorId], references: [id])
 
+  versions      AgentVersion[]
+  purchases     Purchase[]
+  subscriptions Subscription[]
+  reviews       Review[]
+  favorites     Favorite[]
+  chatSessions  ChatSession[]
+
+  @@index([slug])
+  @@index([creatorId])
+  @@index([category])
+  @@index([status])
+  @@index([tags], type: Gin)
   @@map("agents")
 }
+
+model AgentVersion {
+  id                 String             @id @default(uuid())
+  version            String
+  configUrl          String             @map("config_url")
+  changelog          String?
+  securityScanStatus SecurityScanStatus @default(PENDING) @map("security_scan_status")
+  isActive           Boolean            @default(true) @map("is_active")
+  createdAt          DateTime           @default(now()) @map("created_at")
+
+  agentId String @map("agent_id")
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, version])
+  @@index([agentId])
+  @@map("agent_versions")
+}
+
+// ─── Commerce (Acheteur / Vendeur) ──────────────────────────────────────────
+
+model Purchase {
+  id              String   @id @default(uuid())
+  amount          Decimal  @db.Decimal(10, 2)
+  currency        String   @default("eur") @db.Char(3)
+  stripePaymentId String?  @map("stripe_payment_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id])
+  agentId String @map("agent_id")
+  agent   Agent  @relation(fields: [agentId], references: [id])
+
+  @@unique([userId, agentId])
+  @@index([userId])
+  @@index([agentId])
+  @@map("purchases")
+}
+
+model Subscription {
+  id               String             @id @default(uuid())
+  stripeSubId      String?            @map("stripe_sub_id")
+  status           SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd DateTime?          @map("current_period_end")
+  createdAt        DateTime           @default(now()) @map("created_at")
+
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id])
+  agentId String @map("agent_id")
+  agent   Agent  @relation(fields: [agentId], references: [id])
+
+  @@index([userId])
+  @@index([stripeSubId])
+  @@map("subscriptions")
+}
+
+model UsageCredit {
+  id        String   @id @default(uuid())
+  balance   Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  transactions CreditTransaction[]
+
+  @@map("usage_credits")
+}
+
+model CreditTransaction {
+  id        String   @id @default(uuid())
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usageCreditId String      @map("usage_credit_id")
+  usageCredit   UsageCredit @relation(fields: [usageCreditId], references: [id])
+
+  @@index([usageCreditId])
+  @@map("credit_transactions")
+}
+
+// ─── Avis ───────────────────────────────────────────────────────────────────
+
+model Review {
+  id               String   @id @default(uuid())
+  rating           Int      @db.SmallInt
+  comment          String?
+  verifiedPurchase    Boolean  @default(false) @map("verified_purchase")
+  verifiedInteraction Boolean  @default(false) @map("verified_interaction")
+  helpfulCount        Int      @default(0) @map("helpful_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id])
+  agentId String @map("agent_id")
+  agent   Agent  @relation(fields: [agentId], references: [id])
+
+  @@unique([userId, agentId])
+  @@index([agentId])
+  @@map("reviews")
+}
+
+// ─── Activity Logs ──────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  actorId    String   @map("actor_id")
+  actorEmail String   @map("actor_email")
+  action     String
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// ─── Collections & Favoris ──────────────────────────────────────────────────
+
+model Collection {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isPublic    Boolean  @default(false) @map("is_public")
+  agentIds    String[] @map("agent_ids")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isPublic])
+  @@map("collections")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId  String @map("user_id")
+  user    User   @relation(fields: [userId], references: [id])
+  agentId String @map("agent_id")
+  agent   Agent  @relation(fields: [agentId], references: [id])
+
+  @@unique([userId, agentId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+// ─── Pipelines (Orchestration multi-agents) ─────────────────────────────────
+
+model Pipeline {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  agentSequence Json     @map("agent_sequence")
+  config        Json?
+  isPublic      Boolean  @default(false) @map("is_public")
+  price         Decimal? @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isPublic])
+  @@map("pipelines")
+}
+
+// ─── Catalogue ──────────────────────────────────────────────────────────────
 
 model Category {
   id          String   @id @default(uuid())
@@ -83,8 +379,45 @@ model Category {
   slug        String   @unique
   description String
   icon        String
+  agentCount  Int      @default(0) @map("agent_count")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("categories")
+}
+
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+model ChatSession {
+  id        String   @id @default(uuid())
+  title     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  agentId String @map("agent_id")
+  agent   Agent  @relation(fields: [agentId], references: [id])
+
+  messages ChatMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id          String             @id @default(uuid())
+  role        MessageRole
+  contentType MessageContentType @default(TEXT) @map("content_type")
+  content     String
+  mediaUrl    String?            @map("media_url")
+  metadata    Json?
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  sessionId String      @map("session_id")
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
 }

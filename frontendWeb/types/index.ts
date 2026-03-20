@@ -1,1 +1,1 @@
-export type { Agent, UserProfile } from "@agentplace/shared";
+export type { Agent, UserProfile } from "@claake/shared";

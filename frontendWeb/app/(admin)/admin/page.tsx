@@ -1,48 +1,47 @@
 "use client";
 
-import type { AdminStats } from "@agentplace/shared";
+import type { AdminStats } from "@claake/shared";
 import { Bot, ShieldCheck, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function AdminDashboardPage() {
+	const { token } = useAuth();
 	const [stats, setStats] = useState<AdminStats | null>(null);
 
 	useEffect(() => {
-		// TODO: pass real auth token
+		if (!token) return;
 		apiClient.stats
-			.admin("")
+			.admin(token)
 			.then(setStats)
 			.catch(() => {});
-	}, []);
+	}, [token]);
 
 	const statCards = [
 		{
 			title: "Agents publiés",
 			value: String(stats?.published_agents ?? "—"),
 			icon: Bot,
-			change: "",
 		},
-		{ title: "Utilisateurs", value: String(stats?.users ?? "—"), icon: Users, change: "" },
+		{ title: "Utilisateurs", value: String(stats?.users ?? "—"), icon: Users },
 		{
 			title: "En attente de revue",
 			value: String(stats?.pending_review ?? "—"),
 			icon: ShieldCheck,
-			change: "",
 		},
 		{
 			title: "Sessions de chat",
 			value: String(stats?.chat_sessions ?? "—"),
 			icon: TrendingUp,
-			change: "",
 		},
 	];
 
 	return (
 		<div>
 			<h1 className="text-3xl font-bold">Administration</h1>
-			<p className="mt-2 text-muted-foreground">Vue d&apos;ensemble de la plateforme AgentPlace.</p>
+			<p className="mt-2 text-muted-foreground">Vue d&apos;ensemble de la plateforme Claake.</p>
 
 			<div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				{statCards.map((stat) => (
@@ -55,7 +54,6 @@ export default function AdminDashboardPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">{stat.value}</div>
-							{stat.change && <p className="text-xs text-muted-foreground">{stat.change}</p>}
 						</CardContent>
 					</Card>
 				))}

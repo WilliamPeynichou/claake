@@ -1,5 +1,5 @@
 {
-	"name": "agentplace-root",
+	"name": "claake-root",
 	"version": "0.1.0",
 	"private": true,
 	"workspaces": [
@@ -10,13 +10,13 @@
 		"frontendAppMob"
 	],
 	"scripts": {
-		"web": "npm -w @agentplace/frontend-web run dev",
-		"api": "npm -w @agentplace/backend run start:dev",
-		"mobile": "npm -w @agentplace/frontend-app-mob run start",
-		"desktop": "npm -w @agentplace/frontend-app run dev",
-		"web-build": "npm -w @agentplace/frontend-web run build",
-		"api-build": "npm -w @agentplace/backend run build",
-		"desktop-build": "npm -w @agentplace/frontend-app run build",
+		"web": "npm -w @claake/frontend-web run dev",
+		"api": "npm -w @claake/backend run start:dev",
+		"mobile": "npm -w @claake/frontend-app-mob run start",
+		"desktop": "npm -w @claake/frontend-app run dev",
+		"web-build": "npm -w @claake/frontend-web run build",
+		"api-build": "npm -w @claake/backend run build",
+		"desktop-build": "npm -w @claake/frontend-app run build",
 		"lint": "biome check .",
 		"lint-fix": "biome check --fix .",
 		"format": "biome format --write ."
