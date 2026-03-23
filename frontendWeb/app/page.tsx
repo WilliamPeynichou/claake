@@ -2,7 +2,7 @@
 
 import type { Agent, AgentCategory } from "@claake/shared";
 import { getFeaturedAgents, getTrendingAgents } from "@claake/shared";
-import { ArrowRight, Bot, Puzzle, Shield } from "lucide-react";
+import { ArrowRight, Bot, Download, MessageSquare, Puzzle, Shield } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AgentCard } from "@/components/agents/agent-card";
@@ -74,25 +74,40 @@ export default function HomePage() {
 					<p className="mt-5 max-w-xl text-lg text-muted-foreground" style={{ lineHeight: 1.7 }}>
 						{t("hero.subtitle")}
 					</p>
-					<div className="mt-6 flex gap-4">
+					<div className="mt-8 flex flex-col items-center gap-4">
+						{/* CTA principal */}
 						<Button
 							size="lg"
 							asChild
-							className="border border-brand bg-brand text-primary-foreground hover:bg-brand-dark"
+							className="border border-brand bg-brand px-8 py-6 text-base text-primary-foreground hover:bg-brand-dark"
 						>
-							<Link href="/catalogue">
-								{t("hero.cta.explore")}
-								<ArrowRight className="ml-2 h-4 w-4" />
+							<Link href="/chat">
+								<MessageSquare className="mr-2 h-5 w-5" />
+								{t("hero.cta.chat")}
 							</Link>
 						</Button>
-						<Button
-							size="lg"
-							variant="outline"
-							asChild
-							className="border-border hover:border-brand hover:text-brand"
-						>
-							<Link href="/dashboard/agents/new">{t("hero.cta.register")}</Link>
-						</Button>
+
+						{/* CTAs secondaires */}
+						<div className="flex items-center gap-5">
+							<Button
+								size="lg"
+								variant="outline"
+								asChild
+								className="border-border hover:border-brand hover:text-brand"
+							>
+								<Link href="/catalogue">
+									{t("hero.cta.explore")}
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Link>
+							</Button>
+							<Link
+								href="/download"
+								className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-brand"
+							>
+								<Download className="h-4 w-4" />
+								{t("hero.cta.download")}
+							</Link>
+						</div>
 					</div>
 				</div>
 			</section>

@@ -17,6 +17,8 @@ export const translations = {
 			"Discover, test and deploy AI agents built by the community. Use your own API key, right in your browser.",
 		"hero.cta.explore": "Explore the catalogue",
 		"hero.cta.register": "Publish an agent",
+		"hero.cta.chat": "Talk to your agents",
+		"hero.cta.download": "Download our app",
 
 		// Slogan section
 		"slogan.tagline": "Intelligence can be yours",
@@ -83,6 +85,8 @@ export const translations = {
 			"Découvrez, testez et déployez des agents IA créés par la communauté. Utilisez votre propre clé API, directement dans votre navigateur.",
 		"hero.cta.explore": "Explorer le catalogue",
 		"hero.cta.register": "Publier un agent",
+		"hero.cta.chat": "Parlez avec vos agents",
+		"hero.cta.download": "Télécharger notre app",
 
 		// Slogan section
 		"slogan.tagline": "Intelligence can be yours",

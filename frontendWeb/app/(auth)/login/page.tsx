@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -17,8 +17,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginForm() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -35,7 +36,8 @@ export default function LoginPage() {
 			if (error) {
 				setError(error.message);
 			} else {
-				router.push("/dashboard");
+				const redirect = searchParams.get("redirect") ?? "/dashboard";
+				router.push(redirect);
 				router.refresh();
 			}
 		} catch {
@@ -124,5 +126,13 @@ export default function LoginPage() {
 				</p>
 			</CardFooter>
 		</Card>
+	);
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense>
+			<LoginForm />
+		</Suspense>
 	);
 }

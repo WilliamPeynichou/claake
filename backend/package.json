@@ -36,12 +36,13 @@
 		"stripe": "^20.4.1"
 	},
 	"devDependencies": {
-		"@swc/cli": "^0.6.0",
-		"@swc/core": "^1.11.0",
-		"@types/compression": "^1.7.5",
 		"@nestjs/cli": "^11.0.0",
 		"@nestjs/schematics": "^11.0.0",
 		"@nestjs/testing": "^11.0.1",
+		"@swc/cli": "^0.6.0",
+		"@swc/core": "^1.15.21",
+		"@swc/core-darwin-x64": "^1.15.21",
+		"@types/compression": "^1.7.5",
 		"@types/express": "^5.0.0",
 		"@types/jest": "^30.0.0",
 		"@types/node": "^22.10.7",

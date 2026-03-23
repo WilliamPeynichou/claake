@@ -1,5 +1,6 @@
 import type { Agent } from "@claake/shared";
 import { useChat } from "@claake/shared/hooks";
+import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChatInput } from "@/components/chat-input";
@@ -66,18 +67,26 @@ export function ChatPage() {
 	);
 
 	const handleNewChat = useCallback(() => {
-		setSelectedAgent(null);
-		setSearchParams({});
-	}, [setSearchParams]);
+		const webUrl = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
+		window.open(`${webUrl}/catalogue`, "_blank");
+	}, []);
+
+	const handleResumeConversation = useCallback(() => {
+		if (sessions.length > 0) {
+			handleSelectSession(sessions[0]);
+		}
+	}, [sessions, handleSelectSession]);
+
+	const handleStartWithAgent = useCallback(() => {
+		const webUrl = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
+		window.open(`${webUrl}/catalogue`, "_blank");
+	}, []);
 
 	return (
 		<div className="flex h-screen">
 			<ChatSidebar
-				agents={agents}
 				sessions={sessions}
-				selectedAgentId={selectedAgent?.id ?? null}
 				activeSessionId={sessionId}
-				onSelectAgent={handleSelectAgent}
 				onSelectSession={handleSelectSession}
 				onDeleteSession={deleteSession}
 				onNewChat={handleNewChat}
@@ -85,15 +94,30 @@ export function ChatPage() {
 				userName={profile?.display_name ?? profile?.email ?? null}
 			/>
 
-			<div className="flex flex-1 flex-col">
+			<main className="flex flex-1 flex-col">
 				{/* Top bar */}
 				{selectedAgent && (
-					<div className="flex items-center gap-2 border-b px-4 py-2.5">
-						<span className="text-sm font-medium">{selectedAgent.name}</span>
-						<span className="text-xs text-muted-foreground">
-							{selectedAgent.description}
-						</span>
-					</div>
+					<header
+						className="flex items-center gap-4 border-b px-6 py-5"
+						style={{ background: "#faf9f5", borderColor: "#e8e4d8" }}
+					>
+						<div
+							className="flex h-8 w-8 shrink-0 items-center justify-center"
+							style={{ background: "#e8f2ec" }}
+						>
+							<Sparkles className="h-4 w-4" style={{ color: "#2a7a44" }} />
+						</div>
+						<div>
+							<p className="text-sm font-medium" style={{ color: "#1e1c18" }}>
+								{selectedAgent.name}
+							</p>
+							{selectedAgent.description && (
+								<p className="text-xs" style={{ color: "#766f62" }}>
+									{selectedAgent.description}
+								</p>
+							)}
+						</div>
+					</header>
 				)}
 
 				<ChatMessages
@@ -102,6 +126,8 @@ export function ChatPage() {
 					streaming={streaming}
 					error={error}
 					agentName={selectedAgent?.name ?? null}
+					onResumeConversation={handleResumeConversation}
+					onStartWithAgent={handleStartWithAgent}
 				/>
 
 				{selectedAgent && (
@@ -113,7 +139,7 @@ export function ChatPage() {
 						streaming={streaming}
 					/>
 				)}
-			</div>
+			</main>
 		</div>
 	);
 }

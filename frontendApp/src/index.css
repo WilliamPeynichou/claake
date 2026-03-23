@@ -1,21 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 @import "tailwindcss";
 
 @theme {
-	--color-background: #0a0a0a;
-	--color-foreground: #fafafa;
-	--color-card: #111111;
-	--color-card-foreground: #fafafa;
-	--color-muted: #1a1a1a;
-	--color-muted-foreground: #a1a1aa;
-	--color-border: #27272a;
-	--color-input: #27272a;
-	--color-primary: #3b82f6;
-	--color-primary-foreground: #ffffff;
-	--color-destructive: #ef4444;
-	--color-accent: #1e293b;
-	--color-accent-foreground: #f8fafc;
-	--radius: 0.5rem;
-	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+	/* Claake brand */
+	--color-primary:            #2a7a44;
+	--color-primary-foreground: #faf9f5;
+
+	/* Light theme — neutres chauds Claake */
+	--color-background:         #faf9f5;
+	--color-foreground:         #1e1c18;
+	--color-card:               #f3f0e8;
+	--color-card-foreground:    #1e1c18;
+	--color-muted:              #f3f0e8;
+	--color-muted-foreground:   #766f62;
+	--color-border:             #e8e4d8;
+	--color-input:              #faf9f5;
+	--color-accent:             #e8f2ec;
+	--color-accent-foreground:  #1e5c33;
+	--color-destructive:        #c0392b;
+
+	--radius: 0;
+	--font-sans: 'DM Sans', system-ui, sans-serif;
+	--font-display: 'DM Serif Display', Georgia, serif;
 }
 
 * {
@@ -25,16 +31,34 @@
 	border-color: var(--color-border);
 }
 
+html {
+	font-size: 18px;
+}
+
 body {
 	font-family: var(--font-sans);
+	font-weight: 400;
 	background-color: var(--color-background);
 	color: var(--color-foreground);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
 
+:focus-visible {
+	outline: 2px solid #2a7a44;
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
 ::-webkit-scrollbar {
-	width: 6px;
+	width: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -43,5 +67,5 @@ body {
 
 ::-webkit-scrollbar-thumb {
 	background: var(--color-border);
-	border-radius: 3px;
+	border-radius: 0;
 }

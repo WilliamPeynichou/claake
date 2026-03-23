@@ -32,8 +32,11 @@ export async function updateSession(request: NextRequest) {
 
 	const pathname = request.nextUrl.pathname;
 
-	// Protect dashboard routes — require auth
-	if (pathname.startsWith("/dashboard") && !user) {
+	// Routes requiring authentication
+	const protectedRoutes = ["/dashboard", "/chat", "/checkout"];
+	const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+
+	if (isProtected && !user) {
 		const url = request.nextUrl.clone();
 		url.pathname = "/login";
 		url.searchParams.set("redirect", pathname);

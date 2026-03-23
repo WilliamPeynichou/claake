@@ -27,8 +27,11 @@ export function ChatInput({ value, onChange, onSend, disabled, streaming }: Chat
 	}
 
 	return (
-		<div className="border-t bg-card px-4 py-3">
-			<div className="mx-auto flex max-w-3xl items-end gap-2">
+		<div
+			className="border-t px-6 py-5"
+			style={{ background: "#faf9f5", borderColor: "#e8e4d8" }}
+		>
+			<div className="mx-auto flex max-w-3xl items-end gap-3">
 				<textarea
 					ref={textareaRef}
 					value={value}
@@ -37,16 +40,40 @@ export function ChatInput({ value, onChange, onSend, disabled, streaming }: Chat
 						handleInput();
 					}}
 					onKeyDown={handleKeyDown}
-					placeholder="Tapez votre message..."
+					placeholder="Type a message... (Enter to send)"
+					aria-label="Message"
 					rows={1}
 					disabled={disabled}
-					className="flex-1 resize-none rounded-xl border bg-background px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+					className="flex-1 resize-none border px-4 py-3 text-sm leading-relaxed outline-none transition-colors focus:border-[#2a7a44] disabled:opacity-50"
+					style={{ background: "#f3f0e8", borderColor: "#e8e4d8", color: "#1e1c18" }}
 				/>
 				<button
 					type="button"
 					onClick={onSend}
 					disabled={disabled || !value.trim()}
-					className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+					aria-label="Send message"
+					className="flex h-11 w-11 shrink-0 items-center justify-center border transition-all disabled:opacity-40"
+					style={{ borderColor: "#2a7a44", color: "#2a7a44", background: "transparent" }}
+					onMouseEnter={(e) => {
+						if (!(e.currentTarget as HTMLButtonElement).disabled) {
+							(e.currentTarget as HTMLButtonElement).style.background = "#2a7a44";
+							(e.currentTarget as HTMLButtonElement).style.color = "#faf9f5";
+						}
+					}}
+					onMouseLeave={(e) => {
+						(e.currentTarget as HTMLButtonElement).style.background = "transparent";
+						(e.currentTarget as HTMLButtonElement).style.color = "#2a7a44";
+					}}
+					onFocus={(e) => {
+						if (!(e.currentTarget as HTMLButtonElement).disabled) {
+							(e.currentTarget as HTMLButtonElement).style.background = "#2a7a44";
+							(e.currentTarget as HTMLButtonElement).style.color = "#faf9f5";
+						}
+					}}
+					onBlur={(e) => {
+						(e.currentTarget as HTMLButtonElement).style.background = "transparent";
+						(e.currentTarget as HTMLButtonElement).style.color = "#2a7a44";
+					}}
 				>
 					{streaming ? (
 						<Loader2 className="h-4 w-4 animate-spin" />

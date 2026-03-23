@@ -1,4 +1,4 @@
-import { Bot, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
@@ -27,79 +27,123 @@ export function LoginPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-4">
-			<div className="w-full max-w-sm space-y-6">
-				<div className="flex flex-col items-center gap-2">
-					<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-						<Bot className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<h1 className="text-2xl font-bold">Claake</h1>
-					<p className="text-sm text-muted-foreground">Connectez-vous pour continuer</p>
-				</div>
+		<div className="flex min-h-screen" style={{ background: "#faf9f5" }}>
+			{/* Bande verte latérale */}
+			<div
+				className="hidden w-2 lg:block"
+				style={{ background: "#2a7a44" }}
+			/>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{error && (
-						<div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-							{error}
-						</div>
-					)}
-
-					<div className="space-y-2">
-						<label htmlFor="email" className="text-sm font-medium">
-							Email
-						</label>
-						<input
-							id="email"
-							type="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							required
-							className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-							placeholder="vous@exemple.com"
-						/>
-					</div>
-
-					<div className="space-y-2">
-						<label htmlFor="password" className="text-sm font-medium">
-							Mot de passe
-						</label>
-						<div className="relative">
-							<input
-								id="password"
-								type={showPassword ? "text" : "password"}
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								required
-								className="w-full rounded-lg border bg-card px-3 py-2 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary"
-								placeholder="••••••••"
-							/>
-							<button
-								type="button"
-								onClick={() => setShowPassword(!showPassword)}
-								className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+			<main className="flex flex-1 flex-col items-center justify-center px-8 py-16">
+				<div className="w-full max-w-md space-y-10">
+					{/* Logo + titre */}
+					<div className="space-y-4">
+						<img src="/logo.png" alt="Claake" style={{ height: 40 }} />
+						<div>
+							<h1
+								className="text-4xl"
+								style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: "#1e1c18", fontWeight: 400 }}
 							>
-								{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-							</button>
+								Bon retour
+							</h1>
+							<p className="mt-2 text-base" style={{ color: "#6b6558" }}>
+								Connectez-vous pour accéder à vos agents
+							</p>
 						</div>
 					</div>
 
-					<button
-						type="submit"
-						disabled={loading}
-						className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-					>
-						{loading && <Loader2 className="h-4 w-4 animate-spin" />}
-						Se connecter
-					</button>
-				</form>
+					<form onSubmit={handleSubmit} className="space-y-6">
+						{error && (
+							<div
+								role="alert"
+								className="border p-4 text-sm"
+								style={{ borderColor: "#c0392b", color: "#c0392b", background: "rgba(192,57,43,0.06)" }}
+							>
+								{error}
+							</div>
+						)}
 
-				<p className="text-center text-sm text-muted-foreground">
-					Pas encore de compte ?{" "}
-					<Link to="/register" className="text-primary hover:underline">
-						S'inscrire
-					</Link>
-				</p>
-			</div>
+						<div className="space-y-2">
+							<label
+								htmlFor="email"
+								className="block text-xs font-medium tracking-widest uppercase"
+								style={{ color: "#6b6558" }}
+							>
+								Email
+							</label>
+							<input
+								id="email"
+								type="email"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								required
+								className="w-full border px-4 py-3.5 text-base outline-none transition-colors focus:border-[#2a7a44]"
+								style={{ background: "#f3f0e8", borderColor: "#e8e4d8", color: "#1e1c18" }}
+								placeholder="vous@exemple.com"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<label
+								htmlFor="password"
+								className="block text-xs font-medium tracking-widest uppercase"
+								style={{ color: "#6b6558" }}
+							>
+								Mot de passe
+							</label>
+							<div className="relative">
+								<input
+									id="password"
+									type={showPassword ? "text" : "password"}
+									value={password}
+									onChange={(e) => setPassword(e.target.value)}
+									required
+									className="w-full border px-4 py-3.5 pr-12 text-base outline-none transition-colors focus:border-[#2a7a44]"
+									style={{ background: "#f3f0e8", borderColor: "#e8e4d8", color: "#1e1c18" }}
+									placeholder="••••••••"
+								/>
+								<button
+									type="button"
+									onClick={() => setShowPassword(!showPassword)}
+									className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
+									style={{ color: "#766f62" }}
+								>
+									{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+								</button>
+							</div>
+						</div>
+
+						<button
+							type="submit"
+							disabled={loading}
+							className="flex w-full items-center justify-center gap-3 border px-6 py-4 text-sm font-medium tracking-widest uppercase transition-all disabled:opacity-50"
+							style={{ borderColor: "#2a7a44", color: "#2a7a44", background: "transparent" }}
+							onMouseEnter={(e) => {
+								(e.currentTarget as HTMLButtonElement).style.background = "#2a7a44";
+								(e.currentTarget as HTMLButtonElement).style.color = "#faf9f5";
+							}}
+							onMouseLeave={(e) => {
+								(e.currentTarget as HTMLButtonElement).style.background = "transparent";
+								(e.currentTarget as HTMLButtonElement).style.color = "#2a7a44";
+							}}
+						>
+							{loading && <Loader2 className="h-4 w-4 animate-spin" />}
+							Se connecter
+						</button>
+					</form>
+
+					<p className="text-base" style={{ color: "#6b6558" }}>
+						Pas encore de compte ?{" "}
+						<Link
+							to="/register"
+							className="font-medium transition-colors"
+							style={{ color: "#2a7a44" }}
+						>
+							S'inscrire
+						</Link>
+					</p>
+				</div>
+			</main>
 		</div>
 	);
 }

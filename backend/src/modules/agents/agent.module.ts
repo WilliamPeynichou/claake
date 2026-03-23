@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import { RolesGuard } from "../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../common/guards/supabase-auth.guard.js";
 import { CreateAgentUseCase } from "./application/usecases/create-agent.usecase.js";
@@ -15,6 +16,7 @@ import { PrismaAgentRepository } from "./infrastructure/repositories/prisma-agen
 @Module({
 	controllers: [AgentController],
 	providers: [
+		Reflector,
 		SupabaseAuthGuard,
 		RolesGuard,
 		ListAgentsUseCase,

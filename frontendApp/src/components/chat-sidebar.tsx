@@ -1,13 +1,10 @@
-import type { Agent, ChatSession } from "@claake/shared";
-import { Bot, LogOut, MessageSquare, Plus, Search, Trash2 } from "lucide-react";
+import type { ChatSession } from "@claake/shared";
+import { ChevronLeft, ChevronRight, LogOut, MessageSquare, PenSquare, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface ChatSidebarProps {
-	agents: Agent[];
 	sessions: ChatSession[];
-	selectedAgentId: string | null;
 	activeSessionId: string | null;
-	onSelectAgent: (agent: Agent) => void;
 	onSelectSession: (session: ChatSession) => void;
 	onDeleteSession: (sessionId: string) => void;
 	onNewChat: () => void;
@@ -16,208 +13,249 @@ interface ChatSidebarProps {
 }
 
 export function ChatSidebar({
-	agents,
 	sessions,
-	selectedAgentId,
 	activeSessionId,
-	onSelectAgent,
 	onSelectSession,
 	onDeleteSession,
 	onNewChat,
 	onSignOut,
 	userName,
 }: ChatSidebarProps) {
-	const [search, setSearch] = useState("");
-	const [tab, setTab] = useState<"sessions" | "agents">("sessions");
-
-	const filteredAgents = useMemo(() => {
-		if (!search) return agents;
-		const q = search.toLowerCase();
-		return agents.filter(
-			(a) =>
-				a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q),
-		);
-	}, [agents, search]);
-
-	const filteredSessions = useMemo(() => {
-		if (!search) return sessions;
-		const q = search.toLowerCase();
-		return sessions.filter(
-			(s) =>
-				s.agent_name.toLowerCase().includes(q) ||
-				s.title?.toLowerCase().includes(q) ||
-				s.last_message_preview?.toLowerCase().includes(q),
-		);
-	}, [sessions, search]);
+	const [collapsed, setCollapsed] = useState(false);
 
 	const groupedSessions = useMemo(() => {
 		const now = new Date();
 		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 		const yesterday = new Date(today.getTime() - 86400000);
 		const weekAgo = new Date(today.getTime() - 7 * 86400000);
+		const monthAgo = new Date(today.getTime() - 30 * 86400000);
 
 		const groups: { label: string; sessions: ChatSession[] }[] = [
-			{ label: "Aujourd'hui", sessions: [] },
-			{ label: "Hier", sessions: [] },
-			{ label: "Cette semaine", sessions: [] },
-			{ label: "Plus ancien", sessions: [] },
+			{ label: "Today", sessions: [] },
+			{ label: "Yesterday", sessions: [] },
+			{ label: "Previous 7 days", sessions: [] },
+			{ label: "Previous 30 days", sessions: [] },
+			{ label: "Older", sessions: [] },
 		];
 
-		for (const s of filteredSessions) {
+		for (const s of sessions) {
 			const d = new Date(s.updated_at);
 			if (d >= today) groups[0].sessions.push(s);
 			else if (d >= yesterday) groups[1].sessions.push(s);
 			else if (d >= weekAgo) groups[2].sessions.push(s);
-			else groups[3].sessions.push(s);
+			else if (d >= monthAgo) groups[3].sessions.push(s);
+			else groups[4].sessions.push(s);
 		}
 
 		return groups.filter((g) => g.sessions.length > 0);
-	}, [filteredSessions]);
+	}, [sessions]);
 
-	return (
-		<div className="flex h-full w-72 flex-col border-r bg-card">
-			{/* Header */}
-			<div className="flex items-center justify-between border-b px-4 py-3">
-				<div className="flex items-center gap-2">
-					<Bot className="h-5 w-5 text-primary" />
-					<span className="font-semibold">Claake</span>
+	/* ── Collapsed ── */
+	if (collapsed) {
+		return (
+			<aside
+				className="flex h-full flex-col border-r"
+				style={{ width: 56, background: "#f3f0e8", borderColor: "#e8e4d8", transition: "width 200ms ease" }}
+			>
+				{/* Expand */}
+				<div className="flex justify-center px-3 pt-5 pb-2">
+					<button
+						type="button"
+						onClick={() => setCollapsed(false)}
+						className="flex h-9 w-9 items-center justify-center transition-colors"
+						style={{ color: "#766f62" }}
+						aria-label="Expand sidebar"
+						onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#1e1c18"; }}
+						onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#766f62"; }}
+					>
+						<ChevronRight className="h-4 w-4" />
+					</button>
 				</div>
+
+				{/* New chat */}
+				<div className="flex justify-center px-3 pb-4">
+					<button
+						type="button"
+						onClick={onNewChat}
+						className="flex h-9 w-9 items-center justify-center transition-colors"
+						style={{ color: "#2a7a44" }}
+						aria-label="New chat"
+						onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#e8f2ec"; }}
+						onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+					>
+						<PenSquare className="h-4 w-4" />
+					</button>
+				</div>
+
+				{/* Sessions icons */}
+				<div className="flex flex-1 flex-col items-center gap-1 overflow-y-auto px-3 py-2">
+					{sessions.slice(0, 12).map((s) => (
+						<button
+							key={s.id}
+							type="button"
+							onClick={() => onSelectSession(s)}
+							className="flex h-9 w-9 items-center justify-center transition-colors"
+							style={{ color: activeSessionId === s.id ? "#2a7a44" : "#766f62" }}
+							aria-label={s.title ?? s.agent_name}
+							aria-current={activeSessionId === s.id ? "true" : undefined}
+							onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#e8e4d8"; }}
+							onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+						>
+							<MessageSquare className="h-4 w-4" />
+						</button>
+					))}
+				</div>
+
+				{/* Sign out */}
+				<div className="flex justify-center border-t px-3 py-4" style={{ borderColor: "#e8e4d8" }}>
+					<button
+						type="button"
+						onClick={onSignOut}
+						className="flex h-9 w-9 items-center justify-center transition-colors"
+						style={{ color: "#766f62" }}
+						aria-label="Sign out"
+						onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#c0392b"; }}
+						onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#766f62"; }}
+					>
+						<LogOut className="h-4 w-4" />
+					</button>
+				</div>
+			</aside>
+		);
+	}
+
+	/* ── Expanded ── */
+	return (
+		<aside
+			className="flex h-full flex-col border-r"
+			style={{ width: 280, background: "#f3f0e8", borderColor: "#e8e4d8", transition: "width 200ms ease" }}
+		>
+			{/* Header — logo + collapse */}
+			<div className="flex items-center justify-between px-5 py-5">
+				<img src="/logo.png" alt="Claake" style={{ height: 30 }} />
+				<button
+					type="button"
+					onClick={() => setCollapsed(true)}
+					className="flex h-8 w-8 items-center justify-center transition-colors"
+					style={{ color: "#766f62" }}
+					aria-label="Collapse sidebar"
+					onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#1e1c18"; }}
+					onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#766f62"; }}
+				>
+					<ChevronLeft className="h-4 w-4" />
+				</button>
+			</div>
+
+			{/* New chat — bouton plein largeur */}
+			<div className="px-3 pb-4">
 				<button
 					type="button"
 					onClick={onNewChat}
-					className="rounded-lg p-1.5 hover:bg-accent"
-					title="Nouvelle conversation"
+					className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium transition-all"
+					style={{ color: "#1e1c18", background: "transparent" }}
+					aria-label="New chat"
+					onMouseEnter={(e) => {
+						(e.currentTarget as HTMLButtonElement).style.background = "#e8e4d8";
+					}}
+					onMouseLeave={(e) => {
+						(e.currentTarget as HTMLButtonElement).style.background = "transparent";
+					}}
 				>
-					<Plus className="h-4 w-4" />
+					<PenSquare className="h-4 w-4 shrink-0" style={{ color: "#2a7a44" }} />
+					New chat
 				</button>
 			</div>
 
-			{/* Search */}
-			<div className="px-3 py-2">
-				<div className="relative">
-					<Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-					<input
-						type="text"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						placeholder="Rechercher..."
-						className="w-full rounded-lg border bg-background py-1.5 pl-8 pr-3 text-sm outline-none focus:ring-1 focus:ring-primary"
-					/>
-				</div>
-			</div>
-
-			{/* Tabs */}
-			<div className="flex border-b px-3">
-				<button
-					type="button"
-					onClick={() => setTab("sessions")}
-					className={`flex-1 py-2 text-xs font-medium ${
-						tab === "sessions"
-							? "border-b-2 border-primary text-primary"
-							: "text-muted-foreground hover:text-foreground"
-					}`}
-				>
-					Conversations
-				</button>
-				<button
-					type="button"
-					onClick={() => setTab("agents")}
-					className={`flex-1 py-2 text-xs font-medium ${
-						tab === "agents"
-							? "border-b-2 border-primary text-primary"
-							: "text-muted-foreground hover:text-foreground"
-					}`}
-				>
-					Agents
-				</button>
-			</div>
-
-			{/* Content */}
+			{/* Conversations */}
 			<div className="flex-1 overflow-y-auto">
-				{tab === "sessions" ? (
-					groupedSessions.length === 0 ? (
-						<div className="p-4 text-center text-sm text-muted-foreground">
-							Aucune conversation
-						</div>
-					) : (
-						groupedSessions.map((group) => (
-							<div key={group.label}>
-								<div className="px-3 py-2 text-xs font-medium text-muted-foreground">
-									{group.label}
-								</div>
-								{group.sessions.map((session) => (
-									<button
-										type="button"
-										key={session.id}
-										onClick={() => onSelectSession(session)}
-										className={`group flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-accent ${
-											activeSessionId === session.id ? "bg-accent" : ""
-										}`}
-									>
-										<MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-										<div className="min-w-0 flex-1">
-											<div className="truncate text-sm font-medium">
-												{session.title ?? session.agent_name}
-											</div>
-											{session.last_message_preview && (
-												<div className="truncate text-xs text-muted-foreground">
-													{session.last_message_preview}
-												</div>
-											)}
-										</div>
-										<button
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												onDeleteSession(session.id);
-											}}
-											className="mt-0.5 shrink-0 rounded p-0.5 opacity-0 hover:bg-destructive/20 hover:text-destructive group-hover:opacity-100"
-										>
-											<Trash2 className="h-3 w-3" />
-										</button>
-									</button>
-								))}
-							</div>
-						))
-					)
-				) : filteredAgents.length === 0 ? (
-					<div className="p-4 text-center text-sm text-muted-foreground">
-						Aucun agent trouvé
+				{groupedSessions.length === 0 ? (
+					<div className="flex flex-col items-center justify-center gap-3 px-5 py-16 text-center">
+						<MessageSquare className="h-8 w-8 opacity-20" style={{ color: "#6b6558" }} />
+						<p className="text-sm" style={{ color: "#766f62" }}>No conversations yet</p>
 					</div>
 				) : (
-					filteredAgents.map((agent) => (
-						<button
-							type="button"
-							key={agent.id}
-							onClick={() => onSelectAgent(agent)}
-							className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-accent ${
-								selectedAgentId === agent.id ? "bg-accent" : ""
-							}`}
-						>
-							<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-							<div className="min-w-0 flex-1">
-								<div className="truncate text-sm font-medium">{agent.name}</div>
-								<div className="truncate text-xs text-muted-foreground">
-									{agent.description}
-								</div>
-							</div>
-						</button>
+					groupedSessions.map((group) => (
+						<div key={group.label} className="mb-2">
+							{/* Group label */}
+							<p
+								className="px-5 pb-1 pt-4 text-xs font-medium"
+								style={{ color: "#766f62" }}
+							>
+								{group.label}
+							</p>
+
+							{/* Session rows */}
+							{group.sessions.map((session) => (
+								<button
+									type="button"
+									key={session.id}
+									onClick={() => onSelectSession(session)}
+									aria-current={activeSessionId === session.id ? "true" : undefined}
+									className="group relative flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors"
+									style={
+										activeSessionId === session.id
+											? { background: "#e8e4d8" }
+											: {}
+									}
+									onMouseEnter={(e) => {
+										if (activeSessionId !== session.id)
+											(e.currentTarget as HTMLButtonElement).style.background = "#ebe8e0";
+									}}
+									onMouseLeave={(e) => {
+										if (activeSessionId !== session.id)
+											(e.currentTarget as HTMLButtonElement).style.background = "transparent";
+									}}
+								>
+									<span className="min-w-0 flex-1 truncate text-sm" style={{ color: "#1e1c18" }}>
+										{session.title ?? session.agent_name}
+									</span>
+									<button
+										type="button"
+										onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
+										className="shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+										style={{ color: "#766f62" }}
+										aria-label={`Delete conversation ${session.title ?? session.agent_name}`}
+										onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#c0392b"; }}
+										onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#766f62"; }}
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+									</button>
+								</button>
+							))}
+						</div>
 					))
 				)}
 			</div>
 
-			{/* User footer */}
-			<div className="flex items-center justify-between border-t px-3 py-2">
-				<span className="truncate text-xs text-muted-foreground">{userName ?? "Utilisateur"}</span>
-				<button
-					type="button"
-					onClick={onSignOut}
-					className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-					title="Se déconnecter"
-				>
-					<LogOut className="h-3.5 w-3.5" />
-				</button>
+			{/* Footer — user */}
+			<div
+				className="border-t px-3 py-3"
+				style={{ borderColor: "#e8e4d8" }}
+			>
+				<div className="flex items-center gap-3 px-2 py-2">
+					{/* Avatar initiales */}
+					<div
+						className="flex h-8 w-8 shrink-0 items-center justify-center text-xs font-medium"
+						style={{ background: "#2a7a44", color: "#faf9f5" }}
+					>
+						{(userName ?? "U").slice(0, 1).toUpperCase()}
+					</div>
+					<span className="min-w-0 flex-1 truncate text-sm font-medium" style={{ color: "#1e1c18" }}>
+						{userName ?? "User"}
+					</span>
+					<button
+						type="button"
+						onClick={onSignOut}
+						className="shrink-0 p-1.5 transition-colors"
+						style={{ color: "#766f62" }}
+						aria-label="Sign out"
+						onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#c0392b"; }}
+						onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#766f62"; }}
+					>
+						<LogOut className="h-4 w-4" />
+					</button>
+				</div>
 			</div>
-		</div>
+		</aside>
 	);
 }
