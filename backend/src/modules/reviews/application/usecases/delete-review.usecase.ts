@@ -15,11 +15,7 @@ export class DeleteReviewUseCase {
 		@Inject(AGENT_REPOSITORY) private readonly agentRepo: AgentRepositoryPort,
 	) {}
 
-	async execute(
-		reviewId: string,
-		userId: string,
-		userRole: string,
-	): Promise<{ deleted: boolean }> {
+	async execute(reviewId: string, userId: string, userRole: string): Promise<{ deleted: boolean }> {
 		const review = await this.reviewRepo.findById(reviewId);
 		if (!review) throw new NotFoundException("Review not found");
 

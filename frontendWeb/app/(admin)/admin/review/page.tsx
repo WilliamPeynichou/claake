@@ -97,9 +97,7 @@ export default function AdminReviewPage() {
 											<h3 className="font-semibold">{agent.name}</h3>
 											<Badge variant="outline">En attente</Badge>
 										</div>
-										<p className="mt-1 text-sm text-muted-foreground">
-											{agent.description}
-										</p>
+										<p className="mt-1 text-sm text-muted-foreground">{agent.description}</p>
 										<div className="mt-2 flex flex-wrap gap-2">
 											<Badge variant="secondary">{agent.category}</Badge>
 											<span className="text-xs text-muted-foreground">
@@ -133,11 +131,7 @@ export default function AdminReviewPage() {
 										<Button
 											size="sm"
 											variant="destructive"
-											onClick={() =>
-												setReviewingId(
-													reviewingId === agent.id ? null : agent.id,
-												)
-											}
+											onClick={() => setReviewingId(reviewingId === agent.id ? null : agent.id)}
 											disabled={actionLoading}
 										>
 											<X className="mr-1 h-4 w-4" />

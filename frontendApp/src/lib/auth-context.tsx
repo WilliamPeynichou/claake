@@ -1,13 +1,6 @@
 import type { UserProfile } from "@claake/shared";
 import type { Session, User } from "@supabase/supabase-js";
-import {
-	type ReactNode,
-	createContext,
-	useCallback,
-	useContext,
-	useEffect,
-	useState,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { apiClient } from "./api";
 import { supabase } from "./supabase";
 
@@ -32,17 +25,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const token = session?.access_token ?? "";
 
-	const loadProfile = useCallback(
-		async (accessToken: string) => {
-			try {
-				const p = await apiClient.auth.profile(accessToken);
-				setProfile(p);
-			} catch {
-				setProfile(null);
-			}
-		},
-		[],
-	);
+	const loadProfile = useCallback(async (accessToken: string) => {
+		try {
+			const p = await apiClient.auth.profile(accessToken);
+			setProfile(p);
+		} catch {
+			setProfile(null);
+		}
+	}, []);
 
 	useEffect(() => {
 		supabase.auth.getSession().then(({ data: { session: s } }) => {

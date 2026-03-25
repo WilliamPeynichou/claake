@@ -12,7 +12,13 @@ import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function ChatPage() {
 	return (
-		<Suspense fallback={<div className="flex h-full items-center justify-center"><p className="text-muted-foreground">Chargement...</p></div>}>
+		<Suspense
+			fallback={
+				<div className="flex h-full items-center justify-center">
+					<p className="text-muted-foreground">Chargement...</p>
+				</div>
+			}
+		>
 			<ChatPageInner />
 		</Suspense>
 	);

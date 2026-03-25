@@ -1,14 +1,4 @@
-import {
-	Body,
-	Controller,
-	Delete,
-	Get,
-	Param,
-	Patch,
-	Post,
-	Req,
-	UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import type { CreateCollectionDto } from "../../application/dtos/create-collection.dto.js";
 import type { UpdateCollectionDto } from "../../application/dtos/update-collection.dto.js";
@@ -49,11 +39,7 @@ export class CollectionController {
 	}
 
 	@Patch(":id")
-	async update(
-		@Param("id") id: string,
-		@Body() dto: UpdateCollectionDto,
-		@Req() req: any,
-	) {
+	async update(@Param("id") id: string, @Body() dto: UpdateCollectionDto, @Req() req: any) {
 		return this.updateCollection.execute(id, dto, req.user.id);
 	}
 

@@ -10,10 +10,7 @@ export interface UserRepositoryPort {
 		role: string,
 		adminPermissions: AdminPermissions | null,
 	): Promise<UserEntity>;
-	updateProfile(
-		id: string,
-		data: { displayName?: string; bio?: string },
-	): Promise<UserEntity>;
+	updateProfile(id: string, data: { displayName?: string; bio?: string }): Promise<UserEntity>;
 	getApiKeysEncrypted(userId: string): Promise<string | null>;
 	setApiKeysEncrypted(userId: string, data: string | null): Promise<void>;
 }

@@ -6,23 +6,23 @@ export default function ConfidentialitePage() {
 			<h1>Politique de confidentialité</h1>
 
 			<p>
-				Claake (ci-après « Claake ») attache une grande importance à la protection de vos
-				données personnelles et au respect de votre vie privée. La présente Politique de
-				confidentialité vous informe sur la manière dont nous collectons, utilisons et protégeons
-				vos données personnelles conformément au Règlement Général sur la Protection des Données
-				(RGPD) et à la loi Informatique et Libertés.
+				Claake (ci-après « Claake ») attache une grande importance à la protection de vos données
+				personnelles et au respect de votre vie privée. La présente Politique de confidentialité
+				vous informe sur la manière dont nous collectons, utilisons et protégeons vos données
+				personnelles conformément au Règlement Général sur la Protection des Données (RGPD) et à la
+				loi Informatique et Libertés.
 			</p>
 
 			<h2>1. Responsable du traitement</h2>
 			<p>
 				Le responsable du traitement est :{" "}
 				<strong>
-					Claake, [FORME_JURIDIQUE], [ADRESSE_SIÈGE], immatriculée sous le numéro SIRET
-					[SIRET].
+					Claake, [FORME_JURIDIQUE], [ADRESSE_SIÈGE], immatriculée sous le numéro SIRET [SIRET].
 				</strong>
 			</p>
 			<p>
-				Délégué à la Protection des Données (DPO) : <a href="mailto:williampeynichou@claake.com">williampeynichou@claake.com</a>
+				Délégué à la Protection des Données (DPO) :{" "}
+				<a href="mailto:williampeynichou@claake.com">williampeynichou@claake.com</a>
 			</p>
 
 			<h2>2. Données collectées</h2>
@@ -183,8 +183,8 @@ export default function ConfidentialitePage() {
 			</ul>
 			<p>
 				Pour exercer ces droits, contactez notre DPO à :{" "}
-				<a href="mailto:williampeynichou@claake.com">williampeynichou@claake.com</a>. Nous répondrons dans un délai maximum d'un
-				mois.
+				<a href="mailto:williampeynichou@claake.com">williampeynichou@claake.com</a>. Nous
+				répondrons dans un délai maximum d'un mois.
 			</p>
 			<p>
 				Vous avez également le droit d'introduire une réclamation auprès de la CNIL (Commission

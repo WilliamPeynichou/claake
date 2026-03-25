@@ -1,9 +1,9 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { AgentTransformer } from "../../../agents/application/transformers/agent.transformer.js";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
 } from "../../../agents/domain/ports/agent.repository.port.js";
-import { AgentTransformer } from "../../../agents/application/transformers/agent.transformer.js";
 import {
 	USER_REPOSITORY,
 	type UserRepositoryPort,
@@ -28,8 +28,7 @@ export class GetCreatorProfileUseCase {
 		const totalReviews = agents.reduce((sum, a) => sum + a.reviewCount, 0);
 		const avgRating =
 			agents.length > 0
-				? agents.reduce((sum, a) => sum + a.rating * a.reviewCount, 0) /
-					(totalReviews || 1)
+				? agents.reduce((sum, a) => sum + a.rating * a.reviewCount, 0) / (totalReviews || 1)
 				: 0;
 
 		const portfolioLinks = (user as any).portfolioLinks ?? [];

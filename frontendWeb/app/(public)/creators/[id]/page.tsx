@@ -14,16 +14,11 @@ function getLinkIcon(label: string) {
 	const lower = label.toLowerCase();
 	if (lower.includes("github")) return Github;
 	if (lower.includes("linkedin")) return Linkedin;
-	if (lower.includes("site") || lower.includes("web") || lower.includes("portfolio"))
-		return Globe;
+	if (lower.includes("site") || lower.includes("web") || lower.includes("portfolio")) return Globe;
 	return ExternalLink;
 }
 
-export default async function CreatorProfilePage({
-	params,
-}: {
-	params: Promise<{ id: string }>;
-}) {
+export default async function CreatorProfilePage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
 	let creator;
@@ -57,9 +52,7 @@ export default async function CreatorProfilePage({
 								</div>
 								<div>
 									<CardTitle>{creator.display_name ?? "Cr\u00e9ateur"}</CardTitle>
-									<p className="text-sm text-muted-foreground">
-										Cr\u00e9ateur sur Claake
-									</p>
+									<p className="text-sm text-muted-foreground">Cr\u00e9ateur sur Claake</p>
 								</div>
 							</div>
 						</CardHeader>

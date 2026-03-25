@@ -8,9 +8,7 @@ import { CollectionTransformer } from "../transformers/collection.transformer.js
 
 @Injectable()
 export class RemoveAgentFromCollectionUseCase {
-	constructor(
-		@Inject(COLLECTION_REPOSITORY) private readonly repo: CollectionRepositoryPort,
-	) {}
+	constructor(@Inject(COLLECTION_REPOSITORY) private readonly repo: CollectionRepositoryPort) {}
 
 	async execute(
 		collectionId: string,

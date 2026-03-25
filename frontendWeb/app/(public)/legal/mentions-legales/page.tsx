@@ -27,7 +27,8 @@ export default function MentionsLegalesPage() {
 					<strong>Directeur de la publication :</strong> [REPRÉSENTANT_LÉGAL]
 				</li>
 				<li>
-					<strong>Email de contact :</strong> <a href="mailto:claake@contact.com">claake@contact.com</a>
+					<strong>Email de contact :</strong>{" "}
+					<a href="mailto:claake@contact.com">claake@contact.com</a>
 				</li>
 			</ul>
 
@@ -52,9 +53,9 @@ export default function MentionsLegalesPage() {
 			<h2>3. Propriété intellectuelle</h2>
 			<p>
 				L'ensemble des éléments constituant le site Claake (textes, graphismes, logiciels, images,
-				sons, plans, logos, marques, etc.) est la propriété exclusive de Claake ou fait
-				l'objet d'une autorisation d'utilisation. Ces éléments sont protégés par les lois relatives
-				à la propriété intellectuelle.
+				sons, plans, logos, marques, etc.) est la propriété exclusive de Claake ou fait l'objet
+				d'une autorisation d'utilisation. Ces éléments sont protégés par les lois relatives à la
+				propriété intellectuelle.
 			</p>
 			<p>
 				Toute reproduction, représentation, modification, publication ou adaptation de tout ou
@@ -69,26 +70,26 @@ export default function MentionsLegalesPage() {
 
 			<h2>4. Marque</h2>
 			<p>
-				La marque <strong>Claake</strong> et son logo sont des marques déposées de Claake.
-				Toute utilisation non autorisée est strictement interdite.
+				La marque <strong>Claake</strong> et son logo sont des marques déposées de Claake. Toute
+				utilisation non autorisée est strictement interdite.
 			</p>
 
 			<h2>5. Limitation de responsabilité</h2>
 			<p>
-				Claake s'efforce d'assurer l'exactitude et la mise à jour des informations diffusées
-				sur le site. Toutefois, Claake ne garantit pas que les informations soient exactes,
-				complètes, actuelles ou non trompeuses.
+				Claake s'efforce d'assurer l'exactitude et la mise à jour des informations diffusées sur le
+				site. Toutefois, Claake ne garantit pas que les informations soient exactes, complètes,
+				actuelles ou non trompeuses.
 			</p>
 			<p>
-				Claake ne saurait être tenue responsable des dommages directs ou indirects résultant
-				de l'accès ou de l'utilisation du site, notamment d'une panne, d'une interruption, d'un
-				virus informatique ou de toute défaillance technique.
+				Claake ne saurait être tenue responsable des dommages directs ou indirects résultant de
+				l'accès ou de l'utilisation du site, notamment d'une panne, d'une interruption, d'un virus
+				informatique ou de toute défaillance technique.
 			</p>
 
 			<h2>6. Liens hypertextes</h2>
 			<p>
-				Le site Claake peut contenir des liens vers des sites tiers. Claake ne contrôle pas
-				ces sites et décline toute responsabilité quant à leur contenu ou à leur politique de
+				Le site Claake peut contenir des liens vers des sites tiers. Claake ne contrôle pas ces
+				sites et décline toute responsabilité quant à leur contenu ou à leur politique de
 				confidentialité.
 			</p>
 

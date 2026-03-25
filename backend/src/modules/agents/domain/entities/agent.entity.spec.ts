@@ -1,6 +1,8 @@
 import { AgentEntity } from "./agent.entity";
 
-function makeAgent(overrides: Partial<ConstructorParameters<typeof AgentEntity>> = [] as any): AgentEntity {
+function makeAgent(
+	overrides: Partial<ConstructorParameters<typeof AgentEntity>> = [] as any,
+): AgentEntity {
 	const defaults: ConstructorParameters<typeof AgentEntity> = [
 		"agent-1",
 		"Test Agent",
@@ -53,9 +55,30 @@ describe("AgentEntity", () => {
 
 		it("returns false for paid pricing model", () => {
 			const paidAgent = new AgentEntity(
-				"id", "name", "slug", "desc", null, "cat", [], [],
-				"CLOUD", null, null, [], "ONE_TIME", 9.99, 1, "APPROVED",
-				null, 0, 0, 0, "u1", null, new Date(), new Date(),
+				"id",
+				"name",
+				"slug",
+				"desc",
+				null,
+				"cat",
+				[],
+				[],
+				"CLOUD",
+				null,
+				null,
+				[],
+				"ONE_TIME",
+				9.99,
+				1,
+				"APPROVED",
+				null,
+				0,
+				0,
+				0,
+				"u1",
+				null,
+				new Date(),
+				new Date(),
 			);
 			expect(paidAgent.isFree()).toBe(false);
 		});
@@ -68,9 +91,30 @@ describe("AgentEntity", () => {
 
 		it("returns false for PENDING status", () => {
 			const pending = new AgentEntity(
-				"id", "name", "slug", "desc", null, "cat", [], [],
-				"CLOUD", null, null, [], "FREE", 0, 1, "PENDING",
-				null, 0, 0, 0, "u1", null, new Date(), new Date(),
+				"id",
+				"name",
+				"slug",
+				"desc",
+				null,
+				"cat",
+				[],
+				[],
+				"CLOUD",
+				null,
+				null,
+				[],
+				"FREE",
+				0,
+				1,
+				"PENDING",
+				null,
+				0,
+				0,
+				0,
+				"u1",
+				null,
+				new Date(),
+				new Date(),
 			);
 			expect(pending.isPublished()).toBe(false);
 		});
@@ -83,9 +127,30 @@ describe("AgentEntity", () => {
 
 		it("defaults to null", () => {
 			const noPrompt = new AgentEntity(
-				"id", "name", "slug", "desc", null, "cat", [], [],
-				"CLOUD", null, null, [], "FREE", 0, 1, "APPROVED",
-				null, 0, 0, 0, "u1", null, new Date(), new Date(),
+				"id",
+				"name",
+				"slug",
+				"desc",
+				null,
+				"cat",
+				[],
+				[],
+				"CLOUD",
+				null,
+				null,
+				[],
+				"FREE",
+				0,
+				1,
+				"APPROVED",
+				null,
+				0,
+				0,
+				0,
+				"u1",
+				null,
+				new Date(),
+				new Date(),
 			);
 			expect(noPrompt.systemPrompt).toBeNull();
 		});

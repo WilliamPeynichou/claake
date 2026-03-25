@@ -151,9 +151,11 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		if (data.cloudStrategy !== undefined) updateData.cloudStrategy = data.cloudStrategy;
 		if (data.endpointUrl !== undefined) updateData.endpointUrl = data.endpointUrl;
 		if (data.endpointFormat !== undefined) updateData.endpointFormat = data.endpointFormat;
-		if (data.sellerApiKeyEncrypted !== undefined) updateData.sellerApiKeyEncrypted = data.sellerApiKeyEncrypted;
+		if (data.sellerApiKeyEncrypted !== undefined)
+			updateData.sellerApiKeyEncrypted = data.sellerApiKeyEncrypted;
 		if (data.sellerApiProvider !== undefined) updateData.sellerApiProvider = data.sellerApiProvider;
-		if (data.requiredUserProvider !== undefined) updateData.requiredUserProvider = data.requiredUserProvider;
+		if (data.requiredUserProvider !== undefined)
+			updateData.requiredUserProvider = data.requiredUserProvider;
 		if (data.dockerImage !== undefined) updateData.dockerImage = data.dockerImage;
 		if (data.downloadUrl !== undefined) updateData.downloadUrl = data.downloadUrl;
 

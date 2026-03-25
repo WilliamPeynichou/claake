@@ -90,9 +90,7 @@ export function ChatPage() {
 				{selectedAgent && (
 					<div className="flex items-center gap-2 border-b px-4 py-2.5">
 						<span className="text-sm font-medium">{selectedAgent.name}</span>
-						<span className="text-xs text-muted-foreground">
-							{selectedAgent.description}
-						</span>
+						<span className="text-xs text-muted-foreground">{selectedAgent.description}</span>
 					</div>
 				)}
 

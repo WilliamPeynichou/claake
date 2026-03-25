@@ -34,8 +34,7 @@ export function ChatSidebar({
 		if (!search) return agents;
 		const q = search.toLowerCase();
 		return agents.filter(
-			(a) =>
-				a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q),
+			(a) => a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q),
 		);
 	}, [agents, search]);
 
@@ -136,9 +135,7 @@ export function ChatSidebar({
 			<div className="flex-1 overflow-y-auto">
 				{tab === "sessions" ? (
 					groupedSessions.length === 0 ? (
-						<div className="p-4 text-center text-sm text-muted-foreground">
-							Aucune conversation
-						</div>
+						<div className="p-4 text-center text-sm text-muted-foreground">Aucune conversation</div>
 					) : (
 						groupedSessions.map((group) => (
 							<div key={group.label}>
@@ -181,9 +178,7 @@ export function ChatSidebar({
 						))
 					)
 				) : filteredAgents.length === 0 ? (
-					<div className="p-4 text-center text-sm text-muted-foreground">
-						Aucun agent trouvé
-					</div>
+					<div className="p-4 text-center text-sm text-muted-foreground">Aucun agent trouvé</div>
 				) : (
 					filteredAgents.map((agent) => (
 						<button
@@ -197,9 +192,7 @@ export function ChatSidebar({
 							<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 							<div className="min-w-0 flex-1">
 								<div className="truncate text-sm font-medium">{agent.name}</div>
-								<div className="truncate text-xs text-muted-foreground">
-									{agent.description}
-								</div>
+								<div className="truncate text-xs text-muted-foreground">{agent.description}</div>
 							</div>
 						</button>
 					))

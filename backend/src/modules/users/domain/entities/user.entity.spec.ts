@@ -91,8 +91,17 @@ describe("UserEntity", () => {
 
 		it("returns true when stripe account exists", () => {
 			const user = new UserEntity(
-				"u1", "e@e.com", null, null, null, "CREATOR",
-				null, "acct_123", 0, new Date(), new Date(),
+				"u1",
+				"e@e.com",
+				null,
+				null,
+				null,
+				"CREATOR",
+				null,
+				"acct_123",
+				0,
+				new Date(),
+				new Date(),
 			);
 			expect(user.hasStripeAccount()).toBe(true);
 		});

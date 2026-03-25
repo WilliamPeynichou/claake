@@ -37,15 +37,15 @@ export class ChatController {
 	@Post("sessions")
 	async create(@Body() dto: CreateSessionDto, @Req() req: any) {
 		const session = await this.createSession.execute(dto.agent_id, req.user.id);
-		return { id: session.id, agent_id: session.agentId, created_at: session.createdAt.toISOString() };
+		return {
+			id: session.id,
+			agent_id: session.agentId,
+			created_at: session.createdAt.toISOString(),
+		};
 	}
 
 	@Get("sessions")
-	async list(
-		@Req() req: any,
-		@Query("limit") limit?: string,
-		@Query("offset") offset?: string,
-	) {
+	async list(@Req() req: any, @Query("limit") limit?: string, @Query("offset") offset?: string) {
 		return this.listSessions.execute(
 			req.user.id,
 			limit ? Number.parseInt(limit, 10) : 20,

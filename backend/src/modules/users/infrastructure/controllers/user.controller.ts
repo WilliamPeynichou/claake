@@ -66,10 +66,7 @@ export class AuthController {
 	}
 
 	@Post("api-keys")
-	async addApiKey(
-		@Req() req: any,
-		@Body() body: { provider: string; label: string; key: string },
-	) {
+	async addApiKey(@Req() req: any, @Body() body: { provider: string; label: string; key: string }) {
 		return this.manageApiKeys.addKey(req.user.id, body.provider, body.label, body.key);
 	}
 

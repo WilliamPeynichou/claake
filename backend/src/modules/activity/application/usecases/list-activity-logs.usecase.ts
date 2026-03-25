@@ -6,12 +6,7 @@ import { PrismaService } from "../../../../prisma/prisma.service.js";
 export class ListActivityLogsUseCase {
 	constructor(private readonly prisma: PrismaService) {}
 
-	async execute(params: {
-		action?: string;
-		targetType?: string;
-		page?: number;
-		limit?: number;
-	}) {
+	async execute(params: { action?: string; targetType?: string; page?: number; limit?: number }) {
 		const where: Prisma.ActivityLogWhereInput = {};
 
 		if (params.action) where.action = params.action;

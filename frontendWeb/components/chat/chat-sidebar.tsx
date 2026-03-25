@@ -105,9 +105,7 @@ export function ChatSidebar({
 							</button>
 						))}
 						{filteredAgents.length === 0 && (
-							<p className="py-2 text-center text-xs text-muted-foreground">
-								Aucun agent trouvé
-							</p>
+							<p className="py-2 text-center text-xs text-muted-foreground">Aucun agent trouvé</p>
 						)}
 					</div>
 				</div>
@@ -118,18 +116,14 @@ export function ChatSidebar({
 			{/* Conversations list */}
 			<div className="flex-1 overflow-y-auto px-2 py-2">
 				{sessions.length === 0 ? (
-					<p className="px-2 py-4 text-center text-xs text-muted-foreground">
-						Aucune conversation
-					</p>
+					<p className="px-2 py-4 text-center text-xs text-muted-foreground">Aucune conversation</p>
 				) : (
 					groupOrder.map((label) => {
 						const group = grouped[label];
 						if (!group?.length) return null;
 						return (
 							<div key={label} className="mb-3">
-								<p className="mb-1 px-2 text-xs font-medium text-muted-foreground">
-									{label}
-								</p>
+								<p className="mb-1 px-2 text-xs font-medium text-muted-foreground">{label}</p>
 								{group.map((session) => (
 									<div
 										key={session.id}
@@ -146,9 +140,7 @@ export function ChatSidebar({
 										>
 											<MessageSquare className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 											<div className="min-w-0 flex-1">
-												<p className="truncate">
-													{session.title ?? session.agent_name}
-												</p>
+												<p className="truncate">{session.title ?? session.agent_name}</p>
 												{session.last_message_preview && (
 													<p className="truncate text-xs text-muted-foreground">
 														{session.last_message_preview}

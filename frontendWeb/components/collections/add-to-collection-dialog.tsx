@@ -20,11 +20,7 @@ interface AddToCollectionDialogProps {
 	agentId: string;
 }
 
-export function AddToCollectionDialog({
-	open,
-	onOpenChange,
-	agentId,
-}: AddToCollectionDialogProps) {
+export function AddToCollectionDialog({ open, onOpenChange, agentId }: AddToCollectionDialogProps) {
 	const { token } = useAuth();
 	const [collections, setCollections] = useState<Collection[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -58,10 +54,7 @@ export function AddToCollectionDialog({
 	async function handleCreateAndAdd() {
 		if (!token) return;
 		try {
-			const collection = await apiClient.collections.create(
-				{ name: "Nouvelle collection" },
-				token,
-			);
+			const collection = await apiClient.collections.create({ name: "Nouvelle collection" }, token);
 			const updated = await apiClient.collections.addAgent(collection.id, agentId, token);
 			setCollections((prev) => [updated, ...prev]);
 		} catch {
@@ -88,9 +81,7 @@ export function AddToCollectionDialog({
 								onClick={() => handleToggle(col)}
 								disabled={loading}
 								className={`flex w-full items-center gap-3 rounded-md border p-3 text-left text-sm transition-colors ${
-									isIn
-										? "border-primary bg-primary/5"
-										: "border-border hover:border-primary/40"
+									isIn ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
 								}`}
 							>
 								<FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -100,18 +91,11 @@ export function AddToCollectionDialog({
 										{col.agent_ids.length} agent{col.agent_ids.length > 1 ? "s" : ""}
 									</p>
 								</div>
-								{isIn && (
-									<span className="text-xs text-primary">Ajout&eacute;</span>
-								)}
+								{isIn && <span className="text-xs text-primary">Ajout&eacute;</span>}
 							</button>
 						);
 					})}
-					<Button
-						variant="outline"
-						size="sm"
-						className="w-full"
-						onClick={handleCreateAndAdd}
-					>
+					<Button variant="outline" size="sm" className="w-full" onClick={handleCreateAndAdd}>
 						<Plus className="mr-2 h-4 w-4" />
 						Nouvelle collection
 					</Button>

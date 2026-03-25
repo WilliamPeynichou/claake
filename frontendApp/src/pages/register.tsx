@@ -40,10 +40,7 @@ export function RegisterPage() {
 					<p className="text-sm text-muted-foreground">
 						Un lien de confirmation a été envoyé à <strong>{email}</strong>.
 					</p>
-					<Link
-						to="/login"
-						className="inline-block text-sm text-primary hover:underline"
-					>
+					<Link to="/login" className="inline-block text-sm text-primary hover:underline">
 						Retour à la connexion
 					</Link>
 				</div>
@@ -64,9 +61,7 @@ export function RegisterPage() {
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					{error && (
-						<div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-							{error}
-						</div>
+						<div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
 					)}
 
 					<div className="space-y-2">

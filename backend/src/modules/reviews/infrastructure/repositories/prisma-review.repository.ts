@@ -7,9 +7,7 @@ import type { ReviewRepositoryPort } from "../../domain/ports/review.repository.
 export class PrismaReviewRepository implements ReviewRepositoryPort {
 	constructor(private readonly prisma: PrismaService) {}
 
-	private toEntity(
-		raw: any & { user?: { displayName: string | null } },
-	): ReviewEntity {
+	private toEntity(raw: any & { user?: { displayName: string | null } }): ReviewEntity {
 		return new ReviewEntity(
 			raw.id,
 			raw.userId,
@@ -55,10 +53,7 @@ export class PrismaReviewRepository implements ReviewRepositoryPort {
 		return review ? this.toEntity(review) : null;
 	}
 
-	async findByUserAndAgent(
-		userId: string,
-		agentId: string,
-	): Promise<ReviewEntity | null> {
+	async findByUserAndAgent(userId: string, agentId: string): Promise<ReviewEntity | null> {
 		const review = await this.prisma.review.findUnique({
 			where: { userId_agentId: { userId, agentId } },
 			include: { user: { select: { displayName: true } } },
@@ -88,10 +83,7 @@ export class PrismaReviewRepository implements ReviewRepositoryPort {
 		};
 	}
 
-	async update(
-		id: string,
-		data: { rating?: number; comment?: string },
-	): Promise<ReviewEntity> {
+	async update(id: string, data: { rating?: number; comment?: string }): Promise<ReviewEntity> {
 		const review = await this.prisma.review.update({
 			where: { id },
 			data: {
@@ -107,9 +99,7 @@ export class PrismaReviewRepository implements ReviewRepositoryPort {
 		await this.prisma.review.delete({ where: { id } });
 	}
 
-	async computeAgentStats(
-		agentId: string,
-	): Promise<{ avg: number; count: number }> {
+	async computeAgentStats(agentId: string): Promise<{ avg: number; count: number }> {
 		const result = await this.prisma.review.aggregate({
 			where: { agentId },
 			_avg: { rating: true },

@@ -1,4 +1,13 @@
-import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUrl, Min } from "class-validator";
+import {
+	IsArray,
+	IsEnum,
+	IsInt,
+	IsNumber,
+	IsOptional,
+	IsString,
+	IsUrl,
+	Min,
+} from "class-validator";
 
 export class CreateAgentDto {
 	@IsString()

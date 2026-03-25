@@ -59,10 +59,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		}
 	}
 
-	private async *parseStandardSSE(
-		res: Response,
-		format: string,
-	): AsyncIterable<string> {
+	private async *parseStandardSSE(res: Response, format: string): AsyncIterable<string> {
 		const reader = res.body!.getReader();
 		const decoder = new TextDecoder();
 		let buffer = "";

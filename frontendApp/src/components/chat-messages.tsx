@@ -53,10 +53,7 @@ export function ChatMessages({
 
 			<div className="mx-auto w-full max-w-3xl space-y-4 p-4">
 				{messages.map((msg) => (
-					<div
-						key={msg.id}
-						className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}
-					>
+					<div key={msg.id} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}>
 						{msg.role !== "user" && (
 							<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
 								<Bot className="h-4 w-4 text-primary" />

@@ -59,10 +59,7 @@ export class AnthropicProvider implements AIProviderPort {
 
 					try {
 						const parsed = JSON.parse(data);
-						if (
-							parsed.type === "content_block_delta" &&
-							parsed.delta?.type === "text_delta"
-						) {
+						if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
 							yield parsed.delta.text;
 						}
 					} catch {
