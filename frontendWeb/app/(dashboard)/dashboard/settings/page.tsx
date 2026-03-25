@@ -1,6 +1,9 @@
 "use client";
 
+import type { ConnectStatus } from "@claake/shared";
+import { Check, ExternalLink, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +22,10 @@ export default function SettingsPage() {
 	const [message, setMessage] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
+	// Stripe Connect
+	const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null);
+	const [connectLoading, setConnectLoading] = useState(false);
+
 	// Load current profile
 	useEffect(() => {
 		if (!token) return;
@@ -30,6 +37,12 @@ export default function SettingsPage() {
 			})
 			.catch(() => {})
 			.finally(() => setLoading(false));
+
+		// Load Stripe Connect status
+		apiClient.payments
+			.connectStatus(token)
+			.then(setConnectStatus)
+			.catch(() => {});
 	}, [token]);
 
 	async function handleSave(e: React.FormEvent) {
@@ -53,6 +66,18 @@ export default function SettingsPage() {
 			setError("Erreur lors de la mise à jour du profil.");
 		} finally {
 			setSaving(false);
+		}
+	}
+
+	async function handleStripeConnect() {
+		if (!token) return;
+		setConnectLoading(true);
+		try {
+			const { url } = await apiClient.payments.connectOnboard(token);
+			window.location.href = url;
+		} catch {
+			setError("Erreur lors de la connexion à Stripe.");
+			setConnectLoading(false);
 		}
 	}
 
@@ -105,6 +130,67 @@ export default function SettingsPage() {
 									{saving ? "Enregistrement..." : "Enregistrer"}
 								</Button>
 							</form>
+						)}
+					</CardContent>
+				</Card>
+
+				{/* Stripe Connect */}
+				<Card>
+					<CardHeader>
+						<CardTitle>Paiements — Stripe Connect</CardTitle>
+						<CardDescription>
+							Connectez votre compte Stripe pour recevoir les paiements de vos agents.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{connectStatus?.connected && connectStatus.details_submitted ? (
+							<div className="space-y-3">
+								<div className="flex items-center gap-2">
+									<Check className="h-5 w-5 text-green-600" />
+									<span className="font-medium text-green-700 dark:text-green-400">
+										Compte Stripe connecté
+									</span>
+								</div>
+								<div className="flex items-center gap-2">
+									<Badge variant={connectStatus.payouts_enabled ? "default" : "secondary"}>
+										{connectStatus.payouts_enabled
+											? "Virements activés"
+											: "Virements en attente de vérification"}
+									</Badge>
+								</div>
+								<p className="text-xs text-muted-foreground">
+									Les paiements de vos agents sont automatiquement transférés sur votre compte
+									bancaire via Stripe. Claake prélève 20% sur les 100 premières ventes par agent,
+									puis 14%.
+								</p>
+								<Button variant="outline" size="sm" onClick={handleStripeConnect}>
+									<ExternalLink className="mr-2 h-4 w-4" />
+									Gérer mon compte Stripe
+								</Button>
+							</div>
+						) : (
+							<div className="space-y-3">
+								<p className="text-sm text-muted-foreground">
+									Pour vendre des agents payants, vous devez connecter un compte Stripe. Stripe gère
+									les paiements de manière sécurisée et verse directement vos revenus sur votre
+									compte bancaire.
+								</p>
+								<div className="rounded-md border bg-muted/50 p-3 text-sm">
+									<p className="font-medium">Commission Claake :</p>
+									<ul className="mt-1 list-inside list-disc text-muted-foreground">
+										<li>20% sur les 100 premières ventes par agent</li>
+										<li>14% au-delà de 100 ventes</li>
+									</ul>
+								</div>
+								<Button onClick={handleStripeConnect} disabled={connectLoading}>
+									{connectLoading ? (
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									) : (
+										<ExternalLink className="mr-2 h-4 w-4" />
+									)}
+									{connectLoading ? "Redirection..." : "Connecter mon compte Stripe"}
+								</Button>
+							</div>
 						)}
 					</CardContent>
 				</Card>

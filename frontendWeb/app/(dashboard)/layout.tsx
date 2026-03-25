@@ -1,4 +1,4 @@
-import { Bot, Key, LayoutDashboard, MessageSquare, Plus, Settings } from "lucide-react";
+import { Bot, DollarSign, Key, LayoutDashboard, MessageSquare, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 
 const sidebarLinks = [
@@ -7,6 +7,7 @@ const sidebarLinks = [
 	{ href: "/dashboard/library", label: "Ma bibliothèque", icon: Bot },
 	{ href: "/dashboard/agents/new", label: "Publier un agent", icon: Plus },
 	{ href: "/dashboard/agents", label: "Mes agents", icon: Bot },
+	{ href: "/dashboard/earnings", label: "Revenus", icon: DollarSign },
 	{ href: "/dashboard/api-keys", label: "Clés API", icon: Key },
 	{ href: "/dashboard/settings", label: "Paramètres", icon: Settings },
 ];

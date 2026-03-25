@@ -4,6 +4,7 @@ import { UserModule } from "../users/user.module.js";
 import { CheckAccessUseCase } from "./application/usecases/check-access.usecase.js";
 import { CreateCheckoutUseCase } from "./application/usecases/create-checkout.usecase.js";
 import { CreateConnectAccountUseCase } from "./application/usecases/create-connect-account.usecase.js";
+import { GetCreatorEarningsUseCase } from "./application/usecases/get-creator-earnings.usecase.js";
 import { HandleWebhookUseCase } from "./application/usecases/handle-webhook.usecase.js";
 import { ListPurchasesUseCase } from "./application/usecases/list-purchases.usecase.js";
 import { PAYMENT_REPOSITORY } from "./domain/ports/payment.repository.port.js";
@@ -21,6 +22,7 @@ import { StripeService } from "./infrastructure/stripe/stripe.service.js";
 		ListPurchasesUseCase,
 		CheckAccessUseCase,
 		CreateConnectAccountUseCase,
+		GetCreatorEarningsUseCase,
 		{ provide: STRIPE_SERVICE, useClass: StripeService },
 		{ provide: PAYMENT_REPOSITORY, useClass: PrismaPaymentRepository },
 	],

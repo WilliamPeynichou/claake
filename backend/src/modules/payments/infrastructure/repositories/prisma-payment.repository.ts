@@ -83,4 +83,122 @@ export class PrismaPaymentRepository implements PaymentRepositoryPort {
 		});
 		return subscription !== null;
 	}
+
+	async countSalesForAgent(agentId: string): Promise<number> {
+		return this.prisma.commission.count({ where: { agentId } });
+	}
+
+	async createCommission(data: {
+		agentId: string;
+		creatorId: string;
+		buyerId: string;
+		amount: number;
+		platformFee: number;
+		creatorPayout: number;
+		commissionRate: number;
+		currency: string;
+		stripePaymentId?: string;
+		saleNumber: number;
+	}): Promise<void> {
+		await this.prisma.commission.create({
+			data: {
+				agentId: data.agentId,
+				creatorId: data.creatorId,
+				buyerId: data.buyerId,
+				amount: data.amount,
+				platformFee: data.platformFee,
+				creatorPayout: data.creatorPayout,
+				commissionRate: data.commissionRate,
+				currency: data.currency,
+				stripePaymentId: data.stripePaymentId,
+				saleNumber: data.saleNumber,
+			},
+		});
+	}
+
+	async getCreatorEarnings(creatorId: string): Promise<{
+		totalEarnings: number;
+		totalPlatformFees: number;
+		totalSales: number;
+	}> {
+		const result = await this.prisma.commission.aggregate({
+			where: { creatorId },
+			_sum: { creatorPayout: true, platformFee: true },
+			_count: true,
+		});
+		return {
+			totalEarnings: Number(result._sum.creatorPayout ?? 0),
+			totalPlatformFees: Number(result._sum.platformFee ?? 0),
+			totalSales: result._count,
+		};
+	}
+
+	async getCreatorCommissions(
+		creatorId: string,
+		limit: number,
+		offset: number,
+	): Promise<
+		{
+			id: string;
+			amount: number;
+			platformFee: number;
+			creatorPayout: number;
+			commissionRate: number;
+			saleNumber: number;
+			agentId: string;
+			createdAt: Date;
+		}[]
+	> {
+		const rows = await this.prisma.commission.findMany({
+			where: { creatorId },
+			orderBy: { createdAt: "desc" },
+			take: limit,
+			skip: offset,
+		});
+		return rows.map((r) => ({
+			id: r.id,
+			amount: Number(r.amount),
+			platformFee: Number(r.platformFee),
+			creatorPayout: Number(r.creatorPayout),
+			commissionRate: Number(r.commissionRate),
+			saleNumber: r.saleNumber,
+			agentId: r.agentId,
+			createdAt: r.createdAt,
+		}));
+	}
+
+	async createSubscription(data: {
+		userId: string;
+		agentId: string;
+		stripeSubId: string;
+		currentPeriodEnd: Date;
+	}): Promise<void> {
+		await this.prisma.subscription.create({
+			data: {
+				userId: data.userId,
+				agentId: data.agentId,
+				stripeSubId: data.stripeSubId,
+				status: "ACTIVE",
+				currentPeriodEnd: data.currentPeriodEnd,
+			},
+		});
+	}
+
+	async updateSubscriptionStatus(
+		stripeSubId: string,
+		status: "ACTIVE" | "CANCELLED" | "PAST_DUE",
+		currentPeriodEnd?: Date,
+	): Promise<void> {
+		const sub = await this.prisma.subscription.findFirst({
+			where: { stripeSubId },
+		});
+		if (!sub) return;
+		await this.prisma.subscription.update({
+			where: { id: sub.id },
+			data: {
+				status,
+				...(currentPeriodEnd && { currentPeriodEnd }),
+			},
+		});
+	}
 }

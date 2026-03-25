@@ -235,7 +235,8 @@ export default function NewAgentPage() {
 							: undefined,
 					config_url: configUrl || formData.endpoint || undefined,
 					system_prompt: formData.systemPrompt || undefined,
-					pricing_model: "FREE",
+					pricing_model: formData.priceType === "one_time" ? "ONE_TIME" : formData.priceType === "subscription" ? "SUBSCRIPTION" : "FREE",
+					price: formData.priceType !== "free" ? Number(formData.price) : 0,
 				} as any,
 				token,
 			);
@@ -722,15 +723,72 @@ export default function NewAgentPage() {
 						<div className="space-y-4">
 							<h3 className="text-lg font-semibold">Tarification</h3>
 							<p className="text-sm text-muted-foreground">
-								Pour le MVP, seuls les agents gratuits sont disponibles.
+								Choisissez comment monétiser votre agent. Claake prend 20% de commission
+								sur les 100 premières ventes, puis 14% au-delà.
 							</p>
-							<div className="rounded-md border bg-muted/50 p-4">
-								<Badge>Gratuit</Badge>
-								<p className="mt-2 text-sm text-muted-foreground">
-									Votre agent sera disponible gratuitement pour tous les utilisateurs. Les options
-									de monétisation seront disponibles prochainement.
-								</p>
+							<div className="grid grid-cols-3 gap-3">
+								{[
+									{
+										id: "free",
+										label: "Gratuit",
+										desc: "Accessible à tous sans frais",
+									},
+									{
+										id: "one_time",
+										label: "Achat unique",
+										desc: "Paiement en une fois",
+									},
+									{
+										id: "subscription",
+										label: "Abonnement mensuel",
+										desc: "Paiement récurrent chaque mois",
+									},
+								].map((p) => (
+									<button
+										key={p.id}
+										type="button"
+										onClick={() => updateField("priceType", p.id)}
+										className={`rounded-md border p-3 text-left text-sm transition-colors ${
+											formData.priceType === p.id
+												? "border-primary bg-primary/5"
+												: "border-input hover:bg-accent"
+										}`}
+									>
+										<div className="font-medium">{p.label}</div>
+										<div className="mt-1 text-xs text-muted-foreground">{p.desc}</div>
+									</button>
+								))}
 							</div>
+
+							{formData.priceType !== "free" && (
+								<div className="space-y-2">
+									<Label htmlFor="price">
+										Prix ({formData.priceType === "subscription" ? "par mois" : "unique"}) en euros
+									</Label>
+									<div className="relative">
+										<Input
+											id="price"
+											type="number"
+											min="0.50"
+											step="0.01"
+											value={formData.price}
+											onChange={(e) => updateField("price", e.target.value)}
+											placeholder="5.00"
+											className="pr-8"
+										/>
+										<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+											&euro;
+										</span>
+									</div>
+									<p className="text-xs text-muted-foreground">
+										Minimum 0,50 €. Vous recevrez{" "}
+										{Number(formData.price) > 0
+											? `${(Number(formData.price) * 0.8).toFixed(2)} € par vente (80% des 100 premières), puis ${(Number(formData.price) * 0.86).toFixed(2)} € (86%)`
+											: "80% puis 86%"}{" "}
+										sur votre compte Stripe.
+									</p>
+								</div>
+							)}
 						</div>
 					)}
 
@@ -801,7 +859,13 @@ export default function NewAgentPage() {
 								<Separator />
 								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">Prix</span>
-									<Badge>Gratuit</Badge>
+									<Badge>
+										{formData.priceType === "free"
+											? "Gratuit"
+											: formData.priceType === "subscription"
+												? `${formData.price} \u20ac/mois`
+												: `${formData.price} \u20ac`}
+									</Badge>
 								</div>
 							</div>
 

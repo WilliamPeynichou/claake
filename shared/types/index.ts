@@ -210,6 +210,30 @@ export interface CreatorProfile {
 	};
 }
 
+export interface CommissionEntry {
+	id: string;
+	amount: number;
+	platform_fee: number;
+	creator_payout: number;
+	commission_rate: number;
+	sale_number: number;
+	agent_id: string;
+	created_at: string;
+}
+
+export interface CreatorEarnings {
+	total_earnings: number;
+	total_platform_fees: number;
+	total_sales: number;
+	commissions: CommissionEntry[];
+}
+
+export interface ConnectStatus {
+	connected: boolean;
+	details_submitted: boolean;
+	payouts_enabled: boolean;
+}
+
 export interface ActivityLog {
 	id: string;
 	actor_id: string;

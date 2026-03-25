@@ -1,10 +1,10 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../../../prisma/prisma.service.js";
 import {
 	USER_REPOSITORY,
 	type UserRepositoryPort,
 } from "../../../users/domain/ports/user.repository.port.js";
 import { STRIPE_SERVICE, type StripeServicePort } from "../../domain/ports/stripe.port.js";
-import { PrismaService } from "../../../../prisma/prisma.service.js";
 
 @Injectable()
 export class CreateConnectAccountUseCase {
@@ -30,10 +30,7 @@ export class CreateConnectAccountUseCase {
 		}
 
 		const webUrl = process.env.WEB_URL ?? "http://localhost:3000";
-		const link = await this.stripe.createAccountLink(
-			accountId,
-			`${webUrl}/dashboard/settings`,
-		);
+		const link = await this.stripe.createAccountLink(accountId, `${webUrl}/dashboard/settings`);
 
 		return { url: link.url };
 	}

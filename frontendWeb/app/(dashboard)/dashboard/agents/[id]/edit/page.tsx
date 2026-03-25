@@ -66,6 +66,8 @@ export default function EditAgentPage() {
 		sellerApiProvider: "anthropic",
 		dockerImage: "",
 		downloadUrl: "",
+		priceType: "free" as "free" | "one_time" | "subscription",
+		price: "0",
 	});
 
 	useEffect(() => {
@@ -92,6 +94,13 @@ export default function EditAgentPage() {
 					sellerApiProvider: "anthropic",
 					dockerImage: agentData.docker_image ?? "",
 					downloadUrl: agentData.download_url ?? "",
+					priceType:
+						agentData.pricing_model === "one_time"
+							? "one_time"
+							: agentData.pricing_model === "subscription"
+								? "subscription"
+								: "free",
+					price: agentData.price > 0 ? String(agentData.price) : "0",
 				});
 				if (agentData.image_url) {
 					setImagePreview(agentData.image_url);
@@ -173,6 +182,13 @@ export default function EditAgentPage() {
 						formData.mode === "LOCAL" || formData.mode === "HYBRID"
 							? formData.downloadUrl || undefined
 							: undefined,
+					pricing_model:
+						formData.priceType === "one_time"
+							? "ONE_TIME"
+							: formData.priceType === "subscription"
+								? "SUBSCRIPTION"
+								: "FREE",
+					price: formData.priceType !== "free" ? Number(formData.price) : 0,
 				} as any,
 				token,
 			);
@@ -465,6 +481,51 @@ export default function EditAgentPage() {
 										disabled={!isEditable}
 									/>
 								</div>
+							</div>
+						)}
+					</div>
+
+					{/* Pricing */}
+					<Separator />
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold">Tarification</h3>
+						<div className="grid grid-cols-3 gap-2">
+							{[
+								{ id: "free", label: "Gratuit" },
+								{ id: "one_time", label: "Achat unique" },
+								{ id: "subscription", label: "Abonnement" },
+							].map((p) => (
+								<button
+									key={p.id}
+									type="button"
+									onClick={() => isEditable && updateField("priceType", p.id)}
+									disabled={!isEditable}
+									className={`rounded-md border p-2 text-center text-sm transition-colors disabled:opacity-50 ${
+										formData.priceType === p.id ? "border-primary bg-primary/5" : "border-input"
+									}`}
+								>
+									{p.label}
+								</button>
+							))}
+						</div>
+						{formData.priceType !== "free" && (
+							<div className="space-y-2">
+								<Label htmlFor="price">
+									Prix ({formData.priceType === "subscription" ? "par mois" : "unique"}) en euros
+								</Label>
+								<Input
+									id="price"
+									type="number"
+									min="0.50"
+									step="0.01"
+									value={formData.price}
+									onChange={(e) => updateField("price", e.target.value)}
+									placeholder="5.00"
+									disabled={!isEditable}
+								/>
+								<p className="text-xs text-muted-foreground">
+									Claake prend 20% sur les 100 premières ventes, puis 14%.
+								</p>
 							</div>
 						)}
 					</div>

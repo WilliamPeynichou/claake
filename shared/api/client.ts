@@ -7,6 +7,8 @@ import type {
 	ChatMessage,
 	ChatSession,
 	Collection,
+	ConnectStatus,
+	CreatorEarnings,
 	CreatorProfile,
 	Favorite,
 	Purchase,
@@ -316,16 +318,18 @@ export function createApiClient(baseUrl: string) {
 			purchases: (token: string) => fetchJson<Purchase[]>("/payments/purchases", withAuth(token)),
 			checkAccess: (agentId: string, token: string) =>
 				fetchJson<{ has_access: boolean }>(`/payments/access/${agentId}`, withAuth(token)),
+			earnings: (token: string, limit = 50, offset = 0) =>
+				fetchJson<CreatorEarnings>(
+					`/payments/earnings?limit=${limit}&offset=${offset}`,
+					withAuth(token),
+				),
 			connectOnboard: (token: string) =>
 				fetchJson<{ url: string }>(
 					"/payments/connect/onboard",
 					withAuth(token, { method: "POST" }),
 				),
 			connectStatus: (token: string) =>
-				fetchJson<{ connected: boolean; details_submitted: boolean }>(
-					"/payments/connect/status",
-					withAuth(token),
-				),
+				fetchJson<ConnectStatus>("/payments/connect/status", withAuth(token)),
 		},
 		creators: {
 			get: (id: string) => fetchJson<CreatorProfile>(`/creators/${id}`),

@@ -252,6 +252,27 @@ model Subscription {
   @@map("subscriptions")
 }
 
+model Commission {
+  id                 String   @id @default(uuid())
+  amount             Decimal  @db.Decimal(10, 2)
+  platformFee        Decimal  @map("platform_fee") @db.Decimal(10, 2)
+  creatorPayout      Decimal  @map("creator_payout") @db.Decimal(10, 2)
+  commissionRate     Decimal  @map("commission_rate") @db.Decimal(5, 4)
+  currency           String   @default("eur") @db.Char(3)
+  stripePaymentId    String?  @map("stripe_payment_id")
+  saleNumber         Int      @map("sale_number")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  agentId   String @map("agent_id")
+  creatorId String @map("creator_id")
+  buyerId   String @map("buyer_id")
+
+  @@index([agentId])
+  @@index([creatorId])
+  @@index([createdAt])
+  @@map("commissions")
+}
+
 model UsageCredit {
   id        String   @id @default(uuid())
   balance   Int      @default(0)
