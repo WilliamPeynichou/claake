@@ -14,8 +14,10 @@ async function main() {
 	await prisma.agentVersion.deleteMany();
 	await prisma.pipeline.deleteMany();
 	await prisma.agent.deleteMany();
-	await prisma.user.deleteMany();
+	// Detach users from teams before deleting teams (circular FK: teams.owner_id -> users and users.team_id -> teams)
+	await prisma.user.updateMany({ data: { teamId: null } });
 	await prisma.team.deleteMany();
+	await prisma.user.deleteMany();
 	await prisma.category.deleteMany();
 
 	// --- Categories ---
@@ -81,25 +83,28 @@ async function main() {
 	}
 	console.log(`Seeded ${categories.length} categories`);
 
-	// --- Team ---
-	const team = await prisma.team.create({
-		data: {
-			name: "Claake Devs",
-			ownerId: "placeholder",
-			plan: "TEAM",
-		},
-	});
-
-	// --- Users ---
+	// --- Users (Alice created first — she owns the team) ---
 	const alice = await prisma.user.create({
 		data: {
 			email: "alice@example.com",
 			displayName: "Alice Dev",
 			role: "CREATOR",
 			stripeAccountId: "acct_alice_test",
-			teamId: team.id,
 		},
 	});
+
+	// --- Team (created after Alice so ownerId FK is valid) ---
+	const team = await prisma.team.create({
+		data: {
+			name: "Claake Devs",
+			ownerId: alice.id,
+			plan: "TEAM",
+		},
+	});
+
+	// Assign Alice and subsequent members to the team
+	await prisma.user.update({ where: { id: alice.id }, data: { teamId: team.id } });
+
 	const bob = await prisma.user.create({
 		data: {
 			email: "bob@example.com",
@@ -576,14 +581,16 @@ async function main() {
 	}
 	console.log(`Seeded ${favs.length} favorites`);
 
-	// --- Collections ---
+	// --- Collections (via join table) ---
 	await prisma.collection.create({
 		data: {
 			userId: frank.id,
 			name: "Mes outils de dev",
 			description: "Agents pour améliorer mon workflow de développement",
 			isPublic: true,
-			agentIds: [codeReview.id, dataViz.id],
+			agents: {
+				create: [{ agentId: codeReview.id }, { agentId: dataViz.id }],
+			},
 		},
 	});
 	await prisma.collection.create({
@@ -592,22 +599,26 @@ async function main() {
 			name: "Marketing toolkit",
 			description: "Agents pour le marketing et la communication",
 			isPublic: false,
-			agentIds: [contentWriter.id, seoOptimizer.id],
+			agents: {
+				create: [{ agentId: contentWriter.id }, { agentId: seoOptimizer.id }],
+			},
 		},
 	});
 	console.log("Seeded 2 collections");
 
-	// --- Pipelines ---
+	// --- Pipelines (via steps table) ---
 	await prisma.pipeline.create({
 		data: {
 			userId: frank.id,
 			name: "Content Pipeline",
 			description: "Rédaction → SEO → Publication",
-			agentSequence: [
-				{ agentId: contentWriter.id, step: 1, config: { tone: "professional" } },
-				{ agentId: seoOptimizer.id, step: 2, config: {} },
-			],
 			isPublic: true,
+			steps: {
+				create: [
+					{ step: 1, agentId: contentWriter.id, config: { tone: "professional" } },
+					{ step: 2, agentId: seoOptimizer.id, config: {} },
+				],
+			},
 		},
 	});
 	console.log("Seeded 1 pipeline");

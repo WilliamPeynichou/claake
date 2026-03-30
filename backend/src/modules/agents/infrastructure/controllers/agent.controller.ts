@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
 import { RolesGuard } from "../../../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import type { CreateAgentDto } from "../../application/dtos/create-agent.dto.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
+import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
 import { GetAgentDownloadInfoUseCase } from "../../application/usecases/get-agent-download-info.usecase.js";
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
 import { ListAgentsUseCase } from "../../application/usecases/list-agents.usecase.js";
 import { ReviewAgentUseCase } from "../../application/usecases/review-agent.usecase.js";
+import { UnpublishAgentUseCase } from "../../application/usecases/unpublish-agent.usecase.js";
 import { UpdateAgentUseCase } from "../../application/usecases/update-agent.usecase.js";
 import { ValidateAgentUseCase } from "../../application/usecases/validate-agent.usecase.js";
 
@@ -21,6 +23,8 @@ export class AgentController {
 		private readonly validateAgent: ValidateAgentUseCase,
 		private readonly reviewAgent: ReviewAgentUseCase,
 		private readonly getDownloadInfo: GetAgentDownloadInfoUseCase,
+		private readonly deleteAgent: DeleteAgentUseCase,
+		private readonly unpublishAgent: UnpublishAgentUseCase,
 	) {}
 
 	@Get()
@@ -89,6 +93,19 @@ export class AgentController {
 	@UseGuards(SupabaseAuthGuard)
 	async downloadInfo(@Param("id") id: string, @Req() req: any) {
 		return this.getDownloadInfo.execute(id, req.user.id);
+	}
+
+	@Delete(":id")
+	@HttpCode(204)
+	@UseGuards(SupabaseAuthGuard)
+	async remove(@Param("id") id: string, @Req() req: any) {
+		await this.deleteAgent.execute(id, { id: req.user.id, email: req.user.email });
+	}
+
+	@Patch(":id/unpublish")
+	@UseGuards(SupabaseAuthGuard)
+	async unpublish(@Param("id") id: string, @Req() req: any) {
+		return this.unpublishAgent.execute(id, { id: req.user.id, email: req.user.email });
 	}
 
 	@Patch(":id/review")

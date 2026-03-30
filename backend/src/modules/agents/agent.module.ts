@@ -3,10 +3,12 @@ import { Reflector } from "@nestjs/core";
 import { RolesGuard } from "../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../common/guards/supabase-auth.guard.js";
 import { CreateAgentUseCase } from "./application/usecases/create-agent.usecase.js";
+import { DeleteAgentUseCase } from "./application/usecases/delete-agent.usecase.js";
 import { GetAgentDownloadInfoUseCase } from "./application/usecases/get-agent-download-info.usecase.js";
 import { GetAgentUseCase } from "./application/usecases/get-agent.usecase.js";
 import { ListAgentsUseCase } from "./application/usecases/list-agents.usecase.js";
 import { ReviewAgentUseCase } from "./application/usecases/review-agent.usecase.js";
+import { UnpublishAgentUseCase } from "./application/usecases/unpublish-agent.usecase.js";
 import { UpdateAgentUseCase } from "./application/usecases/update-agent.usecase.js";
 import { ValidateAgentUseCase } from "./application/usecases/validate-agent.usecase.js";
 import { AGENT_REPOSITORY } from "./domain/ports/agent.repository.port.js";
@@ -26,6 +28,8 @@ import { PrismaAgentRepository } from "./infrastructure/repositories/prisma-agen
 		ValidateAgentUseCase,
 		ReviewAgentUseCase,
 		GetAgentDownloadInfoUseCase,
+		DeleteAgentUseCase,
+		UnpublishAgentUseCase,
 		{ provide: AGENT_REPOSITORY, useClass: PrismaAgentRepository },
 	],
 	exports: [AGENT_REPOSITORY],

@@ -1,4 +1,4 @@
-import { ValidationPipe } from "@nestjs/common";
+import { RequestMethod, ValidationPipe } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
 import compression from "compression";
 import helmet from "helmet";
@@ -50,7 +50,8 @@ async function bootstrap() {
 		}),
 	);
 
-	app.setGlobalPrefix("v1");
+	app.setGlobalPrefix("v1", { exclude: [{ path: "health", method: RequestMethod.GET }] });
+	app.enableShutdownHooks();
 
 	app.useGlobalPipes(
 		new ValidationPipe({

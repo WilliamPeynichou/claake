@@ -29,6 +29,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		const endpointFormat = ((params as any).endpointFormat as string)?.toLowerCase() ?? "openai";
 		const { url, init } = this.buildRequest(params, endpointFormat);
 
+		this.validateUrl(params.baseUrl!);
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -56,6 +57,45 @@ export class EndpointProxyProvider implements AIProviderPort {
 			yield* this.parseStandardSSE(res, endpointFormat);
 		} finally {
 			clearTimeout(timeout);
+		}
+	}
+
+	private validateUrl(url: string): void {
+		let parsed: URL;
+		try {
+			parsed = new URL(url);
+		} catch {
+			throw new Error("Invalid endpoint URL");
+		}
+
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			throw new Error("Endpoint URL must use http or https protocol");
+		}
+
+		const hostname = parsed.hostname.toLowerCase();
+
+		// Block loopback
+		if (hostname === "localhost" || hostname === "::1") {
+			throw new Error("Endpoint URL points to a blocked address");
+		}
+
+		// Block by numeric IP ranges
+		const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+		if (ipv4Match) {
+			const [, a, b] = ipv4Match.map(Number);
+			const octets = ipv4Match.slice(1).map(Number);
+			// 127.x.x.x — loopback
+			if (octets[0] === 127) throw new Error("Endpoint URL points to a blocked address");
+			// 10.x.x.x — private
+			if (octets[0] === 10) throw new Error("Endpoint URL points to a blocked address");
+			// 172.16-31.x.x — private
+			if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) throw new Error("Endpoint URL points to a blocked address");
+			// 192.168.x.x — private
+			if (octets[0] === 192 && octets[1] === 168) throw new Error("Endpoint URL points to a blocked address");
+			// 169.254.x.x — link-local / AWS metadata
+			if (octets[0] === 169 && octets[1] === 254) throw new Error("Endpoint URL points to a blocked address");
+			// 0.x.x.x — invalid
+			if (octets[0] === 0) throw new Error("Endpoint URL points to a blocked address");
 		}
 	}
 

@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { AgentDetailChat } from "./agent-detail-chat";
 import { AgentDetailReviews } from "./agent-detail-reviews";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error("NEXT_PUBLIC_API_URL is not set");
 const serverApiClient = createApiClient(API_URL);
 
 export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {

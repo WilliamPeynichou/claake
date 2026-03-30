@@ -38,7 +38,7 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 
 	const refreshSessions = useCallback(async () => {
 		try {
-			const result = await apiClient.chat.listSessions(token);
+			const result = await apiClient.chat.listSessions(token, 50);
 			setSessions(result.sessions);
 		} catch {
 			// Silently fail
@@ -143,6 +143,7 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 			const reader = res.body!.getReader();
 			const decoder = new TextDecoder();
 			let buffer = "";
+			let receivedDone = false;
 
 			while (true) {
 				const { done, value } = await reader.read();
@@ -169,6 +170,7 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 							);
 						}
 						if (parsed.done && parsed.message) {
+							receivedDone = true;
 							// Replace placeholder with final persisted message
 							setMessages((prev) =>
 								prev.map((m) =>
@@ -183,6 +185,17 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 						// Skip unparseable
 					}
 				}
+			}
+
+			// Stream ended without a done event — connection was cut mid-response
+			if (!receivedDone) {
+				setMessages((prev) =>
+					prev.map((m) =>
+						m.id === assistantId && m.content
+							? { ...m, content: m.content + "\n\n*(réponse interrompue)*" }
+							: m,
+					),
+				);
 			}
 
 			await refreshSessions();

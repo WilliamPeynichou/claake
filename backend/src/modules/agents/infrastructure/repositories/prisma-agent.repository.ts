@@ -13,7 +13,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 	constructor(private readonly prisma: PrismaService) {}
 
 	async findAll(params: AgentListParams): Promise<{ agents: AgentEntity[]; total: number }> {
-		const where: Prisma.AgentWhereInput = {};
+		const where: Prisma.AgentWhereInput = { deletedAt: null };
 
 		if (params.creatorId) {
 			where.creatorId = params.creatorId;
@@ -86,16 +86,16 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 	}
 
 	async findById(id: string): Promise<AgentEntity | null> {
-		const agent = await this.prisma.agent.findUnique({
-			where: { id },
+		const agent = await this.prisma.agent.findFirst({
+			where: { id, deletedAt: null },
 			include: { creator: { select: { displayName: true } } },
 		});
 		return agent ? AgentMapper.toDomain(agent) : null;
 	}
 
 	async findBySlug(slug: string): Promise<AgentEntity | null> {
-		const agent = await this.prisma.agent.findUnique({
-			where: { slug },
+		const agent = await this.prisma.agent.findFirst({
+			where: { slug, deletedAt: null },
 			include: { creator: { select: { displayName: true } } },
 		});
 		return agent ? AgentMapper.toDomain(agent) : null;
@@ -170,6 +170,29 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 			where: { id },
 			data: { rating, reviewCount },
 		});
+	}
+
+	async softDelete(id: string): Promise<void> {
+		await this.prisma.agent.update({
+			where: { id },
+			data: { deletedAt: new Date() },
+		});
+	}
+
+	async hasPurchased(userId: string, agentId: string): Promise<boolean> {
+		const purchase = await this.prisma.purchase.findUnique({
+			where: { userId_agentId: { userId, agentId } },
+			select: { id: true },
+		});
+		return purchase !== null;
+	}
+
+	async hasActiveSubscription(userId: string, agentId: string): Promise<boolean> {
+		const sub = await this.prisma.subscription.findFirst({
+			where: { userId, agentId, status: "ACTIVE" },
+			select: { id: true },
+		});
+		return sub !== null;
 	}
 
 	async updateStatus(id: string, status: string, scanStatus?: string): Promise<void> {

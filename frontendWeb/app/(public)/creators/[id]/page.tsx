@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error("NEXT_PUBLIC_API_URL is not set");
 const serverApiClient = createApiClient(API_URL);
 
 function getLinkIcon(label: string) {

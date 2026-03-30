@@ -15,7 +15,7 @@ export interface AgentDownloadInfo {
 export class GetAgentDownloadInfoUseCase {
 	constructor(@Inject(AGENT_REPOSITORY) private readonly repo: AgentRepositoryPort) {}
 
-	async execute(agentId: string, _userId: string): Promise<AgentDownloadInfo> {
+	async execute(agentId: string, userId: string): Promise<AgentDownloadInfo> {
 		const agent = await this.repo.findById(agentId);
 		if (!agent) {
 			throw new NotFoundException("Agent not found");
@@ -25,16 +25,23 @@ export class GetAgentDownloadInfoUseCase {
 			throw new BadRequestException("This agent does not support local execution");
 		}
 
-		// TODO: verify purchase access for paid agents
-		if (!agent.isFree()) {
-			// For now, allow access — payment check will be added later
+		const isOwner = agent.isOwnedBy(userId);
+
+		if (!agent.isFree() && !isOwner) {
+			const [purchased, subscribed] = await Promise.all([
+				this.repo.hasPurchased(userId, agentId),
+				this.repo.hasActiveSubscription(userId, agentId),
+			]);
+			if (!purchased && !subscribed) {
+				throw new ForbiddenException("Purchase required to access this agent");
+			}
 		}
 
 		return {
 			docker_image: agent.dockerImage,
 			download_url: agent.downloadUrl,
 			models: agent.models,
-			system_prompt: agent.systemPrompt,
+			system_prompt: isOwner ? agent.systemPrompt : null,
 		};
 	}
 }

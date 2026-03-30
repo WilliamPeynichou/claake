@@ -24,4 +24,7 @@ export interface AgentRepositoryPort {
 	update(id: string, data: Partial<AgentEntity>): Promise<AgentEntity>;
 	updateStatus(id: string, status: string, scanStatus?: string): Promise<void>;
 	updateRating(id: string, rating: number, reviewCount: number): Promise<void>;
+	softDelete(id: string): Promise<void>;
+	hasPurchased(userId: string, agentId: string): Promise<boolean>;
+	hasActiveSubscription(userId: string, agentId: string): Promise<boolean>;
 }

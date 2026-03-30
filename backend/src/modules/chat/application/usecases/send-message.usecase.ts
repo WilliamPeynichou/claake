@@ -67,7 +67,7 @@ export class SendMessageUseCase {
 		const model = agent.models[0] ?? "claude-sonnet-4-20250514";
 		const stream = provider.streamText({
 			model,
-			systemPrompt: agent.systemPrompt ?? agent.longDescription ?? agent.description,
+			systemPrompt: agent.systemPrompt ?? agent.longDescription ?? null,
 			messages: formattedHistory,
 			maxTokens: 4096,
 			...extraParams,
