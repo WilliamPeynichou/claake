@@ -20,8 +20,12 @@ export default function CataloguePage() {
 	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
 	const fetchAgents = useCallback(async () => {
+		setLoading(true);
+		setError(null);
 		try {
 			const res = await apiClient.agents.list({
 				q: query || undefined,
@@ -34,8 +38,10 @@ export default function CataloguePage() {
 			});
 			setAgents(res.agents);
 			setTotal(res.total);
-		} catch {
-			// ignore
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Erreur lors du chargement des agents");
+		} finally {
+			setLoading(false);
 		}
 	}, [query, selectedCategory, pricingModel, mode, sortBy, page]);
 
@@ -103,7 +109,17 @@ export default function CataloguePage() {
 			</div>
 
 			{/* Results */}
-			{agents.length === 0 ? (
+			{error && (
+				<div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+					Erreur : {error}
+				</div>
+			)}
+			{loading ? (
+				<div className="flex flex-col items-center justify-center py-16 text-center">
+					<div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+					<p className="mt-4 text-sm text-muted-foreground">Chargement des agents...</p>
+				</div>
+			) : agents.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-16 text-center">
 					<Search className="h-12 w-12 text-muted-foreground/30" />
 					<h3 className="mt-4 text-lg font-semibold">Aucun agent trouv&eacute;</h3>
