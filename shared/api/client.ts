@@ -193,15 +193,27 @@ export function createApiClient(baseUrl: string) {
 					`/chat/sessions/${sessionId}/messages?limit=${limit}&offset=${offset}`,
 					withAuth(token),
 				),
-			sendMessageSSE: (sessionId: string, content: string, token: string) =>
+			sendMessageSSE: (sessionId: string, content: string, token: string, fileIds?: string[]) =>
 				fetch(`${baseUrl}/chat/sessions/${sessionId}/messages`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
 						Authorization: `Bearer ${token}`,
 					},
-					body: JSON.stringify({ content }),
+					body: JSON.stringify({ content, ...(fileIds?.length ? { file_ids: fileIds } : {}) }),
 				}),
+			uploadFile: (file: File, token: string, opts: { sessionId?: string; agentId?: string }) => {
+				const formData = new FormData();
+				formData.append("file", file);
+				const params = new URLSearchParams();
+				if (opts.sessionId) params.set("sessionId", opts.sessionId);
+				if (opts.agentId) params.set("agentId", opts.agentId);
+				return fetch(`${baseUrl}/uploads?${params}`, {
+					method: "POST",
+					headers: { Authorization: `Bearer ${token}` },
+					body: formData,
+				});
+			},
 			deleteSession: (sessionId: string, token: string) =>
 				fetchJson<{ deleted: boolean }>(
 					`/chat/sessions/${sessionId}`,

@@ -13,6 +13,7 @@ import {
 import type { Response } from "express";
 import { SkipTransform } from "../../../../common/decorators/skip-transform.decorator.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
+import { PrismaService } from "../../../../prisma/prisma.service.js";
 import type { CreateSessionDto } from "../../application/dtos/create-session.dto.js";
 import type { SendMessageDto } from "../../application/dtos/send-message.dto.js";
 import { ChatMessageTransformer } from "../../application/transformers/chat-message.transformer.js";
@@ -22,6 +23,7 @@ import { DeleteSessionUseCase } from "../../application/usecases/delete-session.
 import { GetSessionMessagesUseCase } from "../../application/usecases/get-session-messages.usecase.js";
 import { ListSessionsUseCase } from "../../application/usecases/list-sessions.usecase.js";
 import { SendMessageUseCase } from "../../application/usecases/send-message.usecase.js";
+import type { FileAttachment } from "../../domain/ports/ai-provider.port.js";
 
 @Controller("chat")
 @UseGuards(SupabaseAuthGuard)
@@ -32,6 +34,7 @@ export class ChatController {
 		private readonly getSessionMessages: GetSessionMessagesUseCase,
 		private readonly sendMessage: SendMessageUseCase,
 		private readonly deleteSession: DeleteSessionUseCase,
+		private readonly prisma: PrismaService,
 	) {}
 
 	@Post("sessions")
@@ -76,14 +79,31 @@ export class ChatController {
 		@Req() req: any,
 		@Res() res: Response,
 	) {
+		// Resolve file attachments from DB
+		let attachments: FileAttachment[] = [];
+		if (dto.file_ids?.length) {
+			const files = await this.prisma.uploadedFile.findMany({
+				where: { id: { in: dto.file_ids } },
+				select: { url: true, mimeType: true, type: true },
+			});
+			attachments = files.map((f) => ({
+				type: f.type === "DOCUMENT" ? "document" : "image",
+				url: f.url,
+				mimeType: f.mimeType,
+			}));
+		}
+
 		const { stream, onComplete } = await this.sendMessage.execute(
 			id,
 			req.user.id,
 			dto.content,
 			dto.content_type ?? "TEXT",
+			attachments,
 		);
 
-		res.setHeader("Content-Type", "text/event-stream");
+		// Vercel AI SDK data stream protocol
+		res.setHeader("Content-Type", "text/plain; charset=utf-8");
+		res.setHeader("x-vercel-ai-data-stream", "v1");
 		res.setHeader("Cache-Control", "no-cache");
 		res.setHeader("Connection", "keep-alive");
 		res.flushHeaders();
@@ -93,15 +113,17 @@ export class ChatController {
 		try {
 			for await (const chunk of stream) {
 				fullText += chunk;
-				res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+				// 0: text token
+				res.write(`0:${JSON.stringify(chunk)}\n`);
 			}
 
-			const savedMessage = await onComplete(fullText);
-			const messageDto = ChatMessageTransformer.toDto(savedMessage);
-			res.write(`data: ${JSON.stringify({ done: true, message: messageDto })}\n\n`);
+			await onComplete(fullText);
+			// d: finish step
+			res.write(`d:${JSON.stringify({ finishReason: "stop" })}\n`);
 		} catch (error) {
 			const errMsg = error instanceof Error ? error.message : "Stream error";
-			res.write(`data: ${JSON.stringify({ error: errMsg })}\n\n`);
+			// 3: error
+			res.write(`3:${JSON.stringify(errMsg)}\n`);
 		} finally {
 			res.end();
 		}

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUploader } from "@/components/uploads";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { uploadAgentImage } from "@/lib/supabase/storage";
@@ -466,6 +467,18 @@ export default function EditAgentPage() {
 									/>
 								</div>
 							</div>
+						)}
+					</div>
+
+					{/* Médias & Documents */}
+					<Separator />
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold">Médias &amp; Documents</h3>
+						{token && (
+							<FileUploader
+								token={token}
+								agentId={id}
+							/>
 						)}
 					</div>
 

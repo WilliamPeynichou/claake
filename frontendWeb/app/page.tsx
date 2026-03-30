@@ -41,12 +41,15 @@ export default function HomePage() {
 	const pageRef = useRevealOnScroll();
 	const [agents, setAgents] = useState<Agent[]>([]);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
+	const [loadingAgents, setLoadingAgents] = useState(true);
 
 	useEffect(() => {
+		setLoadingAgents(true);
 		apiClient.agents
-			.list()
+			.list({ limit: 50 })
 			.then((res) => setAgents(res.agents))
-			.catch(() => {});
+			.catch(() => {})
+			.finally(() => setLoadingAgents(false));
 		apiClient.categories
 			.list()
 			.then(setCategories)
@@ -120,14 +123,20 @@ export default function HomePage() {
 						<h2 className="mt-2 font-display text-2xl sm:text-3xl">{t("featured.title")}</h2>
 					</div>
 					<div className="mt-6 flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
-						{featured.map((agent, i) => (
-							<div
-								key={agent.id}
-								className={`min-w-[280px] max-w-[320px] flex-shrink-0 snap-start reveal reveal-delay-${(i % 4) + 1}`}
-							>
-								<AgentCard agent={agent} />
-							</div>
-						))}
+						{loadingAgents && featured.length === 0 ? (
+							Array.from({ length: 3 }).map((_, i) => (
+								<div key={i} className="min-w-[280px] h-48 animate-pulse rounded bg-muted flex-shrink-0" />
+							))
+						) : (
+							featured.map((agent, i) => (
+								<div
+									key={agent.id}
+									className={`min-w-[280px] max-w-[320px] flex-shrink-0 snap-start reveal reveal-delay-${(i % 4) + 1}`}
+								>
+									<AgentCard agent={agent} />
+								</div>
+							))
+						)}
 					</div>
 					<div className="mt-4 flex justify-center">
 						<Link
@@ -218,11 +227,17 @@ export default function HomePage() {
 						<h2 className="mt-2 font-display text-2xl sm:text-3xl">{t("trending.title")}</h2>
 					</div>
 					<div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-						{trending.map((agent, i) => (
-							<div key={agent.id} className={`reveal reveal-delay-${(i % 4) + 1}`}>
-								<AgentCard agent={agent} />
-							</div>
-						))}
+						{loadingAgents && trending.length === 0 ? (
+							Array.from({ length: 4 }).map((_, i) => (
+								<div key={i} className="h-48 animate-pulse rounded bg-muted" />
+							))
+						) : (
+							trending.map((agent, i) => (
+								<div key={agent.id} className={`reveal reveal-delay-${(i % 4) + 1}`}>
+									<AgentCard agent={agent} />
+								</div>
+							))
+						)}
 					</div>
 				</div>
 			</section>

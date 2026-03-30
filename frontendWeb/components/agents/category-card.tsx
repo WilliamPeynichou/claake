@@ -42,6 +42,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
 					<div>
 						<h3 className="font-sans text-sm font-medium">{category.name}</h3>
 						<p className="text-xs text-muted-foreground">{category.description}</p>
+					<p className="mt-1 text-xs font-medium text-brand">{category.agent_count} agent{category.agent_count > 1 ? "s" : ""}</p>
 					</div>
 				</CardContent>
 			</Card>

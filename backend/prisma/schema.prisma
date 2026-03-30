@@ -93,6 +93,11 @@ enum MessageRole {
   SYSTEM
 }
 
+enum UploadedFileType {
+  IMAGE
+  DOCUMENT
+}
+
 // ─── Users & Teams ──────────────────────────────────────────────────────────
 
 model User {
@@ -123,6 +128,7 @@ model User {
   favorites     Favorite[]
   usageCredits  UsageCredit[]
   chatSessions  ChatSession[]
+  uploadedFiles UploadedFile[]
 
   @@index([email])
   @@map("users")
@@ -197,6 +203,7 @@ model Agent {
   chatSessions     ChatSession[]
   collectionAgents CollectionAgent[]
   pipelineSteps    PipelineStep[]
+  uploadedFiles    UploadedFile[]
 
   @@index([slug])
   @@index([creatorId])
@@ -437,7 +444,8 @@ model ChatSession {
   agentId String @map("agent_id")
   agent   Agent  @relation(fields: [agentId], references: [id])
 
-  messages ChatMessage[]
+  messages      ChatMessage[]
+  uploadedFiles UploadedFile[]
 
   @@index([userId, updatedAt])
   @@map("chat_sessions")
@@ -455,6 +463,40 @@ model ChatMessage {
   sessionId String      @map("session_id")
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
+  attachments UploadedFile[]
+
   @@index([sessionId, createdAt])
   @@map("chat_messages")
+}
+
+// ─── Fichiers uploadés ───────────────────────────────────────────────────────
+
+model UploadedFile {
+  id        String           @id @default(uuid())
+  type      UploadedFileType @default(IMAGE)
+  url       String
+  fileName  String           @map("file_name")
+  mimeType  String           @map("mime_type")
+  size      Int
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  // Uploader (user or creator/dev)
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Liens optionnels — un fichier peut être rattaché à un agent, une session ou un message
+  agentId   String? @map("agent_id")
+  agent     Agent?  @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  sessionId String?      @map("session_id")
+  session   ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  messageId String?      @map("message_id")
+  message   ChatMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([sessionId])
+  @@index([messageId])
+  @@map("uploaded_files")
 }

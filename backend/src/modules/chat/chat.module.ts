@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AgentModule } from "../agents/agent.module.js";
+import { PrismaModule } from "../../prisma/prisma.module.js";
 import { UserModule } from "../users/user.module.js";
 import {
 	EXECUTION_STRATEGY_RESOLVER,
@@ -23,7 +24,7 @@ import { PrismaChatRepository } from "./infrastructure/repositories/prisma-chat.
 import { ManageApiKeysUseCase } from "../users/application/usecases/manage-api-keys.usecase.js";
 
 @Module({
-	imports: [AgentModule, UserModule],
+	imports: [AgentModule, UserModule, PrismaModule],
 	controllers: [ChatController],
 	providers: [
 		CreateSessionUseCase,

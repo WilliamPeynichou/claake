@@ -14,6 +14,7 @@ import { NotificationModule } from "./modules/notifications/notification.module.
 import { PaymentModule } from "./modules/payments/payment.module.js";
 import { ReviewModule } from "./modules/reviews/review.module.js";
 import { StatsModule } from "./modules/stats/stats.module.js";
+import { UploadsModule } from "./modules/uploads/uploads.module.js";
 import { UserModule } from "./modules/users/user.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 
@@ -49,6 +50,7 @@ function validateEnv(config: Record<string, unknown>) {
 		ReviewModule,
 		UserModule,
 		StatsModule,
+		UploadsModule,
 	],
 	providers: [
 		{ provide: ENCRYPTION_SERVICE, useClass: AesEncryptionService },

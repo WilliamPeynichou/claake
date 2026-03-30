@@ -13,6 +13,7 @@ import {
 	EXECUTION_STRATEGY_RESOLVER,
 	type ExecutionStrategyResolver,
 } from "../services/execution-strategy.resolver.js";
+import type { FileAttachment } from "../../domain/ports/ai-provider.port.js";
 
 @Injectable()
 export class SendMessageUseCase {
@@ -28,6 +29,7 @@ export class SendMessageUseCase {
 		userId: string,
 		content: string,
 		contentType = "TEXT",
+		attachments: FileAttachment[] = [],
 	): Promise<{
 		stream: AsyncIterable<string>;
 		onComplete: (fullText: string) => Promise<ChatMessageEntity>;
@@ -70,6 +72,7 @@ export class SendMessageUseCase {
 			systemPrompt: agent.systemPrompt ?? agent.longDescription ?? null,
 			messages: formattedHistory,
 			maxTokens: 4096,
+			attachments: attachments.length > 0 ? attachments : undefined,
 			...extraParams,
 		});
 

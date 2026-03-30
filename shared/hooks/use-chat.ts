@@ -18,6 +18,9 @@ export interface UseChatReturn {
 	error: string | null;
 	sessionId: string | null;
 	sessions: ChatSession[];
+	pendingFileIds: string[];
+	addPendingFile: (fileId: string) => void;
+	removePendingFile: (fileId: string) => void;
 	sendMessage: () => Promise<void>;
 	loadSession: (sessionId: string) => Promise<void>;
 	createSession: (agentId: string) => Promise<string>;
@@ -33,8 +36,17 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 	const [error, setError] = useState<string | null>(null);
 	const [sessionId, setSessionId] = useState<string | null>(initialSessionId ?? null);
 	const [sessions, setSessions] = useState<ChatSession[]>([]);
+	const [pendingFileIds, setPendingFileIds] = useState<string[]>([]);
 	const sessionIdRef = useRef(sessionId);
 	sessionIdRef.current = sessionId;
+
+	const addPendingFile = useCallback((fileId: string) => {
+		setPendingFileIds((prev) => [...prev, fileId]);
+	}, []);
+
+	const removePendingFile = useCallback((fileId: string) => {
+		setPendingFileIds((prev) => prev.filter((id) => id !== fileId));
+	}, []);
 
 	const refreshSessions = useCallback(async () => {
 		try {
@@ -91,7 +103,7 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 
 	const sendMessage = useCallback(async () => {
 		const trimmed = input.trim();
-		if (!trimmed) return;
+		if (!trimmed && pendingFileIds.length === 0) return;
 
 		let currentSessionId = sessionIdRef.current;
 
@@ -117,8 +129,10 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 			created_at: new Date().toISOString(),
 		};
 
+		const fileIdsToSend = [...pendingFileIds];
 		setMessages((prev) => [...prev, userMessage]);
 		setInput("");
+		setPendingFileIds([]);
 		setStreaming(true);
 		setError(null);
 
@@ -133,11 +147,11 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 		setMessages((prev) => [...prev, assistantMessage]);
 
 		try {
-			const res = await apiClient.chat.sendMessageSSE(currentSessionId, trimmed, token);
+			const res = await apiClient.chat.sendMessageSSE(currentSessionId, trimmed, token, fileIdsToSend.length ? fileIdsToSend : undefined);
 
 			if (!res.ok) {
 				const errBody = await res.json().catch(() => ({}));
-				throw new Error(errBody.error ?? `Erreur ${res.status}`);
+				throw new Error(errBody.error?.message ?? errBody.message ?? `Erreur ${res.status}`);
 			}
 
 			const reader = res.body!.getReader();
@@ -206,7 +220,7 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 		} finally {
 			setStreaming(false);
 		}
-	}, [input, agentId, apiClient, token, createSession, refreshSessions]);
+	}, [input, pendingFileIds, agentId, apiClient, token, createSession, refreshSessions]);
 
 	return {
 		messages,
@@ -217,6 +231,9 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 		error,
 		sessionId,
 		sessions,
+		pendingFileIds,
+		addPendingFile,
+		removePendingFile,
 		sendMessage,
 		loadSession,
 		createSession,

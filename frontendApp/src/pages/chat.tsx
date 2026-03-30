@@ -1,10 +1,9 @@
 import type { Agent } from "@claake/shared";
 import { useChat } from "@claake/shared/hooks";
-import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChatInput } from "@/components/chat-input";
-import { ChatMessages } from "@/components/chat-messages";
+import { ChatThread } from "@/components/chat-thread";
+import { ChatInputDA } from "@/components/chat-input-da";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -19,126 +18,93 @@ export function ChatPage() {
 		messages,
 		input,
 		setInput,
-		loading,
 		streaming,
 		error,
 		sessionId,
 		sessions,
+		pendingFileIds,
+		addPendingFile,
+		removePendingFile,
 		sendMessage,
 		loadSession,
 		createSession,
 		deleteSession,
-	} = useChat({
-		apiClient,
-		token,
-		agentId: selectedAgent?.id,
-	});
+		refreshSessions,
+	} = useChat({ apiClient, token, agentId: selectedAgent?.id });
 
 	// Load agents
 	useEffect(() => {
-		apiClient.agents.list({ limit: 100 }).then((res) => setAgents(res.agents));
+		apiClient.agents.list({ limit: 100 }).then((res) => {
+			setAgents(res.agents);
+			const agentParam = searchParams.get("agent");
+			if (agentParam) {
+				const found = res.agents.find((a) => a.id === agentParam);
+				if (found) setSelectedAgent(found);
+			}
+		}).catch(() => {});
 	}, []);
 
-	// Auto-select agent from URL param
-	useEffect(() => {
-		const agentParam = searchParams.get("agent");
-		if (agentParam && agents.length > 0 && !selectedAgent) {
-			const found = agents.find((a) => a.id === agentParam);
-			if (found) setSelectedAgent(found);
-		}
-	}, [searchParams, agents, selectedAgent]);
+	const handleSelectSession = useCallback(async (session: { id: string; agent_id: string; agent_name: string }) => {
+		const agent = agents.find((a) => a.id === session.agent_id);
+		if (agent) setSelectedAgent(agent);
+		await loadSession(session.id);
+	}, [agents, loadSession]);
 
-	const handleSelectAgent = useCallback(
-		async (agent: Agent) => {
-			setSelectedAgent(agent);
-			setSearchParams({ agent: agent.id });
-			await createSession(agent.id);
-		},
-		[createSession, setSearchParams],
-	);
-
-	const handleSelectSession = useCallback(
-		async (session: { id: string; agent_id: string; agent_name: string }) => {
-			const agent = agents.find((a) => a.id === session.agent_id);
-			if (agent) setSelectedAgent(agent);
-			await loadSession(session.id);
-		},
-		[agents, loadSession],
-	);
-
-	const handleNewChat = useCallback(() => {
-		const webUrl = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
-		window.open(`${webUrl}/catalogue`, "_blank");
-	}, []);
-
-	const handleResumeConversation = useCallback(() => {
-		if (sessions.length > 0) {
-			handleSelectSession(sessions[0]);
-		}
-	}, [sessions, handleSelectSession]);
-
-	const handleStartWithAgent = useCallback(() => {
-		const webUrl = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
-		window.open(`${webUrl}/catalogue`, "_blank");
-	}, []);
+	const handleNewChat = useCallback(async (agent: Agent) => {
+		setSelectedAgent(agent);
+		setSearchParams({ agent: agent.id });
+		await createSession(agent.id);
+		await refreshSessions();
+	}, [createSession, refreshSessions, setSearchParams]);
 
 	return (
-		<div className="flex h-screen">
+		<div className="flex h-screen" style={{ background: "#faf9f5" }}>
 			<ChatSidebar
+				agents={agents}
 				sessions={sessions}
 				activeSessionId={sessionId}
 				onSelectSession={handleSelectSession}
-				onDeleteSession={deleteSession}
 				onNewChat={handleNewChat}
+				onDeleteSession={deleteSession}
 				onSignOut={signOut}
 				userName={profile?.display_name ?? profile?.email ?? null}
 			/>
 
-			<main className="flex flex-1 flex-col">
-				{/* Top bar */}
+			<main className="flex flex-1 flex-col min-w-0">
 				{selectedAgent && (
-					<header
-						className="flex items-center gap-4 border-b px-6 py-5"
-						style={{ background: "#faf9f5", borderColor: "#e8e4d8" }}
-					>
-						<div
-							className="flex h-8 w-8 shrink-0 items-center justify-center"
-							style={{ background: "#e8f2ec" }}
-						>
-							<Sparkles className="h-4 w-4" style={{ color: "#2a7a44" }} />
+					<header className="flex items-center gap-3 px-6 py-4"
+						style={{ borderBottom: "1px solid #e8e4d8", background: "#faf9f5" }}>
+						<div className="h-8 w-8 flex items-center justify-center"
+							style={{ background: "#e8ede0", border: "1px solid #d0dac4" }}>
+							<span style={{ fontFamily: "'DM Serif Display', serif", color: "#6b7c5c", fontSize: "0.9rem" }}>
+								{selectedAgent.name[0].toUpperCase()}
+							</span>
 						</div>
 						<div>
-							<p className="text-sm font-medium" style={{ color: "#1e1c18" }}>
+							<p className="text-sm font-medium" style={{ color: "#1e1c18", fontFamily: "'DM Sans', system-ui" }}>
 								{selectedAgent.name}
 							</p>
 							{selectedAgent.description && (
-								<p className="text-xs" style={{ color: "#766f62" }}>
-									{selectedAgent.description}
-								</p>
+								<p className="text-xs" style={{ color: "#a09a8a" }}>{selectedAgent.description}</p>
 							)}
 						</div>
 					</header>
 				)}
 
-				<ChatMessages
-					messages={messages}
-					loading={loading}
-					streaming={streaming}
-					error={error}
-					agentName={selectedAgent?.name ?? null}
-					onResumeConversation={handleResumeConversation}
-					onStartWithAgent={handleStartWithAgent}
-				/>
+				<ChatThread messages={messages} streaming={streaming} error={error} agentName={selectedAgent?.name} />
 
-				{selectedAgent && (
-					<ChatInput
-						value={input}
-						onChange={setInput}
-						onSend={sendMessage}
-						disabled={streaming || !selectedAgent}
-						streaming={streaming}
-					/>
-				)}
+				<ChatInputDA
+					value={input}
+					onChange={setInput}
+					onSend={sendMessage}
+					disabled={!sessionId}
+					streaming={streaming}
+					stop={() => {}}
+					token={token}
+					sessionId={sessionId}
+					onFileUploaded={addPendingFile}
+					onFileRemoved={removePendingFile}
+				/>
 			</main>
 		</div>
 	);

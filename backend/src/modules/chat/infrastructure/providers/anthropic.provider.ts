@@ -1,5 +1,19 @@
 import { Injectable } from "@nestjs/common";
-import type { AIProviderPort, StreamTextParams } from "../../domain/ports/ai-provider.port.js";
+import type { AIProviderPort, FileAttachment, StreamTextParams } from "../../domain/ports/ai-provider.port.js";
+
+type AnthropicContentBlock =
+	| { type: "text"; text: string }
+	| { type: "image"; source: { type: "url"; url: string } }
+	| { type: "document"; source: { type: "url"; url: string } };
+
+function buildAttachmentBlocks(attachments: FileAttachment[]): AnthropicContentBlock[] {
+	return attachments.map((a) => {
+		if (a.type === "document") {
+			return { type: "document", source: { type: "url", url: a.url } };
+		}
+		return { type: "image", source: { type: "url", url: a.url } };
+	});
+}
 
 @Injectable()
 export class AnthropicProvider implements AIProviderPort {
@@ -8,10 +22,21 @@ export class AnthropicProvider implements AIProviderPort {
 			throw new Error("No API key provided for Anthropic provider");
 		}
 
-		const messages = params.messages.map((m) => ({
-			role: m.role as "user" | "assistant",
-			content: m.content,
-		}));
+		const messages = params.messages.map((m, idx) => {
+			const isLastUserMessage =
+				m.role === "user" && idx === params.messages.length - 1;
+
+			// Attach files only to the last user message
+			if (isLastUserMessage && params.attachments?.length) {
+				const blocks: AnthropicContentBlock[] = [
+					...buildAttachmentBlocks(params.attachments),
+					{ type: "text", text: m.content },
+				];
+				return { role: "user" as const, content: blocks };
+			}
+
+			return { role: m.role as "user" | "assistant", content: m.content };
+		});
 
 		const body: Record<string, unknown> = {
 			model: params.model,
