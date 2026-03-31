@@ -9,12 +9,18 @@ export const metadata: Metadata = {
 	title: "Claake — One click to intelligence",
 	description:
 		"Découvrez, testez et déployez des agents IA créés par la communauté. L'intelligence à portée de clic.",
+	icons: {
+		icon: "/logoClaakeGreen.png",
+		apple: "/logoClaakeGreen.png",
+		shortcut: "/logoClaakeGreen.png",
+	},
 	openGraph: {
 		title: "Claake — One click to intelligence",
 		description:
 			"Découvrez, testez et déployez des agents IA créés par la communauté. L'intelligence à portée de clic.",
 		url: "https://claake.com",
 		siteName: "Claake",
+		images: [{ url: "/logoClaakeGreen.png", width: 512, height: 512 }],
 		locale: "fr_FR",
 		type: "website",
 	},
@@ -23,6 +29,7 @@ export const metadata: Metadata = {
 		title: "Claake — One click to intelligence",
 		description:
 			"Découvrez, testez et déployez des agents IA créés par la communauté. L'intelligence à portée de clic.",
+		images: ["/logoClaakeGreen.png"],
 	},
 };
 

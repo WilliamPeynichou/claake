@@ -19,7 +19,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
 					Discutez avec <strong>{agent.name}</strong> dans l&apos;espace chat dédié.
 				</p>
 				<Button asChild className="mt-4">
-					<Link href={`/chat?agent=${agent.id}`}>
+					<Link href={`/chat/${agent.id}`}>
 						<MessageSquare className="mr-2 h-4 w-4" />
 						Ouvrir le chat
 					</Link>

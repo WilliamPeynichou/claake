@@ -169,7 +169,7 @@ export default function MyAgentsPage() {
 											</Button>
 										)}
 										<Button variant="outline" size="sm" asChild className="flex-1">
-											<Link href={`/chat?agent=${agent.id}`}>Chat</Link>
+											<Link href={`/chat/${agent.id}`}>Chat</Link>
 										</Button>
 										<Button
 											variant="ghost"

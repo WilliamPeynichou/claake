@@ -3,6 +3,7 @@
 import { Globe, LayoutDashboard, LogOut, Menu, Moon, Shield, Sun, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import styles from "./header.module.css";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n/context";
@@ -29,15 +30,14 @@ export function Header() {
 		<header className="border-b border-border/60 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
 			<div className="container mx-auto flex h-16 items-center justify-between px-4">
 				<div className="flex items-center gap-8">
-					<Link href="/" className="flex items-center gap-2">
+					<Link href="/" className={`flex items-center gap-2 ${styles.logoWrapper}`}>
 						<Image
-							src="/logo.png"
+							src="/logoClaakeGreen.png"
 							alt="Claake"
 							width={110}
 							height={32}
 							priority
-							style={{ height: "auto" }}
-							className="dark:brightness-0 dark:invert"
+							className={styles.logo}
 						/>
 					</Link>
 					<nav className="hidden items-center gap-6 md:flex">

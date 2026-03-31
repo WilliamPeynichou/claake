@@ -103,13 +103,28 @@ export default function HomePage() {
 									<ArrowRight className="ml-2 h-4 w-4" />
 								</Link>
 							</Button>
-							<Link
-								href="/download"
+							<a
+								href="/Claake.dmg"
+								download="Claake.dmg"
 								className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-brand"
 							>
 								<Download className="h-4 w-4" />
 								{t("hero.cta.download")}
-							</Link>
+								<span
+									style={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										background: "#e8e4d8",
+										color: "#6b6558",
+										padding: "0.1rem 0.4rem",
+										borderRadius: "3px",
+									}}
+								>
+									Mac
+								</span>
+							</a>
 						</div>
 					</div>
 				</div>

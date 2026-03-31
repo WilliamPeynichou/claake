@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/context";
+import styles from "./footer.module.css";
 
 export function Footer() {
 	const { t } = useI18n();
@@ -12,7 +14,9 @@ export function Footer() {
 				<div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-4">
 					{/* Brand */}
 					<div className="space-y-3">
-						<p className="font-semibold text-foreground">Claake</p>
+						<Link href="/">
+							<Image src="/logoClaakeGreen.png" alt="Claake" width={90} height={26} className={styles.logo} />
+						</Link>
 						<p className="text-sm text-muted-foreground leading-relaxed">
 							{t("footer.description")}
 						</p>

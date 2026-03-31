@@ -1,0 +1,10 @@
+.logoWrapper {
+	width: 12%;
+	min-width: 4rem;
+	max-width: 7rem;
+}
+
+.logo {
+	width: 100%;
+	height: auto;
+}
