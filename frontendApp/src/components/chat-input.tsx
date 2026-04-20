@@ -27,10 +27,7 @@ export function ChatInput({ value, onChange, onSend, disabled, streaming }: Chat
 	}
 
 	return (
-		<div
-			className="border-t px-6 py-5"
-			style={{ background: "#faf9f5", borderColor: "#e8e4d8" }}
-		>
+		<div className="border-t px-6 py-5" style={{ background: "#faf9f5", borderColor: "#e8e4d8" }}>
 			<div className="mx-auto flex max-w-3xl items-end gap-3">
 				<textarea
 					ref={textareaRef}
@@ -75,11 +72,7 @@ export function ChatInput({ value, onChange, onSend, disabled, streaming }: Chat
 						(e.currentTarget as HTMLButtonElement).style.color = "#2a7a44";
 					}}
 				>
-					{streaming ? (
-						<Loader2 className="h-4 w-4 animate-spin" />
-					) : (
-						<Send className="h-4 w-4" />
-					)}
+					{streaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
 				</button>
 			</div>
 		</div>

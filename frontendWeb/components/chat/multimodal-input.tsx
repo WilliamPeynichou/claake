@@ -46,64 +46,84 @@ export function MultimodalInput({
 	const [uploading, setUploading] = useState(false);
 	const [uploadErr, setUploadErr] = useState<string | null>(null);
 
-	const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-		onChange(e.target.value);
-		const el = e.target;
-		el.style.height = "auto";
-		el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
-	}, [onChange]);
+	const handleInput = useCallback(
+		(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+			onChange(e.target.value);
+			const el = e.target;
+			el.style.height = "auto";
+			el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+		},
+		[onChange],
+	);
 
-	const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		if (e.key === "Enter" && !e.shiftKey) {
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+			if (e.key === "Enter" && !e.shiftKey) {
+				e.preventDefault();
+				if (!disabled && !streaming && (value.trim() || files.length > 0)) {
+					onSend();
+					setFiles([]);
+					if (textareaRef.current) textareaRef.current.style.height = "auto";
+				}
+			}
+		},
+		[disabled, streaming, value, files.length, onSend],
+	);
+
+	const handleSubmit = useCallback(
+		(e: React.FormEvent) => {
 			e.preventDefault();
 			if (!disabled && !streaming && (value.trim() || files.length > 0)) {
 				onSend();
 				setFiles([]);
 				if (textareaRef.current) textareaRef.current.style.height = "auto";
 			}
-		}
-	}, [disabled, streaming, value, files.length, onSend]);
+		},
+		[disabled, streaming, value, files.length, onSend],
+	);
 
-	const handleSubmit = useCallback((e: React.FormEvent) => {
-		e.preventDefault();
-		if (!disabled && !streaming && (value.trim() || files.length > 0)) {
-			onSend();
-			setFiles([]);
-			if (textareaRef.current) textareaRef.current.style.height = "auto";
-		}
-	}, [disabled, streaming, value, files.length, onSend]);
-
-	const onFile = useCallback(async (fl: FileList | null) => {
-		if (!fl || !token) return;
-		setUploadErr(null);
-		setUploading(true);
-		for (const file of Array.from(fl)) {
-			if (file.size > 10_485_760) { setUploadErr("Max 10 Mo"); continue; }
-			try {
-				const fd = new FormData();
-				fd.append("file", file);
-				const p = new URLSearchParams();
-				if (sessionId) p.set("sessionId", sessionId);
-				const res = await fetch(`${API_BASE}/uploads?${p}`, {
-					method: "POST",
-					headers: { Authorization: `Bearer ${token}` },
-					body: fd,
-				});
-				if (!res.ok) throw new Error("Upload échoué");
-				const json = await res.json();
-				const up = json.data ?? json;
-				const isImage = file.type.startsWith("image/");
-				setFiles((prev) => [
-					...prev,
-					{ id: up.id, name: file.name, isImage, previewUrl: isImage ? URL.createObjectURL(file) : undefined },
-				]);
-				onFileUploaded?.(up.id);
-			} catch (err) {
-				setUploadErr(err instanceof Error ? err.message : "Erreur upload");
+	const onFile = useCallback(
+		async (fl: FileList | null) => {
+			if (!fl || !token) return;
+			setUploadErr(null);
+			setUploading(true);
+			for (const file of Array.from(fl)) {
+				if (file.size > 10_485_760) {
+					setUploadErr("Max 10 Mo");
+					continue;
+				}
+				try {
+					const fd = new FormData();
+					fd.append("file", file);
+					const p = new URLSearchParams();
+					if (sessionId) p.set("sessionId", sessionId);
+					const res = await fetch(`${API_BASE}/uploads?${p}`, {
+						method: "POST",
+						headers: { Authorization: `Bearer ${token}` },
+						body: fd,
+					});
+					if (!res.ok) throw new Error("Upload échoué");
+					const json = await res.json();
+					const up = json.data ?? json;
+					const isImage = file.type.startsWith("image/");
+					setFiles((prev) => [
+						...prev,
+						{
+							id: up.id,
+							name: file.name,
+							isImage,
+							previewUrl: isImage ? URL.createObjectURL(file) : undefined,
+						},
+					]);
+					onFileUploaded?.(up.id);
+				} catch (err) {
+					setUploadErr(err instanceof Error ? err.message : "Erreur upload");
+				}
 			}
-		}
-		setUploading(false);
-	}, [token, sessionId, onFileUploaded]);
+			setUploading(false);
+		},
+		[token, sessionId, onFileUploaded],
+	);
 
 	function removeFile(id: string) {
 		setFiles((prev) => prev.filter((f) => f.id !== id));
@@ -130,12 +150,22 @@ export function MultimodalInput({
 							<div
 								key={f.id}
 								className="flex items-center gap-1.5 px-2 py-1"
-								style={{ background: "#e8ede0", border: "1px solid #d0dac4", borderRadius: "4px", fontSize: "0.72rem" }}
+								style={{
+									background: "#e8ede0",
+									border: "1px solid #d0dac4",
+									borderRadius: "4px",
+									fontSize: "0.72rem",
+								}}
 							>
-								{f.isImage && f.previewUrl
-									? <img src={f.previewUrl} alt={f.name} className="h-4 w-4 object-cover rounded" />
-									: <FileText className="h-3.5 w-3.5" style={{ color: "#a09a8a" }} />}
-								<span className="max-w-[100px] truncate" style={{ color: "#6b6558", fontFamily: "'DM Sans', system-ui" }}>
+								{f.isImage && f.previewUrl ? (
+									<img src={f.previewUrl} alt={f.name} className="h-4 w-4 object-cover rounded" />
+								) : (
+									<FileText className="h-3.5 w-3.5" style={{ color: "#a09a8a" }} />
+								)}
+								<span
+									className="max-w-[100px] truncate"
+									style={{ color: "#6b6558", fontFamily: "'DM Sans', system-ui" }}
+								>
 									{f.name}
 								</span>
 								<button type="button" onClick={() => removeFile(f.id)}>
@@ -147,7 +177,10 @@ export function MultimodalInput({
 				)}
 
 				{uploadErr && (
-					<p className="px-4 pt-2 text-xs" style={{ color: "#c44444", fontFamily: "'DM Sans', system-ui" }}>
+					<p
+						className="px-4 pt-2 text-xs"
+						style={{ color: "#c44444", fontFamily: "'DM Sans', system-ui" }}
+					>
 						{uploadErr}
 					</p>
 				)}
@@ -173,9 +206,7 @@ export function MultimodalInput({
 					/>
 
 					{/* Bottom toolbar */}
-					<div
-						className="flex items-center justify-between px-3 pb-3"
-					>
+					<div className="flex items-center justify-between px-3 pb-3">
 						{/* Left: agent selector + attach */}
 						<div className="flex items-center gap-2">
 							{currentAgent && (
@@ -210,13 +241,19 @@ export function MultimodalInput({
 										disabled={uploading}
 										className="p-1.5 transition-colors rounded"
 										style={{ color: uploading ? "#d0dac4" : "#a09a8a" }}
-										onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.color = "#6b7c5c"; }}
-										onMouseLeave={(e) => { if (!uploading) e.currentTarget.style.color = "#a09a8a"; }}
+										onMouseEnter={(e) => {
+											if (!uploading) e.currentTarget.style.color = "#6b7c5c";
+										}}
+										onMouseLeave={(e) => {
+											if (!uploading) e.currentTarget.style.color = "#a09a8a";
+										}}
 										title="Joindre un fichier"
 									>
-										{uploading
-											? <Loader2 className="h-4 w-4 animate-spin" />
-											: <Paperclip className="h-4 w-4" />}
+										{uploading ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<Paperclip className="h-4 w-4" />
+										)}
 									</button>
 								</>
 							)}
@@ -249,8 +286,12 @@ export function MultimodalInput({
 									borderRadius: "8px",
 									cursor: canSend ? "pointer" : "default",
 								}}
-								onMouseEnter={(e) => { if (canSend) e.currentTarget.style.background = "#4e5c42"; }}
-								onMouseLeave={(e) => { if (canSend) e.currentTarget.style.background = "#6b7c5c"; }}
+								onMouseEnter={(e) => {
+									if (canSend) e.currentTarget.style.background = "#4e5c42";
+								}}
+								onMouseLeave={(e) => {
+									if (canSend) e.currentTarget.style.background = "#6b7c5c";
+								}}
 							>
 								<Send className="h-3.5 w-3.5" />
 							</button>

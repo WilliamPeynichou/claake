@@ -37,10 +37,7 @@ export class PrismaFavoriteRepository implements FavoriteRepositoryPort {
 		return fav !== null;
 	}
 
-	async isFavoritedBatch(
-		userId: string,
-		agentIds: string[],
-	): Promise<Record<string, boolean>> {
+	async isFavoritedBatch(userId: string, agentIds: string[]): Promise<Record<string, boolean>> {
 		const favorites = await this.prisma.favorite.findMany({
 			where: { userId, agentId: { in: agentIds } },
 			select: { agentId: true },

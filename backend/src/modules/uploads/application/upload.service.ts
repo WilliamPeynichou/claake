@@ -1,8 +1,8 @@
+import { randomUUID } from "node:crypto";
+import { extname } from "node:path";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { randomUUID } from "node:crypto";
-import { extname } from "node:path";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 
 const ALLOWED_MIME_TYPES = [

@@ -1,6 +1,6 @@
 import { Global, Module } from "@nestjs/common";
-import { ActivityLogService } from "./domain/activity-log.service.js";
 import { ListActivityLogsUseCase } from "./application/usecases/list-activity-logs.usecase.js";
+import { ActivityLogService } from "./domain/activity-log.service.js";
 import { ActivityController } from "./infrastructure/controllers/activity.controller.js";
 
 @Global()

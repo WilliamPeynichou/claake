@@ -5,14 +5,56 @@ import { ListAgentsUseCase } from "./list-agents.usecase";
 
 const mockAgents = [
 	new AgentEntity(
-		"a1", "Agent 1", "agent-1", "Desc 1", null, "coding", [], ["claude-sonnet-4-20250514"],
-		"CLOUD", null, null, [], "FREE", 0, 1, "APPROVED", null, 10, 4.0, 2,
-		"u1", "Creator", new Date(), new Date(),
+		"a1",
+		"Agent 1",
+		"agent-1",
+		"Desc 1",
+		null,
+		"coding",
+		[],
+		["claude-sonnet-4-20250514"],
+		"CLOUD",
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
+		"APPROVED",
+		null,
+		10,
+		4.0,
+		2,
+		"u1",
+		"Creator",
+		new Date(),
+		new Date(),
 	),
 	new AgentEntity(
-		"a2", "Agent 2", "agent-2", "Desc 2", null, "writing", [], ["gpt-4o"],
-		"CLOUD", null, null, [], "FREE", 0, 1, "APPROVED", null, 20, 3.5, 5,
-		"u2", "Creator 2", new Date(), new Date(),
+		"a2",
+		"Agent 2",
+		"agent-2",
+		"Desc 2",
+		null,
+		"writing",
+		[],
+		["gpt-4o"],
+		"CLOUD",
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
+		"APPROVED",
+		null,
+		20,
+		3.5,
+		5,
+		"u2",
+		"Creator 2",
+		new Date(),
+		new Date(),
 	),
 ];
 
@@ -29,10 +71,7 @@ describe("ListAgentsUseCase", () => {
 
 	beforeEach(async () => {
 		const module = await Test.createTestingModule({
-			providers: [
-				ListAgentsUseCase,
-				{ provide: AGENT_REPOSITORY, useValue: mockRepo },
-			],
+			providers: [ListAgentsUseCase, { provide: AGENT_REPOSITORY, useValue: mockRepo }],
 		}).compile();
 
 		useCase = module.get(ListAgentsUseCase);

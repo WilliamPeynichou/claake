@@ -89,20 +89,20 @@ export class EndpointProxyProvider implements AIProviderPort {
 			// 10.x.x.x — private
 			if (octets[0] === 10) throw new Error("Endpoint URL points to a blocked address");
 			// 172.16-31.x.x — private
-			if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) throw new Error("Endpoint URL points to a blocked address");
+			if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31)
+				throw new Error("Endpoint URL points to a blocked address");
 			// 192.168.x.x — private
-			if (octets[0] === 192 && octets[1] === 168) throw new Error("Endpoint URL points to a blocked address");
+			if (octets[0] === 192 && octets[1] === 168)
+				throw new Error("Endpoint URL points to a blocked address");
 			// 169.254.x.x — link-local / AWS metadata
-			if (octets[0] === 169 && octets[1] === 254) throw new Error("Endpoint URL points to a blocked address");
+			if (octets[0] === 169 && octets[1] === 254)
+				throw new Error("Endpoint URL points to a blocked address");
 			// 0.x.x.x — invalid
 			if (octets[0] === 0) throw new Error("Endpoint URL points to a blocked address");
 		}
 	}
 
-	private async *parseStandardSSE(
-		res: Response,
-		format: string,
-	): AsyncIterable<string> {
+	private async *parseStandardSSE(res: Response, format: string): AsyncIterable<string> {
 		const reader = res.body!.getReader();
 		const decoder = new TextDecoder();
 		let buffer = "";

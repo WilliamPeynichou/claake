@@ -6,8 +6,11 @@ import { AnthropicProvider } from "../../infrastructure/providers/anthropic.prov
 import { EndpointProxyProvider } from "../../infrastructure/providers/endpoint-proxy.provider";
 import { MockProvider } from "../../infrastructure/providers/mock.provider";
 import { OpenAIProvider } from "../../infrastructure/providers/openai.provider";
+import {
+	EXECUTION_STRATEGY_RESOLVER,
+	ExecutionStrategyResolver,
+} from "./execution-strategy.resolver";
 import { MANAGE_API_KEYS_USE_CASE } from "./manage-api-keys.port";
-import { EXECUTION_STRATEGY_RESOLVER, ExecutionStrategyResolver } from "./execution-strategy.resolver";
 
 const mockAnthropic = { streamText: jest.fn() };
 const mockOpenai = { streamText: jest.fn() };
@@ -16,23 +19,43 @@ const mockMockProvider = { streamText: jest.fn() };
 const mockEncryption = { encrypt: jest.fn(), decrypt: jest.fn().mockReturnValue("decrypted-key") };
 const mockApiKeys = { getDecryptedKeyForProvider: jest.fn() };
 
-function makeAgent(overrides: {
-	models?: string[];
-	mode?: string;
-	cloudStrategy?: string | null;
-	endpointUrl?: string | null;
-	endpointFormat?: string | null;
-	sellerApiKeyEncrypted?: string | null;
-	sellerApiProvider?: string | null;
-	requiredUserProvider?: string | null;
-} = {}): AgentEntity {
+function makeAgent(
+	overrides: {
+		models?: string[];
+		mode?: string;
+		cloudStrategy?: string | null;
+		endpointUrl?: string | null;
+		endpointFormat?: string | null;
+		sellerApiKeyEncrypted?: string | null;
+		sellerApiProvider?: string | null;
+		requiredUserProvider?: string | null;
+	} = {},
+): AgentEntity {
 	return new AgentEntity(
-		"agent-1", "Test Agent", "test-agent", "desc", null,
-		"coding", ["ai"],
+		"agent-1",
+		"Test Agent",
+		"test-agent",
+		"desc",
+		null,
+		"coding",
+		["ai"],
 		overrides.models ?? ["claude-sonnet-4-20250514"],
 		overrides.mode ?? "CLOUD",
-		null, null, [], "FREE", 0, 1, "APPROVED",
-		null, 0, 0, 0, "creator-1", null, new Date(), new Date(),
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
+		"APPROVED",
+		null,
+		0,
+		0,
+		0,
+		"creator-1",
+		null,
+		new Date(),
+		new Date(),
 		"System prompt",
 		overrides.cloudStrategy !== undefined ? overrides.cloudStrategy : "SELLER_ENDPOINT",
 		overrides.endpointUrl !== undefined ? overrides.endpointUrl : "https://api.example.com",

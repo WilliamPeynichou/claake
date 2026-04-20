@@ -121,11 +121,12 @@ export function FileUploader({
 			<div
 				className={[
 					"flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors",
-					dragOver
-						? "border-brand bg-brand-subtle"
-						: "border-border/60 hover:border-brand/40",
+					dragOver ? "border-brand bg-brand-subtle" : "border-border/60 hover:border-brand/40",
 				].join(" ")}
-				onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+				onDragOver={(e) => {
+					e.preventDefault();
+					setDragOver(true);
+				}}
 				onDragLeave={() => setDragOver(false)}
 				onDrop={(e) => {
 					e.preventDefault();
@@ -157,9 +158,7 @@ export function FileUploader({
 			</div>
 
 			{/* Error */}
-			{error && (
-				<p className="text-sm text-destructive">{error}</p>
-			)}
+			{error && <p className="text-sm text-destructive">{error}</p>}
 
 			{/* File list */}
 			{files.length > 0 && (

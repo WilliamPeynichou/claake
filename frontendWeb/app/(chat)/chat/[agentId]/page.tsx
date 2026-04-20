@@ -12,13 +12,17 @@ import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function AgentChatPage() {
 	return (
-		<Suspense fallback={
-			<div className="flex flex-1 items-center justify-center" style={{ background: "#faf9f5" }}>
-				<span style={{ fontFamily: "'DM Sans', system-ui", fontSize: "0.85rem", color: "#a09a8a" }}>
-					Chargement…
-				</span>
-			</div>
-		}>
+		<Suspense
+			fallback={
+				<div className="flex flex-1 items-center justify-center" style={{ background: "#faf9f5" }}>
+					<span
+						style={{ fontFamily: "'DM Sans', system-ui", fontSize: "0.85rem", color: "#a09a8a" }}
+					>
+						Chargement…
+					</span>
+				</div>
+			}
+		>
 			<AgentChatInner />
 		</Suspense>
 	);
@@ -52,25 +56,34 @@ function AgentChatInner() {
 
 	// Load agents
 	useEffect(() => {
-		apiClient.agents.list({ limit: 100 }).then((res) => {
-			setAgents(res.agents);
-			const found = res.agents.find((a) => a.id === agentId);
-			if (found) setCurrentAgent(found);
-		}).catch(() => {});
+		apiClient.agents
+			.list({ limit: 100 })
+			.then((res) => {
+				setAgents(res.agents);
+				const found = res.agents.find((a) => a.id === agentId);
+				if (found) setCurrentAgent(found);
+			})
+			.catch(() => {});
 	}, [agentId]);
 
-	const handleSelectSession = useCallback(async (sid: string) => {
-		await loadSession(sid);
-	}, [loadSession]);
+	const handleSelectSession = useCallback(
+		async (sid: string) => {
+			await loadSession(sid);
+		},
+		[loadSession],
+	);
 
 	const handleNewChat = useCallback(async () => {
 		await createSession(agentId);
 		await refreshSessions();
 	}, [agentId, createSession, refreshSessions]);
 
-	const handleDeleteSession = useCallback(async (sid: string) => {
-		await deleteSession(sid);
-	}, [deleteSession]);
+	const handleDeleteSession = useCallback(
+		async (sid: string) => {
+			await deleteSession(sid);
+		},
+		[deleteSession],
+	);
 
 	if (authLoading) {
 		return (
@@ -84,7 +97,10 @@ function AgentChatInner() {
 
 	if (!token) {
 		return (
-			<div className="flex flex-1 flex-col items-center justify-center gap-4" style={{ background: "#faf9f5" }}>
+			<div
+				className="flex flex-1 flex-col items-center justify-center gap-4"
+				style={{ background: "#faf9f5" }}
+			>
 				<p style={{ fontFamily: "'DM Sans', system-ui", fontSize: "0.875rem", color: "#a09a8a" }}>
 					Connectez-vous pour accéder au chat.
 				</p>
@@ -185,7 +201,8 @@ function AgentChatInner() {
 									padding: "0.2rem 0.6rem",
 								}}
 							>
-								{currentAgent.models[0].split("/").pop()?.split("-").slice(0, 2).join(" ") ?? currentAgent.models[0]}
+								{currentAgent.models[0].split("/").pop()?.split("-").slice(0, 2).join(" ") ??
+									currentAgent.models[0]}
 							</div>
 						)}
 					</div>

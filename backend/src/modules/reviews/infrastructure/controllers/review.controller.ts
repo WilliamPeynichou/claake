@@ -32,20 +32,12 @@ export class ReviewController {
 		@Query("page") page?: string,
 		@Query("limit") limit?: string,
 	) {
-		return this.listReviews.execute(
-			agentId,
-			page ? Number(page) : 1,
-			limit ? Number(limit) : 10,
-		);
+		return this.listReviews.execute(agentId, page ? Number(page) : 1, limit ? Number(limit) : 10);
 	}
 
 	@Post()
 	@UseGuards(SupabaseAuthGuard)
-	async create(
-		@Param("agentId") agentId: string,
-		@Body() dto: CreateReviewDto,
-		@Req() req: any,
-	) {
+	async create(@Param("agentId") agentId: string, @Body() dto: CreateReviewDto, @Req() req: any) {
 		return this.createReview.execute(agentId, dto, req.user.id);
 	}
 

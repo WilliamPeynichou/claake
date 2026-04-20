@@ -6,9 +6,7 @@ import {
 
 @Injectable()
 export class DeleteSessionUseCase {
-	constructor(
-		@Inject(CHAT_SESSION_REPOSITORY) private readonly repo: ChatSessionRepositoryPort,
-	) {}
+	constructor(@Inject(CHAT_SESSION_REPOSITORY) private readonly repo: ChatSessionRepositoryPort) {}
 
 	async execute(sessionId: string, userId: string): Promise<void> {
 		const session = await this.repo.findById(sessionId);

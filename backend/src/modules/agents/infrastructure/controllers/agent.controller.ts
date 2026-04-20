@@ -1,12 +1,24 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	HttpCode,
+	Param,
+	Patch,
+	Post,
+	Query,
+	Req,
+	UseGuards,
+} from "@nestjs/common";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
 import { RolesGuard } from "../../../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import type { CreateAgentDto } from "../../application/dtos/create-agent.dto.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
-import { GetAgentDownloadInfoUseCase } from "../../application/usecases/get-agent-download-info.usecase.js";
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
+import { GetAgentDownloadInfoUseCase } from "../../application/usecases/get-agent-download-info.usecase.js";
 import { ListAgentsUseCase } from "../../application/usecases/list-agents.usecase.js";
 import { ReviewAgentUseCase } from "../../application/usecases/review-agent.usecase.js";
 import { UnpublishAgentUseCase } from "../../application/usecases/unpublish-agent.usecase.js";
@@ -81,11 +93,7 @@ export class AgentController {
 
 	@Patch(":id")
 	@UseGuards(SupabaseAuthGuard)
-	async update(
-		@Param("id") id: string,
-		@Body() dto: Partial<CreateAgentDto>,
-		@Req() req: any,
-	) {
+	async update(@Param("id") id: string, @Body() dto: Partial<CreateAgentDto>, @Req() req: any) {
 		return this.updateAgent.execute(id, dto, req.user.id);
 	}
 

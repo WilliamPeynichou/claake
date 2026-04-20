@@ -115,9 +115,7 @@ export default function AdminActivityPage() {
 										{log.target_type}/{log.target_id.slice(0, 8)}
 									</TableCell>
 									<TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
-										{log.metadata
-											? JSON.stringify(log.metadata).slice(0, 100)
-											: "\u2014"}
+										{log.metadata ? JSON.stringify(log.metadata).slice(0, 100) : "\u2014"}
 									</TableCell>
 								</TableRow>
 							))

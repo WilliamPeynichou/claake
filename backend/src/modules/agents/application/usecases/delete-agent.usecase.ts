@@ -29,9 +29,7 @@ export class DeleteAgentUseCase {
 		}
 
 		if (agent.status === "APPROVED") {
-			throw new BadRequestException(
-				"Cannot delete a published agent. Unpublish it first.",
-			);
+			throw new BadRequestException("Cannot delete a published agent. Unpublish it first.");
 		}
 
 		await this.repo.softDelete(agentId);

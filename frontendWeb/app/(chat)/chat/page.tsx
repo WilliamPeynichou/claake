@@ -29,10 +29,7 @@ export default function ChatHomePage() {
 
 	if (authLoading || loading) {
 		return (
-			<div
-				className="flex flex-1 items-center justify-center"
-				style={{ background: "#faf9f5" }}
-			>
+			<div className="flex flex-1 items-center justify-center" style={{ background: "#faf9f5" }}>
 				<span style={{ fontFamily: "'DM Sans', system-ui", fontSize: "0.85rem", color: "#a09a8a" }}>
 					Chargement…
 				</span>
@@ -165,7 +162,9 @@ export default function ChatHomePage() {
 
 				{filtered.length === 0 && (
 					<div className="col-span-3 text-center py-12">
-						<p style={{ fontFamily: "'DM Sans', system-ui", fontSize: "0.875rem", color: "#a09a8a" }}>
+						<p
+							style={{ fontFamily: "'DM Sans', system-ui", fontSize: "0.875rem", color: "#a09a8a" }}
+						>
 							Aucun agent trouvé
 						</p>
 					</div>

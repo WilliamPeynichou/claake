@@ -203,7 +203,8 @@ export default function CguPage() {
 				présentes CGU ne constitue pas une renonciation à ce droit.
 			</p>
 			<p>
-				Pour toute question, contactez-nous à : <a href="mailto:claake@contact.com">claake@contact.com</a>
+				Pour toute question, contactez-nous à :{" "}
+				<a href="mailto:claake@contact.com">claake@contact.com</a>
 			</p>
 		</article>
 	);

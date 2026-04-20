@@ -9,10 +9,7 @@ import { AnthropicProvider } from "../../infrastructure/providers/anthropic.prov
 import { EndpointProxyProvider } from "../../infrastructure/providers/endpoint-proxy.provider.js";
 import { MockProvider } from "../../infrastructure/providers/mock.provider.js";
 import { OpenAIProvider } from "../../infrastructure/providers/openai.provider.js";
-import {
-	MANAGE_API_KEYS_USE_CASE,
-	type ManageApiKeysPort,
-} from "./manage-api-keys.port.js";
+import { MANAGE_API_KEYS_USE_CASE, type ManageApiKeysPort } from "./manage-api-keys.port.js";
 
 export const EXECUTION_STRATEGY_RESOLVER = Symbol("EXECUTION_STRATEGY_RESOLVER");
 
@@ -45,9 +42,7 @@ export class ExecutionStrategyResolver {
 		}
 
 		if (!agent.cloudStrategy) {
-			throw new BadRequestException(
-				"Cet agent n'est pas encore configuré pour l'exécution cloud.",
-			);
+			throw new BadRequestException("Cet agent n'est pas encore configuré pour l'exécution cloud.");
 		}
 
 		switch (agent.cloudStrategy) {
@@ -84,10 +79,7 @@ export class ExecutionStrategyResolver {
 		return { provider, extraParams: { apiKey } };
 	}
 
-	private async resolveUserApiKey(
-		agent: AgentEntity,
-		userId: string,
-	): Promise<ResolvedStrategy> {
+	private async resolveUserApiKey(agent: AgentEntity, userId: string): Promise<ResolvedStrategy> {
 		if (!agent.requiredUserProvider) {
 			throw new BadRequestException("Agent required user provider is not configured");
 		}

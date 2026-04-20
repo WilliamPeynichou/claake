@@ -34,11 +34,7 @@ export function ChatMessages({
 				style={{ background: "#faf9f5" }}
 			>
 				{/* Logo grand */}
-				<img
-					src="/logo.png"
-					alt="Claake"
-					style={{ height: 56, opacity: 0.9 }}
-				/>
+				<img src="/logo.png" alt="Claake" style={{ height: 56, opacity: 0.9 }} />
 
 				{/* Titre */}
 				<div className="text-center" style={{ maxWidth: "480px" }}>
@@ -54,11 +50,10 @@ export function ChatMessages({
 					>
 						Welcome to Claake
 					</h1>
-					<p
-						className="mt-4 text-base leading-relaxed"
-						style={{ color: "#6b6558" }}
-					>
-						Select a conversation or choose an agent<br />from the sidebar to get started.
+					<p className="mt-4 text-base leading-relaxed" style={{ color: "#6b6558" }}>
+						Select a conversation or choose an agent
+						<br />
+						from the sidebar to get started.
 					</p>
 				</div>
 
@@ -103,14 +98,25 @@ export function ChatMessages({
 
 	if (loading) {
 		return (
-			<div className="flex flex-1 items-center justify-center" role="status" aria-label="Loading" style={{ background: "#faf9f5" }}>
+			<div
+				className="flex flex-1 items-center justify-center"
+				role="status"
+				aria-label="Loading"
+				style={{ background: "#faf9f5" }}
+			>
 				<Loader2 className="h-5 w-5 animate-spin" style={{ color: "#766f62" }} />
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-1 flex-col overflow-y-auto" role="log" aria-live="polite" aria-label="Conversation" style={{ background: "#faf9f5" }}>
+		<div
+			className="flex flex-1 flex-col overflow-y-auto"
+			role="log"
+			aria-live="polite"
+			aria-label="Conversation"
+			style={{ background: "#faf9f5" }}
+		>
 			{messages.length === 0 && (
 				<div className="flex flex-1 flex-col items-center justify-center gap-5">
 					<div
@@ -122,7 +128,11 @@ export function ChatMessages({
 					<div className="text-center">
 						<p
 							className="text-xl"
-							style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: "#1e1c18", fontWeight: 400 }}
+							style={{
+								fontFamily: "'DM Serif Display', Georgia, serif",
+								color: "#1e1c18",
+								fontWeight: 400,
+							}}
 						>
 							{agentName}
 						</p>
@@ -135,10 +145,7 @@ export function ChatMessages({
 
 			<div className="mx-auto w-full max-w-3xl space-y-8 px-6 py-6">
 				{messages.map((msg) => (
-					<div
-						key={msg.id}
-						className={`flex gap-4 ${msg.role === "user" ? "justify-end" : ""}`}
-					>
+					<div key={msg.id} className={`flex gap-4 ${msg.role === "user" ? "justify-end" : ""}`}>
 						{msg.role !== "user" && (
 							<div
 								className="flex h-8 w-8 shrink-0 items-center justify-center"
@@ -152,15 +159,29 @@ export function ChatMessages({
 							style={
 								msg.role === "user"
 									? { background: "#f3f0e8", color: "#1e1c18", border: "1px solid #e8e4d8" }
-									: { background: "#faf9f5", color: "#1e1c18", border: "1px solid #e8e4d8", borderLeft: "3px solid #2a7a44" }
+									: {
+											background: "#faf9f5",
+											color: "#1e1c18",
+											border: "1px solid #e8e4d8",
+											borderLeft: "3px solid #2a7a44",
+										}
 							}
 						>
 							<div className="whitespace-pre-wrap">{msg.content}</div>
 							{msg.role === "assistant" && streaming && msg.content === "" && (
 								<div className="flex gap-1.5 py-1">
-									<span className="h-1.5 w-1.5 animate-bounce" style={{ background: "#766f62", borderRadius: "50%", animationDelay: "0ms" }} />
-									<span className="h-1.5 w-1.5 animate-bounce" style={{ background: "#766f62", borderRadius: "50%", animationDelay: "150ms" }} />
-									<span className="h-1.5 w-1.5 animate-bounce" style={{ background: "#766f62", borderRadius: "50%", animationDelay: "300ms" }} />
+									<span
+										className="h-1.5 w-1.5 animate-bounce"
+										style={{ background: "#766f62", borderRadius: "50%", animationDelay: "0ms" }}
+									/>
+									<span
+										className="h-1.5 w-1.5 animate-bounce"
+										style={{ background: "#766f62", borderRadius: "50%", animationDelay: "150ms" }}
+									/>
+									<span
+										className="h-1.5 w-1.5 animate-bounce"
+										style={{ background: "#766f62", borderRadius: "50%", animationDelay: "300ms" }}
+									/>
 								</div>
 							)}
 						</div>

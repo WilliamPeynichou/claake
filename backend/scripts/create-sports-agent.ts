@@ -10,10 +10,10 @@
  *                                       si absent, prend le premier CREATOR/ADMIN trouvé en DB
  */
 
-import * as dotenv from "dotenv";
-import * as path from "node:path";
 import { createCipheriv, randomBytes } from "node:crypto";
+import * as path from "node:path";
 import { PrismaClient } from "@prisma/client";
+import * as dotenv from "dotenv";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -45,7 +45,9 @@ function slugify(text: string): string {
 async function main() {
 	const anthropicKey = process.env.ANTHROPIC_API_KEY;
 	if (!anthropicKey) {
-		throw new Error("ANTHROPIC_API_KEY est requise. Relance avec : ANTHROPIC_API_KEY=sk-ant-... ts-node backend/scripts/create-sports-agent.ts");
+		throw new Error(
+			"ANTHROPIC_API_KEY est requise. Relance avec : ANTHROPIC_API_KEY=sk-ant-... ts-node backend/scripts/create-sports-agent.ts",
+		);
 	}
 
 	// 1. Trouver le créateur
@@ -89,7 +91,8 @@ async function main() {
 		data: {
 			name: agentName,
 			slug,
-			description: "Ton coach sportif IA — analyse tes performances, crée des programmes d'entraînement et répond à toutes tes questions sur le sport.",
+			description:
+				"Ton coach sportif IA — analyse tes performances, crée des programmes d'entraînement et répond à toutes tes questions sur le sport.",
 			longDescription: `SportCoach IA est un assistant sportif expert propulsé par Claude.
 
 **Ce qu'il peut faire :**

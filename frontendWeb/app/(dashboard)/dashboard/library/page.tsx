@@ -95,9 +95,7 @@ export default function LibraryPage() {
 					{favorites.length === 0 ? (
 						<div className="flex flex-col items-center justify-center rounded-md border py-16 text-center">
 							<Heart className="h-8 w-8 text-muted-foreground/30" />
-							<p className="mt-2 text-sm text-muted-foreground">
-								Aucun favori pour le moment.
-							</p>
+							<p className="mt-2 text-sm text-muted-foreground">Aucun favori pour le moment.</p>
 							<Link href="/catalogue">
 								<Button variant="outline" className="mt-4">
 									Explorer le catalogue
@@ -124,9 +122,7 @@ export default function LibraryPage() {
 														</p>
 													</div>
 													<Badge variant="secondary" className="text-xs">
-														{agent.pricing_model === "free"
-															? "Gratuit"
-															: `${agent.price}\u20AC`}
+														{agent.pricing_model === "free" ? "Gratuit" : `${agent.price}\u20AC`}
 													</Badge>
 												</div>
 											</CardHeader>

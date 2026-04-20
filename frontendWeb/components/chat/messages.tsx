@@ -60,10 +60,7 @@ export function Messages({ messages, streaming, error, agentName, agentInitial }
 	}
 
 	return (
-		<div
-			className="flex-1 overflow-y-auto"
-			style={{ background: "#faf9f5" }}
-		>
+		<div className="flex-1 overflow-y-auto" style={{ background: "#faf9f5" }}>
 			<div className="max-w-3xl mx-auto py-6 flex flex-col gap-2">
 				{messages.map((msg, i) => (
 					<Message
@@ -71,11 +68,7 @@ export function Messages({ messages, streaming, error, agentName, agentInitial }
 						message={msg}
 						agentName={agentName}
 						agentInitial={agentInitial}
-						isStreaming={
-							streaming &&
-							i === messages.length - 1 &&
-							msg.role === "assistant"
-						}
+						isStreaming={streaming && i === messages.length - 1 && msg.role === "assistant"}
 					/>
 				))}
 

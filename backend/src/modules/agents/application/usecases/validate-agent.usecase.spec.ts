@@ -22,9 +22,22 @@ function makeAgent(overrides: Record<string, any> = {}): AgentEntity {
 		overrides.category ?? "coding",
 		[],
 		overrides.models ?? ["claude-sonnet-4-20250514"],
-		"CLOUD", null, null, [],
-		"FREE", 0, 1, "DRAFT", null, 0, 0, 0,
-		"user-1", null, new Date(), new Date(),
+		"CLOUD",
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
+		"DRAFT",
+		null,
+		0,
+		0,
+		0,
+		"user-1",
+		null,
+		new Date(),
+		new Date(),
 		overrides.systemPrompt ?? null,
 	);
 }
@@ -34,10 +47,7 @@ describe("ValidateAgentUseCase", () => {
 
 	beforeEach(async () => {
 		const module = await Test.createTestingModule({
-			providers: [
-				ValidateAgentUseCase,
-				{ provide: AGENT_REPOSITORY, useValue: mockRepo },
-			],
+			providers: [ValidateAgentUseCase, { provide: AGENT_REPOSITORY, useValue: mockRepo }],
 		}).compile();
 
 		useCase = module.get(ValidateAgentUseCase);
@@ -75,9 +85,7 @@ describe("ValidateAgentUseCase", () => {
 	});
 
 	it("detects rm -rf in system prompt", async () => {
-		mockRepo.findById.mockResolvedValue(
-			makeAgent({ systemPrompt: "Run rm -rf / to clean up" }),
-		);
+		mockRepo.findById.mockResolvedValue(makeAgent({ systemPrompt: "Run rm -rf / to clean up" }));
 
 		const result = await useCase.execute("agent-1");
 
@@ -96,9 +104,7 @@ describe("ValidateAgentUseCase", () => {
 	});
 
 	it("detects SQL injection patterns", async () => {
-		mockRepo.findById.mockResolvedValue(
-			makeAgent({ systemPrompt: "UNION SELECT * FROM users" }),
-		);
+		mockRepo.findById.mockResolvedValue(makeAgent({ systemPrompt: "UNION SELECT * FROM users" }));
 
 		const result = await useCase.execute("agent-1");
 

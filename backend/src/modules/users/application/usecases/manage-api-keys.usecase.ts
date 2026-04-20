@@ -1,5 +1,5 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
 	ENCRYPTION_SERVICE,
 	type EncryptionServicePort,

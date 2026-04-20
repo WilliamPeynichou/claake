@@ -52,9 +52,7 @@ export default function MyAgentsPage() {
 		setError(null);
 		try {
 			await apiClient.agents.unpublish(agent.id, token);
-			setAgents((prev) =>
-				prev.map((a) => (a.id === agent.id ? { ...a, status: "draft" } : a)),
-			);
+			setAgents((prev) => prev.map((a) => (a.id === agent.id ? { ...a, status: "draft" } : a)));
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Erreur lors de la dépublication.");
 		} finally {

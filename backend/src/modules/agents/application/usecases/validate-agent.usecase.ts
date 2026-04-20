@@ -63,9 +63,7 @@ export class ValidateAgentUseCase {
 			}
 			for (const pattern of WARNING_PATTERNS) {
 				if (pattern.test(systemPrompt)) {
-					warnings.push(
-						`Le system prompt contient un mot sensible : ${pattern.source}`,
-					);
+					warnings.push(`Le system prompt contient un mot sensible : ${pattern.source}`);
 				}
 			}
 		}

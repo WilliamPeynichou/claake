@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import type { AIProviderPort, FileAttachment, StreamTextParams } from "../../domain/ports/ai-provider.port.js";
+import type {
+	AIProviderPort,
+	FileAttachment,
+	StreamTextParams,
+} from "../../domain/ports/ai-provider.port.js";
 
 type AnthropicContentBlock =
 	| { type: "text"; text: string }
@@ -23,8 +27,7 @@ export class AnthropicProvider implements AIProviderPort {
 		}
 
 		const messages = params.messages.map((m, idx) => {
-			const isLastUserMessage =
-				m.role === "user" && idx === params.messages.length - 1;
+			const isLastUserMessage = m.role === "user" && idx === params.messages.length - 1;
 
 			// Attach files only to the last user message
 			if (isLastUserMessage && params.attachments?.length) {
@@ -84,10 +87,7 @@ export class AnthropicProvider implements AIProviderPort {
 
 					try {
 						const parsed = JSON.parse(data);
-						if (
-							parsed.type === "content_block_delta" &&
-							parsed.delta?.type === "text_delta"
-						) {
+						if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
 							yield parsed.delta.text;
 						}
 					} catch {

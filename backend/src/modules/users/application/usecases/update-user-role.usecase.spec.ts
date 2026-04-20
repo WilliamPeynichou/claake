@@ -13,8 +13,17 @@ const mockRepo = {
 
 function makeUser(role = "USER"): UserEntity {
 	return new UserEntity(
-		"target-user", "target@example.com", "Target", null, null,
-		role, null, null, 0, new Date(), new Date(),
+		"target-user",
+		"target@example.com",
+		"Target",
+		null,
+		null,
+		role,
+		null,
+		null,
+		0,
+		new Date(),
+		new Date(),
 	);
 }
 
@@ -23,10 +32,7 @@ describe("UpdateUserRoleUseCase", () => {
 
 	beforeEach(async () => {
 		const module = await Test.createTestingModule({
-			providers: [
-				UpdateUserRoleUseCase,
-				{ provide: USER_REPOSITORY, useValue: mockRepo },
-			],
+			providers: [UpdateUserRoleUseCase, { provide: USER_REPOSITORY, useValue: mockRepo }],
 		}).compile();
 
 		useCase = module.get(UpdateUserRoleUseCase);
@@ -34,9 +40,9 @@ describe("UpdateUserRoleUseCase", () => {
 	});
 
 	it("only allows SUPER_ADMIN to change roles", async () => {
-		await expect(
-			useCase.execute("target-user", "ADMIN", null, "ADMIN"),
-		).rejects.toThrow(ForbiddenException);
+		await expect(useCase.execute("target-user", "ADMIN", null, "ADMIN")).rejects.toThrow(
+			ForbiddenException,
+		);
 	});
 
 	it("rejects invalid roles", async () => {
@@ -48,17 +54,17 @@ describe("UpdateUserRoleUseCase", () => {
 	it("cannot modify a SUPER_ADMIN user", async () => {
 		mockRepo.findById.mockResolvedValue(makeUser("SUPER_ADMIN"));
 
-		await expect(
-			useCase.execute("target-user", "USER", null, "SUPER_ADMIN"),
-		).rejects.toThrow(ForbiddenException);
+		await expect(useCase.execute("target-user", "USER", null, "SUPER_ADMIN")).rejects.toThrow(
+			ForbiddenException,
+		);
 	});
 
 	it("throws NotFoundException for unknown user", async () => {
 		mockRepo.findById.mockResolvedValue(null);
 
-		await expect(
-			useCase.execute("nonexistent", "ADMIN", null, "SUPER_ADMIN"),
-		).rejects.toThrow(NotFoundException);
+		await expect(useCase.execute("nonexistent", "ADMIN", null, "SUPER_ADMIN")).rejects.toThrow(
+			NotFoundException,
+		);
 	});
 
 	it("successfully promotes a USER to ADMIN", async () => {
@@ -66,9 +72,24 @@ describe("UpdateUserRoleUseCase", () => {
 		mockRepo.findById.mockResolvedValue(user);
 
 		const updatedUser = new UserEntity(
-			"target-user", "target@example.com", "Target", null, null,
-			"ADMIN", { canManageUsers: true, canManageAgents: true, canManageCategories: false, canManageReviews: false, canViewStats: true, canViewActivity: false },
-			null, 0, new Date(), new Date(),
+			"target-user",
+			"target@example.com",
+			"Target",
+			null,
+			null,
+			"ADMIN",
+			{
+				canManageUsers: true,
+				canManageAgents: true,
+				canManageCategories: false,
+				canManageReviews: false,
+				canViewStats: true,
+				canViewActivity: false,
+			},
+			null,
+			0,
+			new Date(),
+			new Date(),
 		);
 		mockRepo.updateRole.mockResolvedValue(updatedUser);
 

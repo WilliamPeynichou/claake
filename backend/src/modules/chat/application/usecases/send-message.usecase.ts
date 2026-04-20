@@ -5,6 +5,7 @@ import {
 } from "../../../agents/domain/ports/agent.repository.port.js";
 import type { ChatMessageEntity } from "../../domain/entities/chat-message.entity.js";
 import { ChatSessionEntity } from "../../domain/entities/chat-session.entity.js";
+import type { FileAttachment } from "../../domain/ports/ai-provider.port.js";
 import {
 	CHAT_SESSION_REPOSITORY,
 	type ChatSessionRepositoryPort,
@@ -13,7 +14,6 @@ import {
 	EXECUTION_STRATEGY_RESOLVER,
 	type ExecutionStrategyResolver,
 } from "../services/execution-strategy.resolver.js";
-import type { FileAttachment } from "../../domain/ports/ai-provider.port.js";
 
 @Injectable()
 export class SendMessageUseCase {

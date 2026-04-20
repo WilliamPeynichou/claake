@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import Stripe from "stripe";
 import type { StripeServicePort } from "../../domain/ports/stripe.port.js";
@@ -9,10 +9,9 @@ export class StripeService implements StripeServicePort {
 	private readonly webhookSecret: string;
 
 	constructor(private readonly config: ConfigService) {
-		this.stripe = new Stripe(
-			this.config.getOrThrow<string>("STRIPE_SECRET_KEY"),
-			{ apiVersion: "2025-04-30.basil" as any },
-		);
+		this.stripe = new Stripe(this.config.getOrThrow<string>("STRIPE_SECRET_KEY"), {
+			apiVersion: "2025-04-30.basil" as any,
+		});
 		this.webhookSecret = this.config.getOrThrow<string>("STRIPE_WEBHOOK_SECRET");
 	}
 
@@ -55,11 +54,7 @@ export class StripeService implements StripeServicePort {
 		signature: string,
 	): Promise<{ type: string; data: Record<string, any> }> {
 		try {
-			const event = this.stripe.webhooks.constructEvent(
-				rawBody,
-				signature,
-				this.webhookSecret,
-			);
+			const event = this.stripe.webhooks.constructEvent(rawBody, signature, this.webhookSecret);
 			return { type: event.type, data: event.data.object as Record<string, any> };
 		} catch {
 			throw new BadRequestException("Invalid webhook signature");
@@ -78,10 +73,7 @@ export class StripeService implements StripeServicePort {
 		return { accountId: account.id };
 	}
 
-	async createAccountLink(
-		accountId: string,
-		returnUrl: string,
-	): Promise<{ url: string }> {
+	async createAccountLink(accountId: string, returnUrl: string): Promise<{ url: string }> {
 		const link = await this.stripe.accountLinks.create({
 			account: accountId,
 			refresh_url: returnUrl,
@@ -91,9 +83,7 @@ export class StripeService implements StripeServicePort {
 		return { url: link.url };
 	}
 
-	async getAccountStatus(
-		accountId: string,
-	): Promise<{ details_submitted: boolean }> {
+	async getAccountStatus(accountId: string): Promise<{ details_submitted: boolean }> {
 		const account = await this.stripe.accounts.retrieve(accountId);
 		return { details_submitted: account.details_submitted ?? false };
 	}

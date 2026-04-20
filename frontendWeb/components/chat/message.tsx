@@ -56,13 +56,16 @@ export function Message({ message, agentName, agentInitial, isStreaming }: Props
 					fontFamily: "'DM Sans', system-ui, sans-serif",
 				}}
 			>
-				<div className="prose prose-sm max-w-none"
-					style={{
-						"--tw-prose-body": "#1e1c18",
-						"--tw-prose-headings": "#1e1c18",
-						"--tw-prose-code": "#4e5c42",
-						"--tw-prose-pre-bg": "#f3f0e8",
-					} as React.CSSProperties}
+				<div
+					className="prose prose-sm max-w-none"
+					style={
+						{
+							"--tw-prose-body": "#1e1c18",
+							"--tw-prose-headings": "#1e1c18",
+							"--tw-prose-code": "#4e5c42",
+							"--tw-prose-pre-bg": "#f3f0e8",
+						} as React.CSSProperties
+					}
 				>
 					<ReactMarkdown
 						remarkPlugins={[remarkGfm]}

@@ -14,10 +14,30 @@ const mockRepo = {
 
 function makeAgent(status = "PENDING"): AgentEntity {
 	return new AgentEntity(
-		"agent-1", "Test Agent", "test-agent", "Desc", null,
-		"coding", [], ["claude-sonnet-4-20250514"], "CLOUD", null, null, [],
-		"FREE", 0, 1, status, null, 0, 0, 0, "user-1", null,
-		new Date(), new Date(),
+		"agent-1",
+		"Test Agent",
+		"test-agent",
+		"Desc",
+		null,
+		"coding",
+		[],
+		["claude-sonnet-4-20250514"],
+		"CLOUD",
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
+		status,
+		null,
+		0,
+		0,
+		0,
+		"user-1",
+		null,
+		new Date(),
+		new Date(),
 	);
 }
 
@@ -26,10 +46,7 @@ describe("ReviewAgentUseCase", () => {
 
 	beforeEach(async () => {
 		const module = await Test.createTestingModule({
-			providers: [
-				ReviewAgentUseCase,
-				{ provide: AGENT_REPOSITORY, useValue: mockRepo },
-			],
+			providers: [ReviewAgentUseCase, { provide: AGENT_REPOSITORY, useValue: mockRepo }],
 		}).compile();
 
 		useCase = module.get(ReviewAgentUseCase);

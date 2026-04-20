@@ -15,7 +15,13 @@ export function Footer() {
 					{/* Brand */}
 					<div className="space-y-3">
 						<Link href="/">
-							<Image src="/logoClaakeGreen.png" alt="Claake" width={90} height={26} className={styles.logo} />
+							<Image
+								src="/logoClaakeGreen.png"
+								alt="Claake"
+								width={90}
+								height={26}
+								className={styles.logo}
+							/>
 						</Link>
 						<p className="text-sm text-muted-foreground leading-relaxed">
 							{t("footer.description")}

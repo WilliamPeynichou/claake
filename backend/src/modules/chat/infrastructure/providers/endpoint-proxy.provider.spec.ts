@@ -24,7 +24,10 @@ function makeSseResponse(lines: string[]): Response {
 
 // Helper to build a mock JSON Response (Google Gemini format)
 function makeJsonResponse(body: object): Response {
-	return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+	return new Response(JSON.stringify(body), {
+		status: 200,
+		headers: { "Content-Type": "application/json" },
+	});
 }
 
 describe("EndpointProxyProvider — validateUrl (SSRF protection)", () => {
@@ -35,61 +38,122 @@ describe("EndpointProxyProvider — validateUrl (SSRF protection)", () => {
 	});
 
 	it("accepte une URL HTTPS valide", async () => {
-		jest.spyOn(global, "fetch").mockResolvedValue(
-			makeSseResponse(["data: [DONE]"]),
-		);
+		jest.spyOn(global, "fetch").mockResolvedValue(makeSseResponse(["data: [DONE]"]));
 
 		// Should not throw for a legitimate external URL
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "https://api.openai.com/v1" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "https://api.openai.com/v1",
+				} as any),
+			),
 		).resolves.toBeDefined();
 	});
 
 	it("rejette localhost", async () => {
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "https://localhost/api" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "https://localhost/api",
+				} as any),
+			),
 		).rejects.toThrow("blocked address");
 	});
 
 	it("rejette 127.0.0.1 (loopback)", async () => {
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "https://127.0.0.1/api" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "https://127.0.0.1/api",
+				} as any),
+			),
 		).rejects.toThrow("blocked address");
 	});
 
 	it("rejette 10.0.0.1 (réseau privé)", async () => {
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "https://10.0.0.1/api" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "https://10.0.0.1/api",
+				} as any),
+			),
 		).rejects.toThrow("blocked address");
 	});
 
 	it("rejette 172.16.0.1 (réseau privé)", async () => {
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "https://172.16.0.1/api" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "https://172.16.0.1/api",
+				} as any),
+			),
 		).rejects.toThrow("blocked address");
 	});
 
 	it("rejette 192.168.1.1 (réseau privé)", async () => {
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "https://192.168.1.1/api" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "https://192.168.1.1/api",
+				} as any),
+			),
 		).rejects.toThrow("blocked address");
 	});
 
 	it("rejette 169.254.169.254 (AWS metadata)", async () => {
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "https://169.254.169.254/latest" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "https://169.254.169.254/latest",
+				} as any),
+			),
 		).rejects.toThrow("blocked address");
 	});
 
 	it("rejette une URL avec protocole ftp://", async () => {
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "ftp://api.example.com" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "ftp://api.example.com",
+				} as any),
+			),
 		).rejects.toThrow("http or https");
 	});
 
 	it("rejette une URL invalide", async () => {
 		await expect(
-			collectStream(provider.streamText({ model: "gpt-4o", systemPrompt: null, messages: [], baseUrl: "not-a-url" } as any)),
+			collectStream(
+				provider.streamText({
+					model: "gpt-4o",
+					systemPrompt: null,
+					messages: [],
+					baseUrl: "not-a-url",
+				} as any),
+			),
 		).rejects.toThrow("Invalid endpoint URL");
 	});
 

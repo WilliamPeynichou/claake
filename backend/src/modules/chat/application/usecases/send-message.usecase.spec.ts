@@ -37,23 +37,47 @@ const mockAgentRepo = {
 
 const mockStrategyResolver = { resolve: jest.fn() };
 
-function makeSession(overrides: { title?: string | null; userId?: string } = {}): ChatSessionEntity {
+function makeSession(
+	overrides: { title?: string | null; userId?: string } = {},
+): ChatSessionEntity {
 	return new ChatSessionEntity(
 		"session-1",
 		overrides.userId ?? "user-1",
 		"agent-1",
 		overrides.title !== undefined ? overrides.title : null,
-		new Date(), new Date(),
+		new Date(),
+		new Date(),
 	);
 }
 
-function makeAgent(overrides: { models?: string[]; systemPrompt?: string | null } = {}): AgentEntity {
+function makeAgent(
+	overrides: { models?: string[]; systemPrompt?: string | null } = {},
+): AgentEntity {
 	return new AgentEntity(
-		"agent-1", "My Agent", "my-agent", "desc", null,
-		"coding", ["ai"],
+		"agent-1",
+		"My Agent",
+		"my-agent",
+		"desc",
+		null,
+		"coding",
+		["ai"],
 		overrides.models ?? ["claude-sonnet-4-20250514"],
-		"CLOUD", null, null, [], "FREE", 0, 1, "APPROVED",
-		null, 0, 0, 0, "creator-1", null, new Date(), new Date(),
+		"CLOUD",
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
+		"APPROVED",
+		null,
+		0,
+		0,
+		0,
+		"creator-1",
+		null,
+		new Date(),
+		new Date(),
 		overrides.systemPrompt ?? "You are a helpful assistant",
 	);
 }
@@ -96,7 +120,12 @@ describe("SendMessageUseCase", () => {
 
 		await useCase.execute("session-1", "user-1", "Mon message");
 
-		expect(mockChatRepo.addMessage).toHaveBeenCalledWith("session-1", "USER", "Mon message", "TEXT");
+		expect(mockChatRepo.addMessage).toHaveBeenCalledWith(
+			"session-1",
+			"USER",
+			"Mon message",
+			"TEXT",
+		);
 	});
 
 	it("génère un titre à la première message si aucun titre existant", async () => {
@@ -143,7 +172,9 @@ describe("SendMessageUseCase", () => {
 
 		await useCase.execute("session-1", "user-1", "Hello");
 
-		expect(mockProvider.streamText).toHaveBeenCalledWith(expect.objectContaining({ model: "gpt-4o" }));
+		expect(mockProvider.streamText).toHaveBeenCalledWith(
+			expect.objectContaining({ model: "gpt-4o" }),
+		);
 	});
 
 	it("fallback sur claude-sonnet-4-20250514 si aucun modèle défini", async () => {
@@ -159,7 +190,9 @@ describe("SendMessageUseCase", () => {
 
 	it("passe le systemPrompt de l'agent au provider", async () => {
 		mockChatRepo.findById.mockResolvedValue(makeSession());
-		mockAgentRepo.findById.mockResolvedValue(makeAgent({ systemPrompt: "Tu es un expert en droit." }));
+		mockAgentRepo.findById.mockResolvedValue(
+			makeAgent({ systemPrompt: "Tu es un expert en droit." }),
+		);
 
 		await useCase.execute("session-1", "user-1", "Question juridique");
 
@@ -171,30 +204,44 @@ describe("SendMessageUseCase", () => {
 	it("onComplete sauvegarde la réponse de l'assistant", async () => {
 		mockChatRepo.findById.mockResolvedValue(makeSession());
 		mockAgentRepo.findById.mockResolvedValue(makeAgent());
-		mockChatRepo.addMessage.mockResolvedValue({ id: "msg-2", role: "ASSISTANT", content: "Réponse" });
+		mockChatRepo.addMessage.mockResolvedValue({
+			id: "msg-2",
+			role: "ASSISTANT",
+			content: "Réponse",
+		});
 
 		const { onComplete } = await useCase.execute("session-1", "user-1", "Bonjour");
 		await onComplete("Réponse de l'IA");
 
-		expect(mockChatRepo.addMessage).toHaveBeenCalledWith("session-1", "ASSISTANT", "Réponse de l'IA");
+		expect(mockChatRepo.addMessage).toHaveBeenCalledWith(
+			"session-1",
+			"ASSISTANT",
+			"Réponse de l'IA",
+		);
 	});
 
 	it("refuse si la session n'existe pas", async () => {
 		mockChatRepo.findById.mockResolvedValue(null);
 
-		await expect(useCase.execute("ghost-session", "user-1", "Hello")).rejects.toThrow(NotFoundException);
+		await expect(useCase.execute("ghost-session", "user-1", "Hello")).rejects.toThrow(
+			NotFoundException,
+		);
 	});
 
 	it("refuse si l'utilisateur ne possède pas la session", async () => {
 		mockChatRepo.findById.mockResolvedValue(makeSession({ userId: "other-user" }));
 
-		await expect(useCase.execute("session-1", "user-1", "Hello")).rejects.toThrow(ForbiddenException);
+		await expect(useCase.execute("session-1", "user-1", "Hello")).rejects.toThrow(
+			ForbiddenException,
+		);
 	});
 
 	it("refuse si l'agent n'existe plus", async () => {
 		mockChatRepo.findById.mockResolvedValue(makeSession());
 		mockAgentRepo.findById.mockResolvedValue(null);
 
-		await expect(useCase.execute("session-1", "user-1", "Hello")).rejects.toThrow(NotFoundException);
+		await expect(useCase.execute("session-1", "user-1", "Hello")).rejects.toThrow(
+			NotFoundException,
+		);
 	});
 });

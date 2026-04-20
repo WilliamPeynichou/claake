@@ -29,10 +29,7 @@ export function LoginPage() {
 	return (
 		<div className="flex min-h-screen" style={{ background: "#faf9f5" }}>
 			{/* Bande verte latérale */}
-			<div
-				className="hidden w-2 lg:block"
-				style={{ background: "#2a7a44" }}
-			/>
+			<div className="hidden w-2 lg:block" style={{ background: "#2a7a44" }} />
 
 			<main className="flex flex-1 flex-col items-center justify-center px-8 py-16">
 				<div className="w-full max-w-md space-y-10">
@@ -42,7 +39,11 @@ export function LoginPage() {
 						<div>
 							<h1
 								className="text-4xl"
-								style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: "#1e1c18", fontWeight: 400 }}
+								style={{
+									fontFamily: "'DM Serif Display', Georgia, serif",
+									color: "#1e1c18",
+									fontWeight: 400,
+								}}
 							>
 								Bon retour
 							</h1>
@@ -57,7 +58,11 @@ export function LoginPage() {
 							<div
 								role="alert"
 								className="border p-4 text-sm"
-								style={{ borderColor: "#c0392b", color: "#c0392b", background: "rgba(192,57,43,0.06)" }}
+								style={{
+									borderColor: "#c0392b",
+									color: "#c0392b",
+									background: "rgba(192,57,43,0.06)",
+								}}
 							>
 								{error}
 							</div>

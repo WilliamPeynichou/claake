@@ -16,10 +16,7 @@ describe("CreateAgentUseCase", () => {
 
 	beforeEach(async () => {
 		const module = await Test.createTestingModule({
-			providers: [
-				CreateAgentUseCase,
-				{ provide: AGENT_REPOSITORY, useValue: mockRepo },
-			],
+			providers: [CreateAgentUseCase, { provide: AGENT_REPOSITORY, useValue: mockRepo }],
 		}).compile();
 
 		useCase = module.get(CreateAgentUseCase);
@@ -28,10 +25,31 @@ describe("CreateAgentUseCase", () => {
 
 	it("creates an agent and returns a DTO", async () => {
 		const createdEntity = new AgentEntity(
-			"new-id", "My Agent", "my-agent", "A description", null,
-			"coding", ["ai"], ["claude-sonnet-4-20250514"], "CLOUD", null, null, [],
-			"FREE", 0, 1, "DRAFT", null, 0, 0, 0, "creator-1", null,
-			new Date(), new Date(), "System prompt",
+			"new-id",
+			"My Agent",
+			"my-agent",
+			"A description",
+			null,
+			"coding",
+			["ai"],
+			["claude-sonnet-4-20250514"],
+			"CLOUD",
+			null,
+			null,
+			[],
+			"FREE",
+			0,
+			1,
+			"DRAFT",
+			null,
+			0,
+			0,
+			0,
+			"creator-1",
+			null,
+			new Date(),
+			new Date(),
+			"System prompt",
 		);
 		mockRepo.create.mockResolvedValue(createdEntity);
 
@@ -63,18 +81,46 @@ describe("CreateAgentUseCase", () => {
 	it("normalizes mode to uppercase", async () => {
 		mockRepo.create.mockResolvedValue(
 			new AgentEntity(
-				"id", "n", "s", "d", null, "c", [], [], "CLOUD", null, null, [],
-				"FREE", 0, 1, "DRAFT", null, 0, 0, 0, "u", null, new Date(), new Date(),
+				"id",
+				"n",
+				"s",
+				"d",
+				null,
+				"c",
+				[],
+				[],
+				"CLOUD",
+				null,
+				null,
+				[],
+				"FREE",
+				0,
+				1,
+				"DRAFT",
+				null,
+				0,
+				0,
+				0,
+				"u",
+				null,
+				new Date(),
+				new Date(),
 			),
 		);
 
 		await useCase.execute(
-			{ name: "n", slug: "s", description: "d", category: "c", tags: [], models: [], mode: "cloud" } as any,
+			{
+				name: "n",
+				slug: "s",
+				description: "d",
+				category: "c",
+				tags: [],
+				models: [],
+				mode: "cloud",
+			} as any,
 			"u",
 		);
 
-		expect(mockRepo.create).toHaveBeenCalledWith(
-			expect.objectContaining({ mode: "CLOUD" }),
-		);
+		expect(mockRepo.create).toHaveBeenCalledWith(expect.objectContaining({ mode: "CLOUD" }));
 	});
 });

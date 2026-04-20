@@ -5,7 +5,10 @@ import { ChatSessionTransformer } from "./chat-session.transformer";
 describe("ChatSessionTransformer", () => {
 	it("transforms session with details to DTO", () => {
 		const base = new ChatSessionEntity(
-			"s1", "user-1", "agent-1", "My Chat",
+			"s1",
+			"user-1",
+			"agent-1",
+			"My Chat",
 			new Date("2025-03-01T10:00:00Z"),
 			new Date("2025-03-01T12:00:00Z"),
 		);

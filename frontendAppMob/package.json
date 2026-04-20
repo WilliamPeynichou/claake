@@ -11,10 +11,21 @@
 	},
 	"dependencies": {
 		"@claake/shared": "*",
-		"expo": "~55.0.6",
-		"expo-status-bar": "~55.0.4",
+		"@expo-google-fonts/dm-sans": "^0.4.2",
+		"@expo-google-fonts/dm-serif-display": "^0.4.2",
+		"@expo-google-fonts/jetbrains-mono": "^0.4.1",
+		"@react-native-async-storage/async-storage": "2.2.0",
+		"expo": "~55.0.15",
+		"expo-blur": "~55.0.14",
+		"expo-font": "~55.0.6",
+		"expo-linear-gradient": "~55.0.13",
+		"expo-splash-screen": "~55.0.18",
+		"expo-status-bar": "~55.0.5",
 		"react": "19.2.0",
-		"react-native": "0.83.2"
+		"react-dom": "19.2.0",
+		"react-native": "0.83.4",
+		"react-native-svg": "15.15.3",
+		"react-native-web": "^0.21.0"
 	},
 	"devDependencies": {
 		"@types/react": "~19.2.2",

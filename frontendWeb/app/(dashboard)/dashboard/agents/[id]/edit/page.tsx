@@ -474,12 +474,7 @@ export default function EditAgentPage() {
 					<Separator />
 					<div className="space-y-4">
 						<h3 className="text-lg font-semibold">Médias &amp; Documents</h3>
-						{token && (
-							<FileUploader
-								token={token}
-								agentId={id}
-							/>
-						)}
+						{token && <FileUploader token={token} agentId={id} />}
 					</div>
 
 					{/* Actions */}

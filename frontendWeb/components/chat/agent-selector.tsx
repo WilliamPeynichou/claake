@@ -56,12 +56,14 @@ export function AgentSelector({ currentAgent, agents }: AgentSelectorProps) {
 					fontWeight: 500,
 					borderRadius: "6px",
 				}}
-				onMouseEnter={(e) => { if (!open) e.currentTarget.style.borderColor = "#d0dac4"; }}
-				onMouseLeave={(e) => { if (!open) e.currentTarget.style.borderColor = "#e8e4d8"; }}
+				onMouseEnter={(e) => {
+					if (!open) e.currentTarget.style.borderColor = "#d0dac4";
+				}}
+				onMouseLeave={(e) => {
+					if (!open) e.currentTarget.style.borderColor = "#e8e4d8";
+				}}
 			>
-				<span className="truncate max-w-[140px]">
-					{currentAgent?.name ?? "Choisir un agent"}
-				</span>
+				<span className="truncate max-w-[140px]">{currentAgent?.name ?? "Choisir un agent"}</span>
 				<ChevronDown
 					className="h-3 w-3 shrink-0 transition-transform"
 					style={{
@@ -113,7 +115,11 @@ export function AgentSelector({ currentAgent, agents }: AgentSelectorProps) {
 						{filtered.length === 0 ? (
 							<p
 								className="px-4 py-3 text-center"
-								style={{ fontSize: "0.75rem", color: "#a09a8a", fontFamily: "'DM Sans', system-ui" }}
+								style={{
+									fontSize: "0.75rem",
+									color: "#a09a8a",
+									fontFamily: "'DM Sans', system-ui",
+								}}
 							>
 								Aucun agent trouvé
 							</p>
@@ -130,8 +136,12 @@ export function AgentSelector({ currentAgent, agents }: AgentSelectorProps) {
 											background: isActive ? "#e8ede0" : "transparent",
 											borderLeft: isActive ? "2px solid #6b7c5c" : "2px solid transparent",
 										}}
-										onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "#f3f0e8"; }}
-										onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+										onMouseEnter={(e) => {
+											if (!isActive) e.currentTarget.style.background = "#f3f0e8";
+										}}
+										onMouseLeave={(e) => {
+											if (!isActive) e.currentTarget.style.background = "transparent";
+										}}
 									>
 										<div
 											className="h-6 w-6 shrink-0 flex items-center justify-center text-xs"
@@ -158,7 +168,11 @@ export function AgentSelector({ currentAgent, agents }: AgentSelectorProps) {
 											{agent.description && (
 												<p
 													className="truncate"
-													style={{ fontSize: "0.7rem", color: "#a09a8a", fontFamily: "'DM Sans', system-ui" }}
+													style={{
+														fontSize: "0.7rem",
+														color: "#a09a8a",
+														fontFamily: "'DM Sans', system-ui",
+													}}
 												>
 													{agent.description}
 												</p>

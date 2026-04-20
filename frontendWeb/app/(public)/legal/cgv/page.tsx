@@ -83,7 +83,8 @@ export default function CgvPage() {
 			</p>
 			<p>
 				Pour exercer ce droit, l'Utilisateur doit notifier sa décision à Claake par email à{" "}
-				<a href="mailto:claake@contact.com">claake@contact.com</a>, en indiquant son numéro de commande.
+				<a href="mailto:claake@contact.com">claake@contact.com</a>, en indiquant son numéro de
+				commande.
 			</p>
 
 			<h2>Article 7 — Remboursements</h2>

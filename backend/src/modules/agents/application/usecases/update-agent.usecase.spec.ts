@@ -20,22 +20,34 @@ const mockEncryption = {
 	decrypt: jest.fn(),
 };
 
-function makeAgent(overrides: {
-	id?: string;
-	status?: string;
-	creatorId?: string;
-	mode?: string;
-} = {}): AgentEntity {
+function makeAgent(
+	overrides: { id?: string; status?: string; creatorId?: string; mode?: string } = {},
+): AgentEntity {
 	return new AgentEntity(
 		overrides.id ?? "agent-1",
-		"My Agent", "my-agent", "A description", null,
-		"coding", ["ai"], ["claude-sonnet-4-20250514"],
+		"My Agent",
+		"my-agent",
+		"A description",
+		null,
+		"coding",
+		["ai"],
+		["claude-sonnet-4-20250514"],
 		overrides.mode ?? "CLOUD",
-		null, null, [], "FREE", 0, 1,
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
 		overrides.status ?? "DRAFT",
-		null, 0, 0, 0,
+		null,
+		0,
+		0,
+		0,
 		overrides.creatorId ?? "user-1",
-		null, new Date(), new Date(),
+		null,
+		new Date(),
+		new Date(),
 	);
 }
 
@@ -63,7 +75,10 @@ describe("UpdateAgentUseCase", () => {
 
 		const result = await useCase.execute("agent-1", { name: "New Name" }, "user-1");
 
-		expect(mockRepo.update).toHaveBeenCalledWith("agent-1", expect.objectContaining({ name: "New Name" }));
+		expect(mockRepo.update).toHaveBeenCalledWith(
+			"agent-1",
+			expect.objectContaining({ name: "New Name" }),
+		);
 		expect(result.id).toBe("agent-1");
 	});
 
@@ -115,7 +130,10 @@ describe("UpdateAgentUseCase", () => {
 		await useCase.execute("agent-1", { seller_api_key: "sk-raw-key" }, "user-1");
 
 		expect(mockEncryption.encrypt).toHaveBeenCalledWith("sk-raw-key");
-		expect(mockRepo.update).toHaveBeenCalledWith("agent-1", expect.objectContaining({ sellerApiKeyEncrypted: "encrypted-key" }));
+		expect(mockRepo.update).toHaveBeenCalledWith(
+			"agent-1",
+			expect.objectContaining({ sellerApiKeyEncrypted: "encrypted-key" }),
+		);
 	});
 
 	it("met à null sellerApiKeyEncrypted si seller_api_key vide", async () => {
@@ -127,7 +145,10 @@ describe("UpdateAgentUseCase", () => {
 		await useCase.execute("agent-1", { seller_api_key: "" }, "user-1");
 
 		expect(mockEncryption.encrypt).not.toHaveBeenCalled();
-		expect(mockRepo.update).toHaveBeenCalledWith("agent-1", expect.objectContaining({ sellerApiKeyEncrypted: null }));
+		expect(mockRepo.update).toHaveBeenCalledWith(
+			"agent-1",
+			expect.objectContaining({ sellerApiKeyEncrypted: null }),
+		);
 	});
 
 	it("normalise le mode en majuscules", async () => {
@@ -138,6 +159,9 @@ describe("UpdateAgentUseCase", () => {
 
 		await useCase.execute("agent-1", { mode: "cloud" as any }, "user-1");
 
-		expect(mockRepo.update).toHaveBeenCalledWith("agent-1", expect.objectContaining({ mode: "CLOUD" }));
+		expect(mockRepo.update).toHaveBeenCalledWith(
+			"agent-1",
+			expect.objectContaining({ mode: "CLOUD" }),
+		);
 	});
 });

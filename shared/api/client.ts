@@ -138,7 +138,10 @@ export function createApiClient(baseUrl: string) {
 					system_prompt: string | null;
 				}>(`/agents/${agentId}/download-info`, withAuth(token)),
 			delete: async (agentId: string, token: string): Promise<void> => {
-				const res = await fetch(`${baseUrl}/agents/${agentId}`, withAuth(token, { method: "DELETE" }));
+				const res = await fetch(
+					`${baseUrl}/agents/${agentId}`,
+					withAuth(token, { method: "DELETE" }),
+				);
 				if (!res.ok) {
 					const body = await res.json().catch(() => ({}));
 					const message =
@@ -149,7 +152,10 @@ export function createApiClient(baseUrl: string) {
 				}
 			},
 			unpublish: (agentId: string, token: string) =>
-				fetchJson<{ status: string }>(`/agents/${agentId}/unpublish`, withAuth(token, { method: "PATCH" })),
+				fetchJson<{ status: string }>(
+					`/agents/${agentId}/unpublish`,
+					withAuth(token, { method: "PATCH" }),
+				),
 		},
 		categories: {
 			list: () => fetchJson<AgentCategory[]>("/categories"),

@@ -28,7 +28,12 @@ export interface UseChatReturn {
 	refreshSessions: () => Promise<void>;
 }
 
-export function useChat({ apiClient, token, sessionId: initialSessionId, agentId }: UseChatOptions): UseChatReturn {
+export function useChat({
+	apiClient,
+	token,
+	sessionId: initialSessionId,
+	agentId,
+}: UseChatOptions): UseChatReturn {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -147,7 +152,12 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 		setMessages((prev) => [...prev, assistantMessage]);
 
 		try {
-			const res = await apiClient.chat.sendMessageSSE(currentSessionId, trimmed, token, fileIdsToSend.length ? fileIdsToSend : undefined);
+			const res = await apiClient.chat.sendMessageSSE(
+				currentSessionId,
+				trimmed,
+				token,
+				fileIdsToSend.length ? fileIdsToSend : undefined,
+			);
 
 			if (!res.ok) {
 				const errBody = await res.json().catch(() => ({}));
@@ -177,9 +187,7 @@ export function useChat({ apiClient, token, sessionId: initialSessionId, agentId
 						if (parsed.chunk) {
 							setMessages((prev) =>
 								prev.map((m) =>
-									m.id === assistantId
-										? { ...m, content: m.content + parsed.chunk }
-										: m,
+									m.id === assistantId ? { ...m, content: m.content + parsed.chunk } : m,
 								),
 							);
 						}

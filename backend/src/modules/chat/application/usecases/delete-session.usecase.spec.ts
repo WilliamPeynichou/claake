@@ -20,10 +20,7 @@ describe("DeleteSessionUseCase", () => {
 
 	beforeEach(async () => {
 		const module = await Test.createTestingModule({
-			providers: [
-				DeleteSessionUseCase,
-				{ provide: CHAT_SESSION_REPOSITORY, useValue: mockRepo },
-			],
+			providers: [DeleteSessionUseCase, { provide: CHAT_SESSION_REPOSITORY, useValue: mockRepo }],
 		}).compile();
 
 		useCase = module.get(DeleteSessionUseCase);
@@ -32,7 +29,12 @@ describe("DeleteSessionUseCase", () => {
 
 	it("deletes a session owned by the user", async () => {
 		const session = new ChatSessionEntity(
-			"s1", "user-1", "agent-1", "Title", new Date(), new Date(),
+			"s1",
+			"user-1",
+			"agent-1",
+			"Title",
+			new Date(),
+			new Date(),
 		);
 		mockRepo.findById.mockResolvedValue(session);
 
@@ -49,7 +51,12 @@ describe("DeleteSessionUseCase", () => {
 
 	it("throws ForbiddenException when user does not own session", async () => {
 		const session = new ChatSessionEntity(
-			"s1", "other-user", "agent-1", null, new Date(), new Date(),
+			"s1",
+			"other-user",
+			"agent-1",
+			null,
+			new Date(),
+			new Date(),
 		);
 		mockRepo.findById.mockResolvedValue(session);
 

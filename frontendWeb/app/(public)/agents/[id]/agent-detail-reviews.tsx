@@ -14,10 +14,7 @@ export function AgentDetailReviews({ agentId }: AgentDetailReviewsProps) {
 	return (
 		<div className="space-y-6">
 			<h2 className="text-xl font-semibold">Avis</h2>
-			<ReviewForm
-				agentId={agentId}
-				onReviewCreated={() => setRefreshKey((k) => k + 1)}
-			/>
+			<ReviewForm agentId={agentId} onReviewCreated={() => setRefreshKey((k) => k + 1)} />
 			<ReviewList agentId={agentId} refreshKey={refreshKey} />
 		</div>
 	);

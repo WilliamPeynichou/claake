@@ -53,12 +53,12 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 							</div>
 							<div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
 								<Link
-								href={`/creators/${agent.creator_id}`}
-								className="flex items-center gap-1 hover:text-foreground"
-							>
-								<User className="h-3.5 w-3.5" />
-								{agent.creator_name ?? "Anonyme"}
-							</Link>
+									href={`/creators/${agent.creator_id}`}
+									className="flex items-center gap-1 hover:text-foreground"
+								>
+									<User className="h-3.5 w-3.5" />
+									{agent.creator_name ?? "Anonyme"}
+								</Link>
 								<span className="flex items-center gap-1">
 									<Star className="h-3.5 w-3.5 fill-current text-yellow-500" />
 									{agent.rating.toFixed(1)} ({agent.review_count} avis)

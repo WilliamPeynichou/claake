@@ -32,9 +32,7 @@ describe("GetSessionMessagesUseCase", () => {
 	});
 
 	it("returns messages for owned session", async () => {
-		const session = new ChatSessionEntity(
-			"s1", "user-1", "agent-1", null, new Date(), new Date(),
-		);
+		const session = new ChatSessionEntity("s1", "user-1", "agent-1", null, new Date(), new Date());
 		const messages = [
 			new ChatMessageEntity("m1", "s1", "USER", "TEXT", "Hello", null, null, new Date()),
 			new ChatMessageEntity("m2", "s1", "ASSISTANT", "TEXT", "Hi!", null, null, new Date()),
@@ -59,7 +57,12 @@ describe("GetSessionMessagesUseCase", () => {
 
 	it("throws ForbiddenException for non-owner", async () => {
 		const session = new ChatSessionEntity(
-			"s1", "other-user", "agent-1", null, new Date(), new Date(),
+			"s1",
+			"other-user",
+			"agent-1",
+			null,
+			new Date(),
+			new Date(),
 		);
 		mockRepo.findById.mockResolvedValue(session);
 
@@ -67,9 +70,7 @@ describe("GetSessionMessagesUseCase", () => {
 	});
 
 	it("passes pagination params", async () => {
-		const session = new ChatSessionEntity(
-			"s1", "user-1", "agent-1", null, new Date(), new Date(),
-		);
+		const session = new ChatSessionEntity("s1", "user-1", "agent-1", null, new Date(), new Date());
 		mockRepo.findById.mockResolvedValue(session);
 		mockRepo.getMessages.mockResolvedValue({ messages: [], total: 0 });
 

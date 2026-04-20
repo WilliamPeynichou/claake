@@ -7,9 +7,7 @@ import { ChatMessageTransformer } from "../transformers/chat-message.transformer
 
 @Injectable()
 export class GetSessionMessagesUseCase {
-	constructor(
-		@Inject(CHAT_SESSION_REPOSITORY) private readonly repo: ChatSessionRepositoryPort,
-	) {}
+	constructor(@Inject(CHAT_SESSION_REPOSITORY) private readonly repo: ChatSessionRepositoryPort) {}
 
 	async execute(sessionId: string, userId: string, limit = 50, offset = 0) {
 		const session = await this.repo.findById(sessionId);

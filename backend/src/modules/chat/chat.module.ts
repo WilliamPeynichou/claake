@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
-import { AgentModule } from "../agents/agent.module.js";
 import { PrismaModule } from "../../prisma/prisma.module.js";
+import { AgentModule } from "../agents/agent.module.js";
+import { ManageApiKeysUseCase } from "../users/application/usecases/manage-api-keys.usecase.js";
 import { UserModule } from "../users/user.module.js";
 import {
 	EXECUTION_STRATEGY_RESOLVER,
@@ -21,7 +22,6 @@ import { EndpointProxyProvider } from "./infrastructure/providers/endpoint-proxy
 import { MockProvider } from "./infrastructure/providers/mock.provider.js";
 import { OpenAIProvider } from "./infrastructure/providers/openai.provider.js";
 import { PrismaChatRepository } from "./infrastructure/repositories/prisma-chat.repository.js";
-import { ManageApiKeysUseCase } from "../users/application/usecases/manage-api-keys.usecase.js";
 
 @Module({
 	imports: [AgentModule, UserModule, PrismaModule],

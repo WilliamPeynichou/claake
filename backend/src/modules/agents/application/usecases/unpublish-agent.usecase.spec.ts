@@ -19,13 +19,30 @@ const mockActivityLog = { log: jest.fn() };
 
 function makeAgent(overrides: { status?: string; creatorId?: string } = {}): AgentEntity {
 	return new AgentEntity(
-		"agent-1", "My Agent", "my-agent", "desc", null,
-		"coding", ["ai"], ["claude-sonnet-4-20250514"], "CLOUD",
-		null, null, [], "FREE", 0, 1,
+		"agent-1",
+		"My Agent",
+		"my-agent",
+		"desc",
+		null,
+		"coding",
+		["ai"],
+		["claude-sonnet-4-20250514"],
+		"CLOUD",
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
 		overrides.status ?? "APPROVED",
-		null, 0, 0, 0,
+		null,
+		0,
+		0,
+		0,
 		overrides.creatorId ?? "user-1",
-		null, new Date(), new Date(),
+		null,
+		new Date(),
+		new Date(),
 	);
 }
 

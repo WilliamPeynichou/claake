@@ -1,6 +1,6 @@
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import type { EncryptionServicePort } from "../ports/encryption.port.js";
 
 @Injectable()

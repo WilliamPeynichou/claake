@@ -3,15 +3,13 @@ import {
 	COLLECTION_REPOSITORY,
 	type CollectionRepositoryPort,
 } from "../../domain/ports/collection.repository.port.js";
-import type { UpdateCollectionDto } from "../dtos/update-collection.dto.js";
 import type { CollectionResponseDto } from "../dtos/collection-response.dto.js";
+import type { UpdateCollectionDto } from "../dtos/update-collection.dto.js";
 import { CollectionTransformer } from "../transformers/collection.transformer.js";
 
 @Injectable()
 export class UpdateCollectionUseCase {
-	constructor(
-		@Inject(COLLECTION_REPOSITORY) private readonly repo: CollectionRepositoryPort,
-	) {}
+	constructor(@Inject(COLLECTION_REPOSITORY) private readonly repo: CollectionRepositoryPort) {}
 
 	async execute(
 		id: string,

@@ -27,9 +27,13 @@ function groupByDate(sessions: ChatSession[]) {
 	for (const s of sessions) {
 		const d = new Date(s.updated_at);
 		const label =
-			d >= today ? "Aujourd'hui" :
-			d >= yesterday ? "Hier" :
-			d >= weekAgo ? "Cette semaine" : "Plus ancien";
+			d >= today
+				? "Aujourd'hui"
+				: d >= yesterday
+					? "Hier"
+					: d >= weekAgo
+						? "Cette semaine"
+						: "Plus ancien";
 		(map[label] ??= []).push(s);
 	}
 	for (const label of ["Aujourd'hui", "Hier", "Cette semaine", "Plus ancien"]) {
@@ -52,9 +56,7 @@ export function AppSidebar({
 	const [hoveredSession, setHoveredSession] = useState<string | null>(null);
 
 	const currentAgent = agents.find((a) => a.id === agentId);
-	const filteredSessions = agentId
-		? sessions.filter((s) => s.agent_id === agentId)
-		: sessions;
+	const filteredSessions = agentId ? sessions.filter((s) => s.agent_id === agentId) : sessions;
 	const groups = groupByDate(filteredSessions);
 
 	return (
@@ -68,7 +70,13 @@ export function AppSidebar({
 				style={{ borderBottom: "1px solid #e8e4d8" }}
 			>
 				<Link href="/chat">
-					<Image src="/logoClaakeGreen.png" alt="Claake" width={72} height={22} style={{ height: "auto" }} />
+					<Image
+						src="/logoClaakeGreen.png"
+						alt="Claake"
+						width={72}
+						height={22}
+						style={{ height: "auto" }}
+					/>
 				</Link>
 				<button
 					type="button"
@@ -85,7 +93,6 @@ export function AppSidebar({
 
 			{/* Scrollable content */}
 			<div className="flex-1 overflow-y-auto flex flex-col">
-
 				{/* ── Section Agents ── */}
 				<div className="shrink-0">
 					<p
@@ -182,10 +189,11 @@ export function AppSidebar({
 						>
 							{currentAgent ? `Conversations — ${currentAgent.name}` : "Conversations"}
 						</p>
-						{sessionsOpen
-							? <ChevronDown className="h-3 w-3" style={{ color: "#a09a8a" }} />
-							: <ChevronRight className="h-3 w-3" style={{ color: "#a09a8a" }} />
-						}
+						{sessionsOpen ? (
+							<ChevronDown className="h-3 w-3" style={{ color: "#a09a8a" }} />
+						) : (
+							<ChevronRight className="h-3 w-3" style={{ color: "#a09a8a" }} />
+						)}
 					</button>
 
 					{sessionsOpen && (
@@ -193,7 +201,11 @@ export function AppSidebar({
 							{filteredSessions.length === 0 ? (
 								<p
 									className="px-4 py-3 text-center"
-									style={{ fontSize: "0.75rem", color: "#a09a8a", fontFamily: "'DM Sans', system-ui" }}
+									style={{
+										fontSize: "0.75rem",
+										color: "#a09a8a",
+										fontFamily: "'DM Sans', system-ui",
+									}}
 								>
 									Aucune conversation
 								</p>
@@ -220,7 +232,11 @@ export function AppSidebar({
 													key={session.id}
 													className="group flex items-center mx-2 px-2 py-1.5 cursor-pointer"
 													style={{
-														background: isActive ? "#e8ede0" : isHovered ? "#ece9e0" : "transparent",
+														background: isActive
+															? "#e8ede0"
+															: isHovered
+																? "#ece9e0"
+																: "transparent",
 														borderLeft: `2px solid ${isActive ? "#6b7c5c" : "transparent"}`,
 													}}
 													onMouseEnter={() => setHoveredSession(session.id)}
@@ -242,7 +258,10 @@ export function AppSidebar({
 													</div>
 													<button
 														type="button"
-														onClick={(e) => { e.stopPropagation(); onDeleteSession(session.id); }}
+														onClick={(e) => {
+															e.stopPropagation();
+															onDeleteSession(session.id);
+														}}
 														className="ml-1 shrink-0 opacity-0 group-hover:opacity-100 p-1"
 														style={{ color: "#a09a8a" }}
 														onMouseEnter={(e) => (e.currentTarget.style.color = "#c44444")}
@@ -269,9 +288,20 @@ export function AppSidebar({
 				<Link
 					href="/catalogue"
 					className="flex items-center gap-2 px-2 py-1.5 transition-colors"
-					style={{ fontSize: "0.78rem", color: "#6b6558", fontFamily: "'DM Sans', system-ui", textDecoration: "none" }}
-					onMouseEnter={(e) => { e.currentTarget.style.color = "#6b7c5c"; e.currentTarget.style.background = "#e8ede0"; }}
-					onMouseLeave={(e) => { e.currentTarget.style.color = "#6b6558"; e.currentTarget.style.background = "transparent"; }}
+					style={{
+						fontSize: "0.78rem",
+						color: "#6b6558",
+						fontFamily: "'DM Sans', system-ui",
+						textDecoration: "none",
+					}}
+					onMouseEnter={(e) => {
+						e.currentTarget.style.color = "#6b7c5c";
+						e.currentTarget.style.background = "#e8ede0";
+					}}
+					onMouseLeave={(e) => {
+						e.currentTarget.style.color = "#6b6558";
+						e.currentTarget.style.background = "transparent";
+					}}
 				>
 					<BookOpen className="h-3.5 w-3.5 shrink-0" />
 					Catalogue d'agents
@@ -279,9 +309,20 @@ export function AppSidebar({
 				<Link
 					href="/dashboard/settings"
 					className="flex items-center gap-2 px-2 py-1.5 transition-colors"
-					style={{ fontSize: "0.78rem", color: "#6b6558", fontFamily: "'DM Sans', system-ui", textDecoration: "none" }}
-					onMouseEnter={(e) => { e.currentTarget.style.color = "#6b7c5c"; e.currentTarget.style.background = "#e8ede0"; }}
-					onMouseLeave={(e) => { e.currentTarget.style.color = "#6b6558"; e.currentTarget.style.background = "transparent"; }}
+					style={{
+						fontSize: "0.78rem",
+						color: "#6b6558",
+						fontFamily: "'DM Sans', system-ui",
+						textDecoration: "none",
+					}}
+					onMouseEnter={(e) => {
+						e.currentTarget.style.color = "#6b7c5c";
+						e.currentTarget.style.background = "#e8ede0";
+					}}
+					onMouseLeave={(e) => {
+						e.currentTarget.style.color = "#6b6558";
+						e.currentTarget.style.background = "transparent";
+					}}
 				>
 					<UserCircle className="h-3.5 w-3.5 shrink-0" />
 					Mon profil

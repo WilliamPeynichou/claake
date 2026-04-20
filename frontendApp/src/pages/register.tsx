@@ -29,19 +29,29 @@ export function RegisterPage() {
 
 	if (success) {
 		return (
-			<div className="flex min-h-screen flex-col items-center justify-center px-8" style={{ background: "#faf9f5" }}>
+			<div
+				className="flex min-h-screen flex-col items-center justify-center px-8"
+				style={{ background: "#faf9f5" }}
+			>
 				<div className="w-full max-w-md space-y-6 text-center">
 					<img src="/logo.png" alt="Claake" style={{ height: 40, margin: "0 auto" }} />
 					<div>
 						<h1
 							className="text-4xl"
-							style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: "#1e1c18", fontWeight: 400 }}
+							style={{
+								fontFamily: "'DM Serif Display', Georgia, serif",
+								color: "#1e1c18",
+								fontWeight: 400,
+							}}
 						>
 							Vérifiez votre email
 						</h1>
 						<p className="mt-3 text-base" style={{ color: "#6b6558" }}>
 							Un lien de confirmation a été envoyé à{" "}
-							<span className="font-medium" style={{ color: "#1e1c18" }}>{email}</span>.
+							<span className="font-medium" style={{ color: "#1e1c18" }}>
+								{email}
+							</span>
+							.
 						</p>
 					</div>
 					<Link
@@ -59,10 +69,7 @@ export function RegisterPage() {
 	return (
 		<div className="flex min-h-screen" style={{ background: "#faf9f5" }}>
 			{/* Bande verte latérale */}
-			<div
-				className="hidden w-2 lg:block"
-				style={{ background: "#2a7a44" }}
-			/>
+			<div className="hidden w-2 lg:block" style={{ background: "#2a7a44" }} />
 
 			<main className="flex flex-1 flex-col items-center justify-center px-8 py-16">
 				<div className="w-full max-w-md space-y-10">
@@ -72,7 +79,11 @@ export function RegisterPage() {
 						<div>
 							<h1
 								className="text-4xl"
-								style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: "#1e1c18", fontWeight: 400 }}
+								style={{
+									fontFamily: "'DM Serif Display', Georgia, serif",
+									color: "#1e1c18",
+									fontWeight: 400,
+								}}
 							>
 								Créer un compte
 							</h1>
@@ -87,7 +98,11 @@ export function RegisterPage() {
 							<div
 								role="alert"
 								className="border p-4 text-sm"
-								style={{ borderColor: "#c0392b", color: "#c0392b", background: "rgba(192,57,43,0.06)" }}
+								style={{
+									borderColor: "#c0392b",
+									color: "#c0392b",
+									background: "rgba(192,57,43,0.06)",
+								}}
 							>
 								{error}
 							</div>
