@@ -24,6 +24,39 @@ export type EndpointFormat =
 	| "huggingface"
 	| "claake";
 
+export type CreateCloudStrategy = "USER_API_KEY" | "SELLER_API_KEY" | "SELLER_ENDPOINT";
+export type CreateEndpointFormat =
+	| "OPENAI"
+	| "ANTHROPIC"
+	| "GOOGLE"
+	| "MISTRAL"
+	| "GROQ"
+	| "HUGGINGFACE"
+	| "CLAAKE";
+
+export interface CreateAgentInput {
+	name: string;
+	slug: string;
+	description: string;
+	long_description?: string;
+	category: string;
+	tags: string[];
+	models: string[];
+	mode: "LOCAL" | "CLOUD" | "HYBRID";
+	config_url?: string;
+	image_url?: string;
+	system_prompt?: string;
+	pricing_model?: "FREE";
+	cloud_strategy?: CreateCloudStrategy;
+	required_user_provider?: string;
+	endpoint_url?: string;
+	endpoint_format?: CreateEndpointFormat;
+	seller_api_key?: string;
+	seller_api_provider?: string;
+	docker_image?: string;
+	download_url?: string;
+}
+
 export interface Agent {
 	id: string;
 	name: string;

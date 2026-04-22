@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { extname } from "node:path";
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {
+	BadRequestException,
+	ForbiddenException,
+	Injectable,
+	NotFoundException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { UserRole } from "@prisma/client";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 
@@ -37,6 +43,8 @@ export class UploadService {
 		userId: string,
 		opts: { agentId?: string; sessionId?: string; messageId?: string },
 	) {
+		await this.assertUploadTargetAccess(userId, opts);
+
 		if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
 			throw new BadRequestException(
 				`Type de fichier non supporté : ${file.mimetype}. Types acceptés : JPG, PNG, WebP, GIF, PDF.`,
@@ -47,7 +55,7 @@ export class UploadService {
 		}
 
 		const ext = extname(file.originalname).toLowerCase();
-		const storagePath = `${opts.agentId ?? opts.sessionId ?? userId}/${randomUUID()}${ext}`;
+		const storagePath = `uploads/${opts.agentId ?? opts.sessionId ?? userId}/${randomUUID()}${ext}`;
 
 		const { error: storageError } = await this.supabase.storage
 			.from(BUCKET)
@@ -81,16 +89,38 @@ export class UploadService {
 		return record;
 	}
 
-	async listForAgent(agentId: string) {
+	async listForAgent(agentId: string, userId: string, role: UserRole) {
+		const agent = await this.prisma.agent.findUnique({
+			where: { id: agentId },
+			select: { creatorId: true },
+		});
+		if (!agent) {
+			throw new NotFoundException("Agent introuvable.");
+		}
+		if (agent.creatorId !== userId && role !== "ADMIN" && role !== "SUPER_ADMIN") {
+			throw new ForbiddenException("Accès refusé.");
+		}
+
 		return this.prisma.uploadedFile.findMany({
 			where: { agentId },
 			orderBy: { createdAt: "desc" },
 		});
 	}
 
-	async listForSession(sessionId: string) {
+	async listForSession(sessionId: string, userId: string) {
+		const session = await this.prisma.chatSession.findUnique({
+			where: { id: sessionId },
+			select: { userId: true },
+		});
+		if (!session) {
+			throw new NotFoundException("Session introuvable.");
+		}
+		if (session.userId !== userId) {
+			throw new ForbiddenException("Accès refusé.");
+		}
+
 		return this.prisma.uploadedFile.findMany({
-			where: { sessionId },
+			where: { sessionId, userId },
 			orderBy: { createdAt: "desc" },
 		});
 	}
@@ -109,5 +139,49 @@ export class UploadService {
 		}
 
 		await this.prisma.uploadedFile.delete({ where: { id: fileId } });
+	}
+
+	private async assertUploadTargetAccess(
+		userId: string,
+		opts: { agentId?: string; sessionId?: string; messageId?: string },
+	): Promise<void> {
+		if (opts.sessionId) {
+			const session = await this.prisma.chatSession.findUnique({
+				where: { id: opts.sessionId },
+				select: { userId: true },
+			});
+			if (!session) {
+				throw new NotFoundException("Session introuvable.");
+			}
+			if (session.userId !== userId) {
+				throw new ForbiddenException("Accès refusé.");
+			}
+		}
+
+		if (opts.messageId) {
+			const message = await this.prisma.chatMessage.findUnique({
+				where: { id: opts.messageId },
+				select: { session: { select: { userId: true } } },
+			});
+			if (!message) {
+				throw new NotFoundException("Message introuvable.");
+			}
+			if (message.session.userId !== userId) {
+				throw new ForbiddenException("Accès refusé.");
+			}
+		}
+
+		if (opts.agentId) {
+			const agent = await this.prisma.agent.findUnique({
+				where: { id: opts.agentId },
+				select: { creatorId: true },
+			});
+			if (!agent) {
+				throw new NotFoundException("Agent introuvable.");
+			}
+			if (agent.creatorId !== userId) {
+				throw new ForbiddenException("Accès refusé.");
+			}
+		}
 	}
 }

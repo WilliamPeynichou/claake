@@ -1,6 +1,6 @@
 "use client";
 
-import type { AgentCategory, ValidationResult } from "@claake/shared";
+import type { AgentCategory, CreateAgentInput, ValidationResult } from "@claake/shared";
 import { AI_MODELS, EXECUTION_MODES } from "@claake/shared";
 import { AlertCircle, ArrowLeft, ArrowRight, Check, ImagePlus, Upload, X } from "lucide-react";
 import Image from "next/image";
@@ -49,13 +49,14 @@ const INITIAL_FORM = {
 
 export default function NewAgentPage() {
 	const router = useRouter();
-	const { token } = useAuth();
+	const { token, user } = useAuth();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const imageInputRef = useRef<HTMLInputElement>(null);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
 	const [currentStep, setCurrentStep] = useState(0);
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [submitWarnings, setSubmitWarnings] = useState<string[]>([]);
 	const [validation, setValidation] = useState<ValidationResult | null>(null);
 	const [backendError, setBackendError] = useState<string | null>(null);
 	const [formData, setFormData] = useState(INITIAL_FORM);
@@ -65,6 +66,7 @@ export default function NewAgentPage() {
 	const [agentJsonFile, setAgentJsonFile] = useState<File | null>(null);
 	const [imageFile, setImageFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [dropDragOver, setDropDragOver] = useState(false);
 
 	useEffect(() => {
 		apiClient.categories
@@ -147,15 +149,23 @@ export default function NewAgentPage() {
 		switch (currentStep) {
 			case 1:
 				return !!(formData.name && formData.description && formData.category);
-			case 2:
+			case 2: {
+				const isCloud = formData.mode !== "LOCAL";
+				const isLocal = formData.mode === "LOCAL" || formData.mode === "HYBRID";
+				if (isCloud && formData.cloudStrategy === "SELLER_ENDPOINT" && !formData.endpoint)
+					return false;
+				if (isCloud && formData.cloudStrategy === "SELLER_API_KEY" && !formData.sellerApiKey)
+					return false;
+				if (isLocal && !formData.dockerImage && !formData.downloadUrl) return false;
 				return true;
+			}
 			default:
 				return true;
 		}
 	}
 
 	async function handleSubmit() {
-		if (!token) {
+		if (!token || !user) {
 			setSubmitError("Vous devez être connecté.");
 			return;
 		}
@@ -167,6 +177,7 @@ export default function NewAgentPage() {
 
 		setSubmitting(true);
 		setSubmitError(null);
+		setSubmitWarnings([]);
 
 		try {
 			const slug = formData.name
@@ -174,13 +185,17 @@ export default function NewAgentPage() {
 				.replace(/[^a-z0-9]+/g, "-")
 				.replace(/^-|-$/g, "");
 
+			const warnings: string[] = [];
+
 			// Upload image if provided
 			let imageUrl: string | undefined;
 			if (imageFile) {
 				try {
-					imageUrl = await uploadAgentImage(imageFile, slug);
-				} catch {
-					// Image upload is optional, continue without it
+					imageUrl = await uploadAgentImage(imageFile, slug, user.id);
+				} catch (err) {
+					warnings.push(
+						`L'icône n'a pas pu être uploadée : ${err instanceof Error ? err.message : "erreur inconnue"}`,
+					);
 				}
 			}
 
@@ -188,59 +203,61 @@ export default function NewAgentPage() {
 			let configUrl: string | undefined;
 			if (agentJsonFile) {
 				try {
-					configUrl = await uploadAgentConfigFile(agentJsonFile, slug);
-				} catch {
-					// Config file upload is optional, continue without it
+					configUrl = await uploadAgentConfigFile(agentJsonFile, slug, user.id);
+				} catch (err) {
+					warnings.push(
+						`Le fichier .agentjson n'a pas pu être uploadé : ${err instanceof Error ? err.message : "erreur inconnue"}`,
+					);
 				}
 			}
 
-			const result = await apiClient.agents.create(
-				{
-					name: formData.name,
-					slug,
-					description: formData.description,
-					long_description: formData.longDescription || undefined,
-					category: formData.category,
-					tags: formData.tags
-						.split(",")
-						.map((t) => t.trim())
-						.filter(Boolean),
-					models: [formData.model],
-					mode: formData.mode,
-					image_url: imageUrl ?? undefined,
-					cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
-					required_user_provider:
-						formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
-					endpoint_url:
-						formData.cloudStrategy === "SELLER_ENDPOINT"
-							? formData.endpoint || undefined
-							: undefined,
-					endpoint_format:
-						formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpointFormat : undefined,
-					seller_api_key:
-						formData.cloudStrategy === "SELLER_API_KEY"
-							? formData.sellerApiKey || undefined
-							: undefined,
-					seller_api_provider:
-						formData.cloudStrategy === "SELLER_API_KEY"
-							? formData.sellerApiProvider || undefined
-							: undefined,
-					docker_image:
-						formData.mode === "LOCAL" || formData.mode === "HYBRID"
-							? formData.dockerImage || undefined
-							: undefined,
-					download_url:
-						formData.mode === "LOCAL" || formData.mode === "HYBRID"
-							? formData.downloadUrl || undefined
-							: undefined,
-					config_url: configUrl || formData.endpoint || undefined,
-					system_prompt: formData.systemPrompt || undefined,
-					pricing_model: "FREE",
-				} as any,
-				token,
-			);
+			const payload: CreateAgentInput = {
+				name: formData.name,
+				slug,
+				description: formData.description,
+				long_description: formData.longDescription || undefined,
+				category: formData.category,
+				tags: formData.tags
+					.split(",")
+					.map((t) => t.trim())
+					.filter(Boolean),
+				models: [formData.model],
+				mode: formData.mode,
+				image_url: imageUrl ?? undefined,
+				cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
+				required_user_provider:
+					formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
+				endpoint_url:
+					formData.cloudStrategy === "SELLER_ENDPOINT"
+						? formData.endpoint || undefined
+						: undefined,
+				endpoint_format:
+					formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpointFormat : undefined,
+				seller_api_key:
+					formData.cloudStrategy === "SELLER_API_KEY"
+						? formData.sellerApiKey || undefined
+						: undefined,
+				seller_api_provider:
+					formData.cloudStrategy === "SELLER_API_KEY"
+						? formData.sellerApiProvider || undefined
+						: undefined,
+				docker_image:
+					formData.mode === "LOCAL" || formData.mode === "HYBRID"
+						? formData.dockerImage || undefined
+						: undefined,
+				download_url:
+					formData.mode === "LOCAL" || formData.mode === "HYBRID"
+						? formData.downloadUrl || undefined
+						: undefined,
+				config_url: configUrl || undefined,
+				system_prompt: formData.systemPrompt || undefined,
+				pricing_model: "FREE",
+			};
+
+			const result = await apiClient.agents.create(payload, token);
 
 			setValidation(result.validation);
+			setSubmitWarnings(warnings);
 			setSubmitted(true);
 		} catch (err) {
 			setSubmitError(err instanceof Error ? err.message : "Erreur lors de la soumission.");
@@ -260,6 +277,20 @@ export default function NewAgentPage() {
 					Votre agent <strong>{formData.name}</strong> a été soumis pour validation. Vous recevrez
 					une notification une fois la revue terminée.
 				</p>
+
+				{submitWarnings.length > 0 && (
+					<div className="mt-4 w-full max-w-md rounded-md border border-orange-500/50 bg-orange-50 p-3 text-left dark:bg-orange-900/20">
+						<p className="mb-1 text-sm font-medium text-orange-700 dark:text-orange-400">
+							Avertissements d&apos;upload
+						</p>
+						{submitWarnings.map((w) => (
+							<p key={w} className="flex items-start gap-1 text-sm text-orange-600 dark:text-orange-300">
+								<AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+								{w}
+							</p>
+						))}
+					</div>
+				)}
 
 				{validation && (
 					<div className="mt-6 w-full max-w-md text-left">
@@ -304,6 +335,7 @@ export default function NewAgentPage() {
 						onClick={() => {
 							setSubmitted(false);
 							setValidation(null);
+							setSubmitWarnings([]);
 							setCurrentStep(0);
 							setFormData(INITIAL_FORM);
 							setAgentJsonFile(null);
@@ -370,9 +402,24 @@ export default function NewAgentPage() {
 								</p>
 							</div>
 							<div
-								className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors hover:bg-muted/50"
+								className={`flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors ${
+									dropDragOver
+										? "border-primary bg-primary/5"
+										: "hover:bg-muted/50"
+								}`}
 								onClick={() => fileInputRef.current?.click()}
-								onKeyDown={() => {}}
+								onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+								onDragOver={(e) => { e.preventDefault(); setDropDragOver(true); }}
+								onDragLeave={() => setDropDragOver(false)}
+								onDrop={(e) => {
+									e.preventDefault();
+									setDropDragOver(false);
+									const file = e.dataTransfer.files?.[0];
+									if (file) {
+										const syntheticEvent = { target: { files: e.dataTransfer.files } } as unknown as React.ChangeEvent<HTMLInputElement>;
+										handleFileUpload(syntheticEvent);
+									}
+								}}
 								role="button"
 								tabIndex={0}
 							>

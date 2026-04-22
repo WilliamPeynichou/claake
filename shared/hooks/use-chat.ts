@@ -164,7 +164,11 @@ export function useChat({
 				throw new Error(errBody.error?.message ?? errBody.message ?? `Erreur ${res.status}`);
 			}
 
-			const reader = res.body!.getReader();
+			if (!res.body) {
+				throw new Error("Réponse vide du serveur.");
+			}
+
+			const reader = res.body.getReader();
 			const decoder = new TextDecoder();
 			let buffer = "";
 			let receivedDone = false;
@@ -178,30 +182,49 @@ export function useChat({
 				buffer = lines.pop() ?? "";
 
 				for (const line of lines) {
-					if (!line.startsWith("data: ")) continue;
-					const data = line.slice(6).trim();
-					if (!data) continue;
-
 					try {
-						const parsed = JSON.parse(data);
-						if (parsed.chunk) {
+						if (line.startsWith("0:")) {
+							const chunk = JSON.parse(line.slice(2));
 							setMessages((prev) =>
-								prev.map((m) =>
-									m.id === assistantId ? { ...m, content: m.content + parsed.chunk } : m,
-								),
+								prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + chunk } : m)),
 							);
+							continue;
 						}
-						if (parsed.done && parsed.message) {
+
+						if (line.startsWith("d:")) {
 							receivedDone = true;
-							// Replace placeholder with final persisted message
-							setMessages((prev) =>
-								prev.map((m) =>
-									m.id === assistantId ? { ...parsed.message, id: parsed.message.id } : m,
-								),
-							);
+							continue;
 						}
-						if (parsed.error) {
-							setError(parsed.error);
+
+						if (line.startsWith("3:")) {
+							setError(JSON.parse(line.slice(2)));
+							continue;
+						}
+
+						if (line.startsWith("data: ")) {
+							const data = line.slice(6).trim();
+							if (!data) continue;
+							const parsed = JSON.parse(data);
+							if (parsed.chunk) {
+								setMessages((prev) =>
+									prev.map((m) =>
+										m.id === assistantId ? { ...m, content: m.content + parsed.chunk } : m,
+									),
+								);
+							}
+							if (parsed.done) {
+								receivedDone = true;
+								if (parsed.message) {
+									setMessages((prev) =>
+										prev.map((m) =>
+											m.id === assistantId ? { ...parsed.message, id: parsed.message.id } : m,
+										),
+									);
+								}
+							}
+							if (parsed.error) {
+								setError(parsed.error);
+							}
 						}
 					} catch {
 						// Skip unparseable
@@ -214,7 +237,7 @@ export function useChat({
 				setMessages((prev) =>
 					prev.map((m) =>
 						m.id === assistantId && m.content
-							? { ...m, content: m.content + "\n\n*(réponse interrompue)*" }
+							? { ...m, content: `${m.content}\n\n*(réponse interrompue)*` }
 							: m,
 					),
 				);

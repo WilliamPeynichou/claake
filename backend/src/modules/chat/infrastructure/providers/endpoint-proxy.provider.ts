@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import type { AIProviderPort, StreamTextParams } from "../../domain/ports/ai-provider.port.js";
+import type {
+	AIProviderPort,
+	FileAttachment,
+	StreamTextParams,
+} from "../../domain/ports/ai-provider.port.js";
 
 const MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10MB
 const TIMEOUT_MS = 60_000;
@@ -18,6 +22,44 @@ const OPENAI_COMPATIBLE_FORMATS = new Set([
 	"huggingface",
 	"claake",
 ]);
+
+type OpenAIContentPart =
+	| { type: "text"; text: string }
+	| { type: "image_url"; image_url: { url: string } };
+
+type AnthropicContentBlock =
+	| { type: "text"; text: string }
+	| { type: "image"; source: { type: "url"; url: string } }
+	| { type: "document"; source: { type: "url"; url: string } };
+
+function buildOpenAIContent(text: string, attachments: FileAttachment[]): OpenAIContentPart[] {
+	const parts: OpenAIContentPart[] = [];
+	for (const attachment of attachments) {
+		if (attachment.type === "image") {
+			parts.push({ type: "image_url", image_url: { url: attachment.url } });
+		} else {
+			parts.push({
+				type: "text",
+				text: `Document joint (${attachment.mimeType}) : ${attachment.url}`,
+			});
+		}
+	}
+	parts.push({ type: "text", text });
+	return parts;
+}
+
+function buildAnthropicContent(
+	text: string,
+	attachments: FileAttachment[],
+): AnthropicContentBlock[] {
+	const blocks = attachments.map((attachment) => {
+		if (attachment.type === "document") {
+			return { type: "document", source: { type: "url", url: attachment.url } } as const;
+		}
+		return { type: "image", source: { type: "url", url: attachment.url } } as const;
+	});
+	return [...blocks, { type: "text", text }];
+}
 
 @Injectable()
 export class EndpointProxyProvider implements AIProviderPort {
@@ -218,10 +260,19 @@ export class EndpointProxyProvider implements AIProviderPort {
 	}
 
 	private buildAnthropicRequest(params: StreamTextParams): { url: string; init: RequestInit } {
-		const messages = params.messages.map((m) => ({
-			role: m.role as "user" | "assistant",
-			content: m.content,
-		}));
+		const messages = params.messages.map((m, idx) => {
+			const isLastUserMessage = m.role === "user" && idx === params.messages.length - 1;
+			if (isLastUserMessage && params.attachments?.length) {
+				return {
+					role: "user" as const,
+					content: buildAnthropicContent(m.content, params.attachments),
+				};
+			}
+			return {
+				role: m.role as "user" | "assistant",
+				content: m.content,
+			};
+		});
 
 		const body: Record<string, unknown> = {
 			model: params.model,
@@ -295,11 +346,21 @@ export class EndpointProxyProvider implements AIProviderPort {
 	}
 
 	private buildOpenAIRequest(params: StreamTextParams): { url: string; init: RequestInit } {
-		const messages: Array<{ role: string; content: string }> = [];
+		const messages: Array<{ role: string; content: string | OpenAIContentPart[] }> = [];
 		if (params.systemPrompt) {
 			messages.push({ role: "system", content: params.systemPrompt });
 		}
-		messages.push(...params.messages);
+		params.messages.forEach((message, index) => {
+			const isLastUserMessage = message.role === "user" && index === params.messages.length - 1;
+			if (isLastUserMessage && params.attachments?.length) {
+				messages.push({
+					role: message.role,
+					content: buildOpenAIContent(message.content, params.attachments),
+				});
+				return;
+			}
+			messages.push(message);
+		});
 
 		return {
 			url: params.baseUrl!,

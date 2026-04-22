@@ -1,5 +1,29 @@
 import { Injectable } from "@nestjs/common";
-import type { AIProviderPort, StreamTextParams } from "../../domain/ports/ai-provider.port.js";
+import type {
+	AIProviderPort,
+	FileAttachment,
+	StreamTextParams,
+} from "../../domain/ports/ai-provider.port.js";
+
+type OpenAIContentPart =
+	| { type: "text"; text: string }
+	| { type: "image_url"; image_url: { url: string } };
+
+function buildMultimodalContent(text: string, attachments: FileAttachment[]): OpenAIContentPart[] {
+	const parts: OpenAIContentPart[] = [];
+	for (const attachment of attachments) {
+		if (attachment.type === "image") {
+			parts.push({ type: "image_url", image_url: { url: attachment.url } });
+		} else {
+			parts.push({
+				type: "text",
+				text: `Document joint (${attachment.mimeType}) : ${attachment.url}`,
+			});
+		}
+	}
+	parts.push({ type: "text", text });
+	return parts;
+}
 
 @Injectable()
 export class OpenAIProvider implements AIProviderPort {
@@ -8,12 +32,23 @@ export class OpenAIProvider implements AIProviderPort {
 			throw new Error("No API key provided for OpenAI provider");
 		}
 
-		const messages: Array<{ role: string; content: string }> = [];
+		const messages: Array<{ role: string; content: string | OpenAIContentPart[] }> = [];
 
 		if (params.systemPrompt) {
 			messages.push({ role: "system", content: params.systemPrompt });
 		}
-		messages.push(...params.messages);
+		params.messages.forEach((message, index) => {
+			const isLastUserMessage = message.role === "user" && index === params.messages.length - 1;
+			if (isLastUserMessage && params.attachments?.length) {
+				messages.push({
+					role: message.role,
+					content: buildMultimodalContent(message.content, params.attachments),
+				});
+				return;
+			}
+
+			messages.push(message);
+		});
 
 		const baseUrl = params.baseUrl ?? "https://api.openai.com";
 

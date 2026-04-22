@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -10,20 +11,26 @@ import {
 	Res,
 	UseGuards,
 } from "@nestjs/common";
-import type { Response } from "express";
+import type { UserRole } from "@prisma/client";
+import type { Request, Response } from "express";
 import { SkipTransform } from "../../../../common/decorators/skip-transform.decorator.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
-import type { CreateSessionDto } from "../../application/dtos/create-session.dto.js";
-import type { SendMessageDto } from "../../application/dtos/send-message.dto.js";
-import { ChatMessageTransformer } from "../../application/transformers/chat-message.transformer.js";
-import { ChatSessionTransformer } from "../../application/transformers/chat-session.transformer.js";
+import { CreateSessionDto } from "../../application/dtos/create-session.dto.js";
+import { SendMessageDto } from "../../application/dtos/send-message.dto.js";
 import { CreateSessionUseCase } from "../../application/usecases/create-session.usecase.js";
 import { DeleteSessionUseCase } from "../../application/usecases/delete-session.usecase.js";
 import { GetSessionMessagesUseCase } from "../../application/usecases/get-session-messages.usecase.js";
 import { ListSessionsUseCase } from "../../application/usecases/list-sessions.usecase.js";
 import { SendMessageUseCase } from "../../application/usecases/send-message.usecase.js";
 import type { FileAttachment } from "../../domain/ports/ai-provider.port.js";
+
+type AuthenticatedRequest = Request & {
+	user: {
+		id: string;
+		role: UserRole;
+	};
+};
 
 @Controller("chat")
 @UseGuards(SupabaseAuthGuard)
@@ -38,7 +45,7 @@ export class ChatController {
 	) {}
 
 	@Post("sessions")
-	async create(@Body() dto: CreateSessionDto, @Req() req: any) {
+	async create(@Body() dto: CreateSessionDto, @Req() req: AuthenticatedRequest) {
 		const session = await this.createSession.execute(dto.agent_id, req.user.id);
 		return {
 			id: session.id,
@@ -48,7 +55,11 @@ export class ChatController {
 	}
 
 	@Get("sessions")
-	async list(@Req() req: any, @Query("limit") limit?: string, @Query("offset") offset?: string) {
+	async list(
+		@Req() req: AuthenticatedRequest,
+		@Query("limit") limit?: string,
+		@Query("offset") offset?: string,
+	) {
 		return this.listSessions.execute(
 			req.user.id,
 			limit ? Number.parseInt(limit, 10) : 20,
@@ -59,7 +70,7 @@ export class ChatController {
 	@Get("sessions/:id/messages")
 	async messages(
 		@Param("id") id: string,
-		@Req() req: any,
+		@Req() req: AuthenticatedRequest,
 		@Query("limit") limit?: string,
 		@Query("offset") offset?: string,
 	) {
@@ -76,16 +87,27 @@ export class ChatController {
 	async sendMsg(
 		@Param("id") id: string,
 		@Body() dto: SendMessageDto,
-		@Req() req: any,
+		@Req() req: AuthenticatedRequest,
 		@Res() res: Response,
 	) {
 		// Resolve file attachments from DB
 		let attachments: FileAttachment[] = [];
+		let attachmentIds: string[] = [];
 		if (dto.file_ids?.length) {
+			attachmentIds = [...new Set(dto.file_ids)];
 			const files = await this.prisma.uploadedFile.findMany({
-				where: { id: { in: dto.file_ids } },
-				select: { url: true, mimeType: true, type: true },
+				where: {
+					id: { in: attachmentIds },
+					userId: req.user.id,
+					OR: [{ sessionId: null }, { sessionId: id }],
+				},
+				select: { id: true, url: true, mimeType: true, type: true },
 			});
+			if (files.length !== attachmentIds.length) {
+				throw new BadRequestException(
+					"Un ou plusieurs fichiers sont introuvables ou non autorisés.",
+				);
+			}
 			attachments = files.map((f) => ({
 				type: f.type === "DOCUMENT" ? "document" : "image",
 				url: f.url,
@@ -99,6 +121,7 @@ export class ChatController {
 			dto.content,
 			dto.content_type ?? "TEXT",
 			attachments,
+			attachmentIds,
 		);
 
 		// Vercel AI SDK data stream protocol
@@ -130,7 +153,7 @@ export class ChatController {
 	}
 
 	@Delete("sessions/:id")
-	async remove(@Param("id") id: string, @Req() req: any) {
+	async remove(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
 		await this.deleteSession.execute(id, req.user.id);
 		return { deleted: true };
 	}

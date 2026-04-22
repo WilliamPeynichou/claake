@@ -7,6 +7,7 @@ import type {
 	ChatMessage,
 	ChatSession,
 	Collection,
+	CreateAgentInput,
 	CreatorProfile,
 	Favorite,
 	Purchase,
@@ -106,7 +107,7 @@ export function createApiClient(baseUrl: string) {
 			},
 			get: (id: string) => fetchJson<Agent>(`/agents/${id}`),
 			mine: (token: string) => fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
-			create: (agent: Partial<Agent>, token: string) =>
+			create: (agent: CreateAgentInput, token: string) =>
 				fetchJson<Agent & { validation: ValidationResult }>(
 					"/agents",
 					withAuth(token, {

@@ -125,6 +125,40 @@ describe("SendMessageUseCase", () => {
 			"USER",
 			"Mon message",
 			"TEXT",
+			null,
+			null,
+			[],
+		);
+	});
+
+	it("rattache les fichiers au message utilisateur", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(makeAgent());
+
+		await useCase.execute(
+			"session-1",
+			"user-1",
+			"Analyse ce document",
+			"TEXT",
+			[{ type: "document", url: "https://files.example/doc.pdf", mimeType: "application/pdf" }],
+			["file-1"],
+		);
+
+		expect(mockChatRepo.addMessage).toHaveBeenCalledWith(
+			"session-1",
+			"USER",
+			"Analyse ce document",
+			"TEXT",
+			null,
+			null,
+			["file-1"],
+		);
+		expect(mockProvider.streamText).toHaveBeenCalledWith(
+			expect.objectContaining({
+				attachments: [
+					{ type: "document", url: "https://files.example/doc.pdf", mimeType: "application/pdf" },
+				],
+			}),
 		);
 	});
 

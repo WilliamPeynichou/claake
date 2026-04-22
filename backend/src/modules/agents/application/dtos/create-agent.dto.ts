@@ -5,9 +5,9 @@ import {
 	IsNumber,
 	IsOptional,
 	IsString,
-	IsUrl,
 	Min,
 } from "class-validator";
+import { IsPublicUrl } from "../../../../common/validators/is-public-url.validator.js";
 
 export class CreateAgentDto {
 	@IsString()
@@ -39,7 +39,7 @@ export class CreateAgentDto {
 	mode?: string;
 
 	@IsOptional()
-	@IsString()
+	@IsPublicUrl()
 	config_url?: string;
 
 	@IsOptional()
@@ -68,7 +68,7 @@ export class CreateAgentDto {
 	cloud_strategy?: string;
 
 	@IsOptional()
-	@IsUrl()
+	@IsPublicUrl()
 	endpoint_url?: string;
 
 	@IsOptional()
@@ -107,10 +107,10 @@ export class CreateAgentDto {
 	docker_image?: string;
 
 	@IsOptional()
-	@IsUrl()
+	@IsPublicUrl()
 	download_url?: string;
 
 	@IsOptional()
-	@IsUrl()
+	@IsPublicUrl()
 	image_url?: string;
 }

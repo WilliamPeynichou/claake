@@ -2,7 +2,7 @@
 
 import type { Agent, AgentCategory } from "@claake/shared";
 import { AI_MODELS, EXECUTION_MODES } from "@claake/shared";
-import { AlertCircle, ArrowLeft, Check, ImagePlus, Loader2, Save, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, FileJson, ImagePlus, Loader2, Save, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FileUploader } from "@/components/uploads";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { uploadAgentImage } from "@/lib/supabase/storage";
+import { uploadAgentConfigFile, uploadAgentImage } from "@/lib/supabase/storage";
 
 const statusLabels: Record<
 	string,
@@ -32,8 +32,9 @@ const statusLabels: Record<
 
 export default function EditAgentPage() {
 	const { id } = useParams<{ id: string }>();
-	const { token } = useAuth();
+	const { token, user } = useAuth();
 	const imageInputRef = useRef<HTMLInputElement>(null);
+	const configInputRef = useRef<HTMLInputElement>(null);
 	const [agent, setAgent] = useState<Agent | null>(null);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -43,6 +44,7 @@ export default function EditAgentPage() {
 
 	const [imageFile, setImageFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [configFile, setConfigFile] = useState<File | null>(null);
 
 	const [formData, setFormData] = useState({
 		name: "",
@@ -133,8 +135,15 @@ export default function EditAgentPage() {
 		setSuccess(false);
 	}
 
+	function handleConfigFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		setConfigFile(file);
+		setError(null);
+	}
+
 	async function handleSave() {
-		if (!token || !agent) return;
+		if (!token || !agent || !user) return;
 
 		setSaving(true);
 		setError(null);
@@ -143,7 +152,12 @@ export default function EditAgentPage() {
 		try {
 			let imageUrl: string | undefined;
 			if (imageFile) {
-				imageUrl = await uploadAgentImage(imageFile, agent.slug);
+				imageUrl = await uploadAgentImage(imageFile, agent.slug, user.id);
+			}
+
+			let configUrl: string | undefined;
+			if (configFile) {
+				configUrl = await uploadAgentConfigFile(configFile, agent.slug, user.id);
 			}
 
 			await apiClient.agents.update(
@@ -160,6 +174,7 @@ export default function EditAgentPage() {
 					models: [formData.model],
 					mode: formData.mode,
 					image_url: imageUrl ?? undefined,
+					config_url: configUrl ?? undefined,
 					system_prompt: formData.systemPrompt || undefined,
 					cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
 					required_user_provider:
@@ -291,6 +306,48 @@ export default function EditAgentPage() {
 							/>
 						</div>
 					</div>
+
+					<Separator />
+
+					{/* Config file */}
+					{isEditable && (
+						<div className="space-y-2">
+							<Label>Fichier .agentjson</Label>
+							<div className="flex items-center gap-3">
+								<button
+									type="button"
+									onClick={() => configInputRef.current?.click()}
+									className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-dashed transition-colors hover:bg-muted/50"
+								>
+									<FileJson className="h-5 w-5 text-muted-foreground" />
+								</button>
+								<div className="text-sm text-muted-foreground">
+									{configFile ? (
+										<span className="text-green-600">{configFile.name}</span>
+									) : agent.config_url ? (
+										<span>Config existante — sélectionnez un fichier pour la remplacer</span>
+									) : (
+										<span>Aucune config — vous pouvez en ajouter une</span>
+									)}
+									<Button
+										variant="outline"
+										size="sm"
+										className="ml-2"
+										onClick={() => configInputRef.current?.click()}
+									>
+										Choisir un .agentjson
+									</Button>
+								</div>
+								<input
+									ref={configInputRef}
+									type="file"
+									accept=".agentjson,.json"
+									onChange={handleConfigFileSelect}
+									className="hidden"
+								/>
+							</div>
+						</div>
+					)}
 
 					<Separator />
 

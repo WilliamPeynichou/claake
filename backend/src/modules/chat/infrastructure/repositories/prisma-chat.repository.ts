@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { MessageContentType, MessageRole } from "@prisma/client";
+import type { MessageContentType, MessageRole, Prisma } from "@prisma/client";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
 import type { ChatMessageEntity } from "../../domain/entities/chat-message.entity.js";
 import type { ChatSessionEntity } from "../../domain/entities/chat-session.entity.js";
@@ -82,23 +82,34 @@ export class PrismaChatRepository implements ChatSessionRepositoryPort {
 		contentType = "TEXT",
 		mediaUrl: string | null = null,
 		metadata: Record<string, unknown> | null = null,
+		attachmentIds: string[] = [],
 	): Promise<ChatMessageEntity> {
-		const [message] = await this.prisma.$transaction([
-			this.prisma.chatMessage.create({
+		const message = await this.prisma.$transaction(async (tx) => {
+			const created = await tx.chatMessage.create({
 				data: {
 					sessionId,
 					role: role as MessageRole,
 					contentType: contentType as MessageContentType,
 					content,
 					mediaUrl,
-					metadata: (metadata as any) ?? undefined,
+					metadata: metadata ? (metadata as Prisma.InputJsonObject) : undefined,
 				},
-			}),
-			this.prisma.chatSession.update({
+			});
+
+			if (attachmentIds.length > 0) {
+				await tx.uploadedFile.updateMany({
+					where: { id: { in: attachmentIds } },
+					data: { messageId: created.id, sessionId },
+				});
+			}
+
+			await tx.chatSession.update({
 				where: { id: sessionId },
 				data: { updatedAt: new Date() },
-			}),
-		]);
+			});
+
+			return created;
+		});
 		return ChatMessageMapper.toDomain(message);
 	}
 

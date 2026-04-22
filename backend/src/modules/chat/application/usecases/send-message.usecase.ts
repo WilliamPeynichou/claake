@@ -30,6 +30,7 @@ export class SendMessageUseCase {
 		content: string,
 		contentType = "TEXT",
 		attachments: FileAttachment[] = [],
+		attachmentIds: string[] = [],
 	): Promise<{
 		stream: AsyncIterable<string>;
 		onComplete: (fullText: string) => Promise<ChatMessageEntity>;
@@ -48,7 +49,15 @@ export class SendMessageUseCase {
 		}
 
 		// Save user message
-		await this.chatRepo.addMessage(sessionId, "USER", content, contentType);
+		await this.chatRepo.addMessage(
+			sessionId,
+			"USER",
+			content,
+			contentType,
+			null,
+			null,
+			attachmentIds,
+		);
 
 		// Update title on first message
 		if (!session.title) {
