@@ -8,6 +8,11 @@ import { UserTransformer } from "../transformers/user.transformer.js";
 
 const VALID_ROLES = ["USER", "CREATOR", "ADMIN"];
 
+function normalizeAssignableRole(role: string): string {
+	const normalized = role.toUpperCase();
+	return normalized === "DEVELOPER" ? "CREATOR" : normalized;
+}
+
 @Injectable()
 export class UpdateUserRoleUseCase {
 	constructor(
@@ -26,7 +31,7 @@ export class UpdateUserRoleUseCase {
 			throw new ForbiddenException("Only super admins can manage roles");
 		}
 
-		const normalizedRole = newRole.toUpperCase();
+		const normalizedRole = normalizeAssignableRole(newRole);
 
 		if (!VALID_ROLES.includes(normalizedRole)) {
 			throw new ForbiddenException("Cannot assign this role");

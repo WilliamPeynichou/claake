@@ -22,14 +22,12 @@ import { useTheme } from "../theme/ThemeContext";
 
 function TypingIndicator() {
 	const { dark, c } = useTheme();
-	const dots = [
-		useRef(new Animated.Value(0)).current,
-		useRef(new Animated.Value(0)).current,
-		useRef(new Animated.Value(0)).current,
-	];
+	const firstDot = useRef(new Animated.Value(0)).current;
+	const secondDot = useRef(new Animated.Value(0)).current;
+	const thirdDot = useRef(new Animated.Value(0)).current;
 
 	useEffect(() => {
-		dots.forEach((dot, i) => {
+		[firstDot, secondDot, thirdDot].forEach((dot, i) => {
 			Animated.loop(
 				Animated.sequence([
 					Animated.delay(i * 150),
@@ -39,16 +37,26 @@ function TypingIndicator() {
 				]),
 			).start();
 		});
-	}, []);
+	}, [firstDot, secondDot, thirdDot]);
 
 	return (
 		<View style={styles.typingWrap}>
 			<Glass borderRadius={22} style={styles.typingBubble}>
 				<View style={styles.typingDots}>
-					{dots.map((d, i) => (
+					{[
+						["typing-dot-1", firstDot],
+						["typing-dot-2", secondDot],
+						["typing-dot-3", thirdDot],
+					].map(([id, dot]) => (
 						<Animated.View
-							key={i}
-							style={[styles.dot, { backgroundColor: BRAND.brand, transform: [{ translateY: d }] }]}
+							key={id as string}
+							style={[
+								styles.dot,
+								{
+									backgroundColor: BRAND.brand,
+									transform: [{ translateY: dot as Animated.Value }],
+								},
+							]}
 						/>
 					))}
 				</View>
@@ -74,7 +82,7 @@ function MessageBubble({ msg, index }: { msg: Message; index: number }) {
 			Animated.spring(scale, { toValue: 1, speed: 14, delay: index * 40, useNativeDriver: true }),
 			Animated.timing(ty, { toValue: 0, duration: 500, delay: index * 40, useNativeDriver: true }),
 		]).start();
-	}, []);
+	}, [index, opacity, scale, ty]);
 
 	const isUser = msg.role === "user";
 
@@ -123,13 +131,13 @@ function ChatListView({ onPickAgent }: { onPickAgent: (id: string) => void }) {
 			</Text>
 
 			<View style={styles.chatList}>
-				{MOCK_CHATS.map((chat, i) => {
+				{MOCK_CHATS.map((chat) => {
 					const ag = MOCK_AGENTS.find((a) => a.id === chat.agentId);
 					return (
 						<Glass
 							strong
 							borderRadius={22}
-							key={i}
+							key={chat.agentId}
 							onPress={() => onPickAgent(chat.agentId)}
 							style={styles.chatItem}
 						>
@@ -180,14 +188,23 @@ function ChatConversationView({ agentId, onBack }: { agentId: string; onBack: ()
 
 	const send = () => {
 		if (!input.trim()) return;
-		setMsgs((m) => [...m, { role: "user", text: input.trim() }]);
+		const userMessage: Message = {
+			id: `user-${Date.now()}`,
+			role: "user",
+			text: input.trim(),
+		};
+		setMsgs((m) => [...m, userMessage]);
 		setInput("");
 		setTyping(true);
 		setTimeout(() => {
 			setTyping(false);
 			setMsgs((m) => [
 				...m,
-				{ role: "agent", text: "Bien reçu. Je regarde ça et je te réponds dans un instant." },
+				{
+					id: `agent-${Date.now()}`,
+					role: "agent",
+					text: "Bien reçu. Je regarde ça et je te réponds dans un instant.",
+				},
 			]);
 		}, 1400);
 	};
@@ -225,7 +242,7 @@ function ChatConversationView({ agentId, onBack }: { agentId: string; onBack: ()
 				onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
 			>
 				{msgs.map((m, i) => (
-					<MessageBubble key={i} msg={m} index={i} />
+					<MessageBubble key={m.id} msg={m} index={i} />
 				))}
 				{typing && <TypingIndicator />}
 			</ScrollView>

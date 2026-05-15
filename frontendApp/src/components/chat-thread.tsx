@@ -13,7 +13,7 @@ export function ChatThread({ messages, streaming, error, agentName }: Props) {
 	const bottomRef = useRef<HTMLDivElement>(null);
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messages]);
+	});
 
 	if (messages.length === 0 && !streaming) {
 		return (

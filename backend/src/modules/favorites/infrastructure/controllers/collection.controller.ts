@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
-import type { CreateCollectionDto } from "../../application/dtos/create-collection.dto.js";
-import type { UpdateCollectionDto } from "../../application/dtos/update-collection.dto.js";
+import { CreateCollectionDto } from "../../application/dtos/create-collection.dto.js";
+import { UpdateCollectionDto } from "../../application/dtos/update-collection.dto.js";
 import { AddAgentToCollectionUseCase } from "../../application/usecases/add-agent-to-collection.usecase.js";
 import { CreateCollectionUseCase } from "../../application/usecases/create-collection.usecase.js";
 import { DeleteCollectionUseCase } from "../../application/usecases/delete-collection.usecase.js";

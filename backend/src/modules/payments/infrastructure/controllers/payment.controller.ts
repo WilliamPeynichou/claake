@@ -17,7 +17,7 @@ import {
 	USER_REPOSITORY,
 	type UserRepositoryPort,
 } from "../../../users/domain/ports/user.repository.port.js";
-import type { CheckoutRequestDto } from "../../application/dtos/checkout-request.dto.js";
+import { CheckoutRequestDto } from "../../application/dtos/checkout-request.dto.js";
 import { CheckAccessUseCase } from "../../application/usecases/check-access.usecase.js";
 import { CreateCheckoutUseCase } from "../../application/usecases/create-checkout.usecase.js";
 import { CreateConnectAccountUseCase } from "../../application/usecases/create-connect-account.usecase.js";

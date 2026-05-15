@@ -7,7 +7,11 @@ const AGENT_FILES_BUCKET = "agent-files";
  * Upload an agent icon/image to Supabase Storage.
  * Returns the public URL of the uploaded file.
  */
-export async function uploadAgentImage(file: File, agentSlug: string, userId: string): Promise<string> {
+export async function uploadAgentImage(
+	file: File,
+	agentSlug: string,
+	userId: string,
+): Promise<string> {
 	const supabase = createClient();
 	const ext = file.name.split(".").pop() ?? "png";
 	const path = `${userId}/${agentSlug}/icon-${Date.now()}.${ext}`;

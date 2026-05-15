@@ -43,18 +43,12 @@ export async function updateSession(request: NextRequest) {
 		return NextResponse.redirect(url);
 	}
 
-	// Protect admin routes — require auth + admin/super_admin role from metadata
+	// Protect admin routes at the edge only by requiring authentication.
+	// Fine-grained roles/permissions are enforced by the backend API, using the DB role.
 	if (pathname.startsWith("/admin")) {
 		if (!user) {
 			const url = request.nextUrl.clone();
 			url.pathname = "/login";
-			return NextResponse.redirect(url);
-		}
-
-		const role = user.app_metadata?.role;
-		if (role !== "admin" && role !== "super_admin" && role !== "ADMIN" && role !== "SUPER_ADMIN") {
-			const url = request.nextUrl.clone();
-			url.pathname = "/dashboard";
 			return NextResponse.redirect(url);
 		}
 	}

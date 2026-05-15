@@ -118,7 +118,8 @@ export function FileUploader({
 	return (
 		<div className="space-y-4">
 			{/* Drop zone */}
-			<div
+			<section
+				aria-label="Zone de dépôt des fichiers"
 				className={[
 					"flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors",
 					dragOver ? "border-brand bg-brand-subtle" : "border-border/60 hover:border-brand/40",
@@ -155,7 +156,7 @@ export function FileUploader({
 						<span>Parcourir</span>
 					</Button>
 				</label>
-			</div>
+			</section>
 
 			{/* Error */}
 			{error && <p className="text-sm text-destructive">{error}</p>}

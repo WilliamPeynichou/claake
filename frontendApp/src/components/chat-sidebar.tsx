@@ -189,7 +189,6 @@ export function ChatSidebar({
 							onChange={(e) => setSearch(e.target.value)}
 							className="flex-1 bg-transparent text-sm outline-none"
 							style={{ color: "#1e1c18" }}
-							autoFocus
 						/>
 						{search && (
 							<button type="button" onClick={() => setSearch("")}>

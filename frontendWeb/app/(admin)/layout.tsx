@@ -32,12 +32,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 	const pathname = usePathname();
 
 	const isSuperAdmin = role === "super_admin" || role === "SUPER_ADMIN";
+	const isAdmin = isSuperAdmin || role === "admin" || role === "ADMIN";
 	const allLinks = isSuperAdmin ? [...adminLinks, ...superAdminLinks] : adminLinks;
 
 	if (loading) {
 		return (
 			<div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
 				<p className="text-muted-foreground">Chargement...</p>
+			</div>
+		);
+	}
+
+	if (!isAdmin) {
+		return (
+			<div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center text-center">
+				<Flag className="h-10 w-10 text-muted-foreground/30" />
+				<h3 className="mt-4 text-lg font-semibold">Accès refusé</h3>
+				<p className="mt-2 text-sm text-muted-foreground">
+					Cet espace est réservé aux administrateurs.
+				</p>
 			</div>
 		);
 	}

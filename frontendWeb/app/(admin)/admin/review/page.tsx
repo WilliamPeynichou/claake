@@ -2,7 +2,7 @@
 
 import type { Agent } from "@claake/shared";
 import { Bot, Check, ShieldCheck, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,20 +18,21 @@ export default function AdminReviewPage() {
 	const [rejectReason, setRejectReason] = useState("");
 	const [actionLoading, setActionLoading] = useState(false);
 
-	useEffect(() => {
-		loadPending();
-	}, []);
-
-	async function loadPending() {
+	const loadPending = useCallback(async () => {
+		if (!token) return;
 		try {
-			const result = await apiClient.agents.list({ all: true });
+			const result = await apiClient.agents.list({ all: true }, token);
 			setAgents(result.agents.filter((a) => a.status === "pending"));
 		} catch {
 			// Silently fail
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, [token]);
+
+	useEffect(() => {
+		void loadPending();
+	}, [loadPending]);
 
 	async function handleApprove(agentId: string) {
 		if (!token) return;

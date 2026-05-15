@@ -23,6 +23,50 @@ export default function CataloguePage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
+	const resetToFirstPage = useCallback(() => {
+		setPage(1);
+	}, []);
+
+	const handleQueryChange = useCallback(
+		(value: string) => {
+			setQuery(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
+	const handleCategoryChange = useCallback(
+		(value: string) => {
+			setSelectedCategory(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
+	const handlePricingModelChange = useCallback(
+		(value: string) => {
+			setPricingModel(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
+	const handleModeChange = useCallback(
+		(value: string) => {
+			setMode(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
+	const handleSortByChange = useCallback(
+		(value: string) => {
+			setSortBy(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
 	const fetchAgents = useCallback(async () => {
 		setLoading(true);
 		setError(null);
@@ -56,11 +100,6 @@ export default function CataloguePage() {
 			.catch(() => {});
 	}, []);
 
-	// Reset page on filter change
-	useEffect(() => {
-		setPage(1);
-	}, [query, selectedCategory, pricingModel, mode, sortBy]);
-
 	const totalPages = Math.ceil(total / 24);
 
 	return (
@@ -80,18 +119,18 @@ export default function CataloguePage() {
 					placeholder="Rechercher un agent par nom, description ou tag..."
 					className="pl-10"
 					value={query}
-					onChange={(e) => setQuery(e.target.value)}
+					onChange={(e) => handleQueryChange(e.target.value)}
 				/>
 			</div>
 
 			{/* Filters */}
 			<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div className="flex flex-wrap gap-2">
-					<button type="button" onClick={() => setSelectedCategory("all")}>
+					<button type="button" onClick={() => handleCategoryChange("all")}>
 						<Badge variant={selectedCategory === "all" ? "default" : "outline"}>Tous</Badge>
 					</button>
 					{categories.map((cat) => (
-						<button key={cat.id} type="button" onClick={() => setSelectedCategory(cat.slug)}>
+						<button key={cat.id} type="button" onClick={() => handleCategoryChange(cat.slug)}>
 							<Badge variant={selectedCategory === cat.slug ? "default" : "outline"}>
 								{cat.name}
 							</Badge>
@@ -100,11 +139,11 @@ export default function CataloguePage() {
 				</div>
 				<SearchFilters
 					pricingModel={pricingModel}
-					onPricingModelChange={setPricingModel}
+					onPricingModelChange={handlePricingModelChange}
 					mode={mode}
-					onModeChange={setMode}
+					onModeChange={handleModeChange}
 					sortBy={sortBy}
-					onSortByChange={setSortBy}
+					onSortByChange={handleSortByChange}
 				/>
 			</div>
 

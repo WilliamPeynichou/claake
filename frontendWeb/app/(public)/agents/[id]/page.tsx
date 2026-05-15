@@ -1,3 +1,4 @@
+import type { Agent } from "@claake/shared";
 import { ApiError, createApiClient } from "@claake/shared";
 import { ArrowLeft, Bot, Cloud, Download, HardDrive, Star, Tag, User } from "lucide-react";
 import Link from "next/link";
@@ -16,7 +17,7 @@ const serverApiClient = createApiClient(API_URL);
 export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
-	let agent;
+	let agent: Agent;
 	try {
 		agent = await serverApiClient.agents.get(id);
 	} catch (e) {

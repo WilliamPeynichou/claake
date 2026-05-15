@@ -1,10 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { RequirePermission } from "../../../../common/decorators/admin-permission.decorator.js";
 import { CurrentUser } from "../../../../common/decorators/current-user.decorator.js";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
+import { AdminPermissionGuard } from "../../../../common/guards/admin-permission.guard.js";
 import { RolesGuard } from "../../../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
-import type { UpdateProfileDto } from "../../application/dtos/update-profile.dto.js";
-import type { UpdateRoleDto } from "../../application/dtos/update-role.dto.js";
+import { AddApiKeyDto } from "../../application/dtos/add-api-key.dto.js";
+import { UpdateProfileDto } from "../../application/dtos/update-profile.dto.js";
+import { UpdateRoleDto } from "../../application/dtos/update-role.dto.js";
 import { GetCreatorProfileUseCase } from "../../application/usecases/get-creator-profile.usecase.js";
 import { GetUserProfileUseCase } from "../../application/usecases/get-user-profile.usecase.js";
 import { ListUsersUseCase } from "../../application/usecases/list-users.usecase.js";
@@ -17,11 +20,12 @@ export class UserController {
 	constructor(
 		private readonly listUsers: ListUsersUseCase,
 		private readonly updateUserRole: UpdateUserRoleUseCase,
-		private readonly getUserProfile: GetUserProfileUseCase,
-		private readonly updateUserProfile: UpdateUserProfileUseCase,
 	) {}
 
 	@Get()
+	@UseGuards(SupabaseAuthGuard, RolesGuard, AdminPermissionGuard)
+	@Roles("ADMIN", "SUPER_ADMIN")
+	@RequirePermission("canManageUsers")
 	async findAll() {
 		return this.listUsers.execute();
 	}
@@ -66,7 +70,7 @@ export class AuthController {
 	}
 
 	@Post("api-keys")
-	async addApiKey(@Req() req: any, @Body() body: { provider: string; label: string; key: string }) {
+	async addApiKey(@Req() req: any, @Body() body: AddApiKeyDto) {
 		return this.manageApiKeys.addKey(req.user.id, body.provider, body.label, body.key);
 	}
 

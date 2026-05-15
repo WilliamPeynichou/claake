@@ -228,9 +228,7 @@ export default function NewAgentPage() {
 				required_user_provider:
 					formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
 				endpoint_url:
-					formData.cloudStrategy === "SELLER_ENDPOINT"
-						? formData.endpoint || undefined
-						: undefined,
+					formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpoint || undefined : undefined,
 				endpoint_format:
 					formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpointFormat : undefined,
 				seller_api_key:
@@ -284,7 +282,10 @@ export default function NewAgentPage() {
 							Avertissements d&apos;upload
 						</p>
 						{submitWarnings.map((w) => (
-							<p key={w} className="flex items-start gap-1 text-sm text-orange-600 dark:text-orange-300">
+							<p
+								key={w}
+								className="flex items-start gap-1 text-sm text-orange-600 dark:text-orange-300"
+							>
 								<AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
 								{w}
 							</p>
@@ -401,55 +402,48 @@ export default function NewAgentPage() {
 									Uploadez votre fichier de définition d&apos;agent ou créez-en un manuellement.
 								</p>
 							</div>
-							<div
-								className={`flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors ${
-									dropDragOver
-										? "border-primary bg-primary/5"
-										: "hover:bg-muted/50"
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".agentjson,.json"
+								onChange={handleFileUpload}
+								className="hidden"
+							/>
+							<button
+								type="button"
+								className={`flex w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors ${
+									dropDragOver ? "border-primary bg-primary/5" : "hover:bg-muted/50"
 								}`}
 								onClick={() => fileInputRef.current?.click()}
-								onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
-								onDragOver={(e) => { e.preventDefault(); setDropDragOver(true); }}
+								onDragOver={(e) => {
+									e.preventDefault();
+									setDropDragOver(true);
+								}}
 								onDragLeave={() => setDropDragOver(false)}
 								onDrop={(e) => {
 									e.preventDefault();
 									setDropDragOver(false);
 									const file = e.dataTransfer.files?.[0];
 									if (file) {
-										const syntheticEvent = { target: { files: e.dataTransfer.files } } as unknown as React.ChangeEvent<HTMLInputElement>;
+										const syntheticEvent = {
+											target: { files: e.dataTransfer.files },
+										} as unknown as React.ChangeEvent<HTMLInputElement>;
 										handleFileUpload(syntheticEvent);
 									}
 								}}
-								role="button"
-								tabIndex={0}
 							>
 								<div className="text-center">
 									<Upload className="mx-auto h-8 w-8 text-muted-foreground" />
 									<p className="mt-2 text-sm font-medium">Glissez votre fichier .agentjson ici</p>
 									<p className="text-xs text-muted-foreground">ou cliquez pour sélectionner</p>
-									<input
-										ref={fileInputRef}
-										type="file"
-										accept=".agentjson,.json"
-										onChange={handleFileUpload}
-										className="hidden"
-									/>
 									{agentJsonFile && (
 										<p className="mt-2 text-sm text-green-600">{agentJsonFile.name}</p>
 									)}
-									<Button
-										variant="outline"
-										size="sm"
-										className="mt-4"
-										onClick={(e) => {
-											e.stopPropagation();
-											fileInputRef.current?.click();
-										}}
-									>
+									<span className="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors">
 										Sélectionner un fichier
-									</Button>
+									</span>
 								</div>
-							</div>
+							</button>
 							{submitError && <p className="text-sm text-destructive">{submitError}</p>}
 							<Separator />
 							<p className="text-center text-sm text-muted-foreground">

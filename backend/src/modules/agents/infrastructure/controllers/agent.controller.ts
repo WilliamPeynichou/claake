@@ -2,8 +2,10 @@ import {
 	Body,
 	Controller,
 	Delete,
+	ForbiddenException,
 	Get,
 	HttpCode,
+	NotFoundException,
 	Param,
 	Patch,
 	Post,
@@ -11,10 +13,16 @@ import {
 	Req,
 	UseGuards,
 } from "@nestjs/common";
+import { RequirePermission } from "../../../../common/decorators/admin-permission.decorator.js";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
+import { AdminPermissionGuard } from "../../../../common/guards/admin-permission.guard.js";
+import { OptionalSupabaseAuthGuard } from "../../../../common/guards/optional-supabase-auth.guard.js";
 import { RolesGuard } from "../../../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
-import type { CreateAgentDto } from "../../application/dtos/create-agent.dto.js";
+import { PrismaService } from "../../../../prisma/prisma.service.js";
+import { CreateAgentDto } from "../../application/dtos/create-agent.dto.js";
+import { ReviewAgentDto } from "../../application/dtos/review-agent.dto.js";
+import { UpdateAgentDto } from "../../application/dtos/update-agent.dto.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
@@ -24,6 +32,8 @@ import { ReviewAgentUseCase } from "../../application/usecases/review-agent.usec
 import { UnpublishAgentUseCase } from "../../application/usecases/unpublish-agent.usecase.js";
 import { UpdateAgentUseCase } from "../../application/usecases/update-agent.usecase.js";
 import { ValidateAgentUseCase } from "../../application/usecases/validate-agent.usecase.js";
+
+type RequestUser = { id: string; email: string; role: string };
 
 @Controller("agents")
 export class AgentController {
@@ -37,10 +47,13 @@ export class AgentController {
 		private readonly getDownloadInfo: GetAgentDownloadInfoUseCase,
 		private readonly deleteAgent: DeleteAgentUseCase,
 		private readonly unpublishAgent: UnpublishAgentUseCase,
+		private readonly prisma: PrismaService,
 	) {}
 
 	@Get()
+	@UseGuards(OptionalSupabaseAuthGuard)
 	async findAll(
+		@Req() req: { user?: RequestUser },
 		@Query("q") q?: string,
 		@Query("category") category?: string,
 		@Query("all") all?: string,
@@ -52,10 +65,15 @@ export class AgentController {
 		@Query("page") page?: string,
 		@Query("limit") limit?: string,
 	) {
+		const includeUnpublished = all === "true";
+		if (includeUnpublished && !(await this.canManageAgents(req.user))) {
+			throw new ForbiddenException("Admin access required to list unpublished agents");
+		}
+
 		return this.listAgents.execute({
 			q,
 			category,
-			publishedOnly: all !== "true",
+			publishedOnly: !includeUnpublished,
 			pricingModel,
 			mode,
 			minRating: minRating ? Number(minRating) : undefined,
@@ -68,7 +86,7 @@ export class AgentController {
 
 	@Get("mine")
 	@UseGuards(SupabaseAuthGuard)
-	async findMine(@Req() req: any) {
+	async findMine(@Req() req: { user: RequestUser }) {
 		return this.listAgents.execute({
 			publishedOnly: false,
 			creatorId: req.user.id,
@@ -76,13 +94,22 @@ export class AgentController {
 	}
 
 	@Get(":id")
-	async findOne(@Param("id") id: string) {
-		return this.getAgent.execute(id);
+	@UseGuards(OptionalSupabaseAuthGuard)
+	async findOne(@Param("id") id: string, @Req() req: { user?: RequestUser }) {
+		const agent = await this.getAgent.execute(id);
+		const canView =
+			agent.status === "approved" ||
+			agent.creator_id === req.user?.id ||
+			(await this.canManageAgents(req.user));
+		if (!canView) {
+			throw new NotFoundException(`Agent ${id} not found`);
+		}
+		return agent;
 	}
 
 	@Post()
 	@UseGuards(SupabaseAuthGuard)
-	async create(@Body() dto: CreateAgentDto, @Req() req: any) {
+	async create(@Body() dto: CreateAgentDto, @Req() req: { user: RequestUser }) {
 		const agent = await this.createAgent.execute(dto, req.user.id);
 
 		// Run validation pipeline
@@ -93,40 +120,57 @@ export class AgentController {
 
 	@Patch(":id")
 	@UseGuards(SupabaseAuthGuard)
-	async update(@Param("id") id: string, @Body() dto: Partial<CreateAgentDto>, @Req() req: any) {
+	async update(
+		@Param("id") id: string,
+		@Body() dto: UpdateAgentDto,
+		@Req() req: { user: RequestUser },
+	) {
 		return this.updateAgent.execute(id, dto, req.user.id);
 	}
 
 	@Get(":id/download-info")
 	@UseGuards(SupabaseAuthGuard)
-	async downloadInfo(@Param("id") id: string, @Req() req: any) {
+	async downloadInfo(@Param("id") id: string, @Req() req: { user: RequestUser }) {
 		return this.getDownloadInfo.execute(id, req.user.id);
 	}
 
 	@Delete(":id")
 	@HttpCode(204)
 	@UseGuards(SupabaseAuthGuard)
-	async remove(@Param("id") id: string, @Req() req: any) {
+	async remove(@Param("id") id: string, @Req() req: { user: RequestUser }) {
 		await this.deleteAgent.execute(id, { id: req.user.id, email: req.user.email });
 	}
 
 	@Patch(":id/unpublish")
 	@UseGuards(SupabaseAuthGuard)
-	async unpublish(@Param("id") id: string, @Req() req: any) {
+	async unpublish(@Param("id") id: string, @Req() req: { user: RequestUser }) {
 		return this.unpublishAgent.execute(id, { id: req.user.id, email: req.user.email });
 	}
 
 	@Patch(":id/review")
-	@UseGuards(SupabaseAuthGuard, RolesGuard)
+	@UseGuards(SupabaseAuthGuard, RolesGuard, AdminPermissionGuard)
 	@Roles("ADMIN", "SUPER_ADMIN")
+	@RequirePermission("canManageAgents")
 	async review(
 		@Param("id") id: string,
-		@Body() body: { decision: "approve" | "reject"; reason?: string },
-		@Req() req: any,
+		@Body() body: ReviewAgentDto,
+		@Req() req: { user: RequestUser },
 	) {
 		return this.reviewAgent.execute(id, body.decision, body.reason, {
 			id: req.user.id,
 			email: req.user.email,
 		});
+	}
+
+	private async canManageAgents(user?: RequestUser): Promise<boolean> {
+		if (user?.role === "SUPER_ADMIN") return true;
+		if (user?.role !== "ADMIN") return false;
+
+		const dbUser = await this.prisma.user.findUnique({
+			where: { id: user.id },
+			select: { adminPermissions: true },
+		});
+		const permissions = dbUser?.adminPermissions as { canManageAgents?: boolean } | null;
+		return permissions?.canManageAgents === true;
 	}
 }

@@ -91,7 +91,6 @@ export function AgentSelector({ currentAgent, agents }: AgentSelectorProps) {
 					>
 						<Search className="h-3.5 w-3.5 shrink-0" style={{ color: "#a09a8a" }} />
 						<input
-							autoFocus
 							type="text"
 							placeholder="Rechercher un agent..."
 							value={search}

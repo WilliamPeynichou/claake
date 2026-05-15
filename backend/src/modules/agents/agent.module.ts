@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { AdminPermissionGuard } from "../../common/guards/admin-permission.guard.js";
+import { OptionalSupabaseAuthGuard } from "../../common/guards/optional-supabase-auth.guard.js";
 import { RolesGuard } from "../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../common/guards/supabase-auth.guard.js";
 import { CreateAgentUseCase } from "./application/usecases/create-agent.usecase.js";
@@ -20,7 +22,9 @@ import { PrismaAgentRepository } from "./infrastructure/repositories/prisma-agen
 	providers: [
 		Reflector,
 		SupabaseAuthGuard,
+		OptionalSupabaseAuthGuard,
 		RolesGuard,
+		AdminPermissionGuard,
 		ListAgentsUseCase,
 		GetAgentUseCase,
 		CreateAgentUseCase,

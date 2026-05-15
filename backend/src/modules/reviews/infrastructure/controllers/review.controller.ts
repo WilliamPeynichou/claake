@@ -11,7 +11,8 @@ import {
 	UseGuards,
 } from "@nestjs/common";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
-import type { CreateReviewDto } from "../../application/dtos/create-review.dto.js";
+import { CreateReviewDto } from "../../application/dtos/create-review.dto.js";
+import { UpdateReviewDto } from "../../application/dtos/update-review.dto.js";
 import { CreateReviewUseCase } from "../../application/usecases/create-review.usecase.js";
 import { DeleteReviewUseCase } from "../../application/usecases/delete-review.usecase.js";
 import { ListReviewsUseCase } from "../../application/usecases/list-reviews.usecase.js";
@@ -45,7 +46,7 @@ export class ReviewController {
 	@UseGuards(SupabaseAuthGuard)
 	async update(
 		@Param("reviewId") reviewId: string,
-		@Body() body: { rating?: number; comment?: string },
+		@Body() body: UpdateReviewDto,
 		@Req() req: any,
 	) {
 		return this.updateReview.execute(reviewId, body, req.user.id);

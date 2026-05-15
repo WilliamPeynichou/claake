@@ -18,7 +18,7 @@ export function Messages({ messages, streaming, error, agentName, agentInitial }
 
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messages, streaming]);
+	});
 
 	if (messages.length === 0 && !streaming) {
 		return (

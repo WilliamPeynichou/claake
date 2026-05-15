@@ -10,7 +10,7 @@ import { PrismaService } from "../../prisma/prisma.service.js";
 import { normalizeUserRole } from "../auth/role-normalization.js";
 
 @Injectable()
-export class SupabaseAuthGuard implements CanActivate {
+export class OptionalSupabaseAuthGuard implements CanActivate {
 	private readonly supabase: SupabaseClient;
 
 	constructor(
@@ -27,12 +27,13 @@ export class SupabaseAuthGuard implements CanActivate {
 		const request = context.switchToHttp().getRequest();
 		const authHeader = request.headers.authorization;
 
-		if (!authHeader?.startsWith("Bearer ")) {
-			throw new UnauthorizedException("Missing or invalid authorization header");
+		if (!authHeader) return true;
+
+		if (!authHeader.startsWith("Bearer ")) {
+			throw new UnauthorizedException("Invalid authorization header");
 		}
 
 		const token = authHeader.slice(7);
-
 		const {
 			data: { user },
 			error,
@@ -42,11 +43,7 @@ export class SupabaseAuthGuard implements CanActivate {
 			throw new UnauthorizedException("Invalid or expired token");
 		}
 
-		// DB is the authorization source of truth. Supabase metadata is used only
-		// when the local user row is first created.
 		const cloudRole = normalizeUserRole(user.app_metadata?.role);
-
-		// Ensure the authenticated Supabase user exists locally without overwriting DB-managed roles.
 		const dbUser = await this.prisma.user.upsert({
 			where: { id: user.id },
 			create: {

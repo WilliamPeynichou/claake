@@ -19,6 +19,7 @@ export function ReviewList({ agentId, refreshKey }: ReviewListProps) {
 	const limit = 5;
 
 	useEffect(() => {
+		void refreshKey;
 		apiClient.reviews
 			.list(agentId, page, limit)
 			.then((res) => {

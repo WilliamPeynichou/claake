@@ -1,30 +1,36 @@
 import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import { IsPublicUrl } from "../../../../common/validators/is-public-url.validator.js";
 
-export class CreateAgentDto {
+export class UpdateAgentDto {
+	@IsOptional()
 	@IsString()
-	name!: string;
+	name?: string;
 
+	@IsOptional()
 	@IsString()
-	slug!: string;
+	slug?: string;
 
+	@IsOptional()
 	@IsString()
-	description!: string;
+	description?: string;
 
 	@IsOptional()
 	@IsString()
 	long_description?: string;
 
+	@IsOptional()
 	@IsString()
-	category!: string;
+	category?: string;
 
+	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	tags!: string[];
+	tags?: string[];
 
+	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	models!: string[];
+	models?: string[];
 
 	@IsOptional()
 	@IsEnum(["LOCAL", "CLOUD", "HYBRID"])

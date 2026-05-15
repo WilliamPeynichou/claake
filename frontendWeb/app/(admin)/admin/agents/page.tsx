@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 const statusLabel: Record<string, string> = {
 	approved: "Publié",
@@ -27,16 +28,18 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 };
 
 export default function AdminAgentsPage() {
+	const { token } = useAuth();
 	const [agents, setAgents] = useState<Agent[]>([]);
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 
 	useEffect(() => {
+		if (!token) return;
 		apiClient.agents
-			.list({ all: true })
+			.list({ all: true }, token)
 			.then((res) => setAgents(res.agents))
 			.catch(() => {});
-	}, []);
+	}, [token]);
 
 	const filtered = agents.filter((a) => {
 		const matchesSearch =

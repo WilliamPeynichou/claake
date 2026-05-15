@@ -27,7 +27,7 @@ function ToggleSwitch({ value, onToggle }: { value: boolean; onToggle: () => voi
 			duration: 220,
 			useNativeDriver: true,
 		}).start();
-	}, [value]);
+	}, [knobX, value]);
 
 	return (
 		<Pressable onPress={onToggle} style={[styles.toggle, value && styles.toggleOn]}>

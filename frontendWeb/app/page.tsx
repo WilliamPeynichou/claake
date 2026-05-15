@@ -11,6 +11,14 @@ import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api";
 import { useI18n } from "@/lib/i18n/context";
 
+const FEATURED_SKELETON_IDS = ["featured-skeleton-1", "featured-skeleton-2", "featured-skeleton-3"];
+const TRENDING_SKELETON_IDS = [
+	"trending-skeleton-1",
+	"trending-skeleton-2",
+	"trending-skeleton-3",
+	"trending-skeleton-4",
+];
+
 function useRevealOnScroll() {
 	const ref = useRef<HTMLDivElement>(null);
 
@@ -139,9 +147,9 @@ export default function HomePage() {
 					</div>
 					<div className="mt-6 flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
 						{loadingAgents && featured.length === 0
-							? Array.from({ length: 3 }).map((_, i) => (
+							? FEATURED_SKELETON_IDS.map((skeletonId) => (
 									<div
-										key={i}
+										key={skeletonId}
 										className="min-w-[280px] h-48 animate-pulse rounded bg-muted flex-shrink-0"
 									/>
 								))
@@ -244,8 +252,8 @@ export default function HomePage() {
 					</div>
 					<div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 						{loadingAgents && trending.length === 0
-							? Array.from({ length: 4 }).map((_, i) => (
-									<div key={i} className="h-48 animate-pulse rounded bg-muted" />
+							? TRENDING_SKELETON_IDS.map((skeletonId) => (
+									<div key={skeletonId} className="h-48 animate-pulse rounded bg-muted" />
 								))
 							: trending.map((agent, i) => (
 									<div key={agent.id} className={`reveal reveal-delay-${(i % 4) + 1}`}>

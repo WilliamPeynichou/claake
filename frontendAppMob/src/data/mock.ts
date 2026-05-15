@@ -22,6 +22,7 @@ export type Chat = {
 };
 
 export type Message = {
+	id: string;
 	role: "user" | "agent";
 	text: string;
 };
@@ -142,18 +143,22 @@ export const MOCK_CHATS: Chat[] = [
 
 export const SAMPLE_THREAD: Message[] = [
 	{
+		id: "sample-1",
 		role: "user",
 		text: "Peux-tu me rédiger la clause de confidentialité pour un freelance dev ?",
 	},
 	{
+		id: "sample-2",
 		role: "agent",
 		text: "Voici une clause adaptée, en trois paragraphes : définition des informations confidentielles, obligations de la partie réceptrice, et durée (standard 3 ans après fin du contrat). Je t'ajoute aussi une variante RGPD.",
 	},
 	{
+		id: "sample-3",
 		role: "user",
 		text: "Parfait. Ajoute une clause pénale proportionnée.",
 	},
 	{
+		id: "sample-4",
 		role: "agent",
 		text: "Entendu. Clause pénale : forfait de 5 000 € par violation caractérisée, sans préjudice des dommages-intérêts complémentaires. Je garde la rédaction sobre pour rester exécutable.",
 	},

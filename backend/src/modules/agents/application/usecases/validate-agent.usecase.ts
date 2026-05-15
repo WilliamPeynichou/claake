@@ -67,12 +67,7 @@ function normalizeForScan(text: string): string {
 		.trim();
 }
 
-function scanText(
-	text: string,
-	label: string,
-	errors: string[],
-	warnings: string[],
-): void {
+function scanText(text: string, label: string, errors: string[], warnings: string[]): void {
 	if (!text) return;
 	const normalized = normalizeForScan(text);
 	const collapsed = text.replace(/\s/g, "");

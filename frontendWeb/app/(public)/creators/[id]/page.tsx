@@ -1,3 +1,4 @@
+import type { CreatorProfile } from "@claake/shared";
 import { ApiError, createApiClient } from "@claake/shared";
 import { ArrowLeft, Bot, ExternalLink, Github, Globe, Linkedin, Star, User } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +23,7 @@ function getLinkIcon(label: string) {
 export default async function CreatorProfilePage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
-	let creator;
+	let creator: CreatorProfile;
 	try {
 		creator = await serverApiClient.creators.get(id);
 	} catch (e) {

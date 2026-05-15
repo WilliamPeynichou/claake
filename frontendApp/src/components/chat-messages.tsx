@@ -25,7 +25,7 @@ export function ChatMessages({
 
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messages, streaming]);
+	});
 
 	if (!agentName) {
 		return (
@@ -98,14 +98,13 @@ export function ChatMessages({
 
 	if (loading) {
 		return (
-			<div
+			<output
 				className="flex flex-1 items-center justify-center"
-				role="status"
 				aria-label="Loading"
 				style={{ background: "#faf9f5" }}
 			>
 				<Loader2 className="h-5 w-5 animate-spin" style={{ color: "#766f62" }} />
-			</div>
+			</output>
 		);
 	}
 

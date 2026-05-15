@@ -52,7 +52,7 @@ export class CreateReviewUseCase {
 		} else {
 			// Free agent: check chat interaction
 			const sessions = await this.chatRepo.findByUserAndAgent(userId, agentId);
-			verifiedInteraction = sessions !== null;
+			verifiedInteraction = sessions.length > 0;
 			if (!verifiedInteraction) {
 				throw new ForbiddenException("You must use this agent before reviewing");
 			}

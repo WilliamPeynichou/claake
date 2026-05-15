@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 export function ChatPage() {
 	const { token, profile, signOut } = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
+	const agentParam = searchParams.get("agent");
 	const [agents, setAgents] = useState<Agent[]>([]);
 	const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
@@ -22,7 +23,6 @@ export function ChatPage() {
 		error,
 		sessionId,
 		sessions,
-		pendingFileIds,
 		addPendingFile,
 		removePendingFile,
 		sendMessage,
@@ -38,14 +38,13 @@ export function ChatPage() {
 			.list({ limit: 100 })
 			.then((res) => {
 				setAgents(res.agents);
-				const agentParam = searchParams.get("agent");
 				if (agentParam) {
 					const found = res.agents.find((a) => a.id === agentParam);
 					if (found) setSelectedAgent(found);
 				}
 			})
 			.catch(() => {});
-	}, []);
+	}, [agentParam]);
 
 	const handleSelectSession = useCallback(
 		async (session: { id: string; agent_id: string; agent_name: string }) => {

@@ -34,7 +34,10 @@ function groupByDate(sessions: ChatSession[]) {
 					: d >= weekAgo
 						? "Cette semaine"
 						: "Plus ancien";
-		(map[label] ??= []).push(s);
+		if (!map[label]) {
+			map[label] = [];
+		}
+		map[label].push(s);
 	}
 	for (const label of ["Aujourd'hui", "Hier", "Cette semaine", "Plus ancien"]) {
 		if (map[label]?.length) groups.push({ label, items: map[label] });
@@ -53,7 +56,6 @@ export function AppSidebar({
 }: AppSidebarProps) {
 	const router = useRouter();
 	const [sessionsOpen, setSessionsOpen] = useState(true);
-	const [hoveredSession, setHoveredSession] = useState<string | null>(null);
 
 	const currentAgent = agents.find((a) => a.id === agentId);
 	const filteredSessions = agentId ? sessions.filter((s) => s.agent_id === agentId) : sessions;
@@ -226,24 +228,21 @@ export function AppSidebar({
 										</p>
 										{items.map((session) => {
 											const isActive = session.id === activeSessionId;
-											const isHovered = session.id === hoveredSession;
 											return (
 												<div
 													key={session.id}
-													className="group flex items-center mx-2 px-2 py-1.5 cursor-pointer"
+													className={`group flex items-center mx-2 px-2 py-1.5 ${
+														isActive ? "bg-[#e8ede0]" : "hover:bg-[#ece9e0]"
+													}`}
 													style={{
-														background: isActive
-															? "#e8ede0"
-															: isHovered
-																? "#ece9e0"
-																: "transparent",
 														borderLeft: `2px solid ${isActive ? "#6b7c5c" : "transparent"}`,
 													}}
-													onMouseEnter={() => setHoveredSession(session.id)}
-													onMouseLeave={() => setHoveredSession(null)}
-													onClick={() => onSelectSession(session.id)}
 												>
-													<div className="flex-1 min-w-0">
+													<button
+														type="button"
+														className="flex-1 min-w-0 text-left"
+														onClick={() => onSelectSession(session.id)}
+													>
 														<p
 															className="truncate"
 															style={{
@@ -255,7 +254,7 @@ export function AppSidebar({
 														>
 															{session.title ?? session.agent_name ?? "Conversation"}
 														</p>
-													</div>
+													</button>
 													<button
 														type="button"
 														onClick={(e) => {

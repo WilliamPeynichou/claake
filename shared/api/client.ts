@@ -90,7 +90,7 @@ export function createApiClient(baseUrl: string) {
 
 	return {
 		agents: {
-			list: (params?: AgentSearchParams) => {
+			list: (params?: AgentSearchParams, token?: string) => {
 				const qs = new URLSearchParams();
 				if (params?.q) qs.set("q", params.q);
 				if (params?.category) qs.set("category", params.category);
@@ -103,7 +103,10 @@ export function createApiClient(baseUrl: string) {
 				if (params?.page) qs.set("page", String(params.page));
 				if (params?.limit) qs.set("limit", String(params.limit));
 				const query = qs.toString();
-				return fetchJson<AgentListResponse>(`/agents${query ? `?${query}` : ""}`);
+				return fetchJson<AgentListResponse>(
+					`/agents${query ? `?${query}` : ""}`,
+					token ? withAuth(token) : undefined,
+				);
 			},
 			get: (id: string) => fetchJson<Agent>(`/agents/${id}`),
 			mine: (token: string) => fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
