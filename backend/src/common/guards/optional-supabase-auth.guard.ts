@@ -7,7 +7,6 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { PrismaService } from "../../prisma/prisma.service.js";
-import { normalizeUserRole } from "../auth/role-normalization.js";
 
 @Injectable()
 export class OptionalSupabaseAuthGuard implements CanActivate {
@@ -43,13 +42,12 @@ export class OptionalSupabaseAuthGuard implements CanActivate {
 			throw new UnauthorizedException("Invalid or expired token");
 		}
 
-		const cloudRole = normalizeUserRole(user.app_metadata?.role);
 		const dbUser = await this.prisma.user.upsert({
 			where: { id: user.id },
 			create: {
 				id: user.id,
 				email: user.email ?? "",
-				role: cloudRole ?? "USER",
+				role: "USER",
 			},
 			update: {},
 			select: { role: true },

@@ -52,10 +52,10 @@ export class StripeService implements StripeServicePort {
 	async constructWebhookEvent(
 		rawBody: Buffer,
 		signature: string,
-	): Promise<{ type: string; data: Record<string, any> }> {
+	): Promise<{ id: string; type: string; data: Record<string, any> }> {
 		try {
 			const event = this.stripe.webhooks.constructEvent(rawBody, signature, this.webhookSecret);
-			return { type: event.type, data: event.data.object as Record<string, any> };
+			return { id: event.id, type: event.type, data: event.data.object as Record<string, any> };
 		} catch {
 			throw new BadRequestException("Invalid webhook signature");
 		}

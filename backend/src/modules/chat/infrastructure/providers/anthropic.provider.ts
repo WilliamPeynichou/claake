@@ -5,6 +5,9 @@ import type {
 	StreamTextParams,
 } from "../../domain/ports/ai-provider.port.js";
 
+const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
+const TIMEOUT_MS = 60_000;
+
 type AnthropicContentBlock =
 	| { type: "text"; text: string }
 	| { type: "image"; source: { type: "url"; url: string } }
@@ -52,29 +55,44 @@ export class AnthropicProvider implements AIProviderPort {
 			body.system = params.systemPrompt;
 		}
 
-		const res = await fetch("https://api.anthropic.com/v1/messages", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"x-api-key": params.apiKey,
-				"anthropic-version": "2023-06-01",
-			},
-			body: JSON.stringify(body),
-		});
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+		let res: Response;
+		try {
+			res = await fetch("https://api.anthropic.com/v1/messages", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-api-key": params.apiKey,
+					"anthropic-version": "2023-06-01",
+				},
+				body: JSON.stringify(body),
+				signal: controller.signal,
+			});
+		} catch {
+			clearTimeout(timeout);
+			throw new Error("Anthropic provider unavailable");
+		}
 
 		if (!res.ok) {
-			const err = await res.text();
-			throw new Error(`Anthropic API error ${res.status}: ${err}`);
+			clearTimeout(timeout);
+			throw new Error("Anthropic provider unavailable");
 		}
 
 		const reader = res.body!.getReader();
 		const decoder = new TextDecoder();
 		let buffer = "";
+		let totalSize = 0;
 
 		try {
 			while (true) {
 				const { done, value } = await reader.read();
 				if (done) break;
+
+				totalSize += value.byteLength;
+				if (totalSize > MAX_RESPONSE_SIZE) {
+					throw new Error("Anthropic provider response exceeded maximum size");
+				}
 
 				buffer += decoder.decode(value, { stream: true });
 				const lines = buffer.split("\n");
@@ -96,6 +114,7 @@ export class AnthropicProvider implements AIProviderPort {
 				}
 			}
 		} finally {
+			clearTimeout(timeout);
 			reader.releaseLock();
 		}
 	}

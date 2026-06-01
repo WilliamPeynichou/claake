@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { assertPublicHttpUrl } from "../../../../common/security/public-url.js";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
@@ -67,6 +68,35 @@ function normalizeForScan(text: string): string {
 		.trim();
 }
 
+const MAX_CONFIG_BYTES = 256 * 1024;
+
+async function readLimitedText(res: Response, maxBytes: number): Promise<string> {
+	const reader = res.body?.getReader();
+	if (!reader) return "";
+	const chunks: Uint8Array[] = [];
+	let total = 0;
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			total += value.byteLength;
+			if (total > maxBytes) {
+				throw new Error("CONFIG_TOO_LARGE");
+			}
+			chunks.push(value);
+		}
+	} finally {
+		reader.releaseLock();
+	}
+	const buffer = new Uint8Array(total);
+	let offset = 0;
+	for (const chunk of chunks) {
+		buffer.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return new TextDecoder().decode(buffer);
+}
+
 function scanText(text: string, label: string, errors: string[], warnings: string[]): void {
 	if (!text) return;
 	const normalized = normalizeForScan(text);
@@ -110,29 +140,44 @@ export class ValidateAgentUseCase {
 		// Validate .agentjson content from storage if config_url is provided
 		if (agent.configUrl) {
 			try {
-				const res = await fetch(agent.configUrl, { signal: AbortSignal.timeout(5000) });
+				const parsedConfigUrl = await assertPublicHttpUrl(agent.configUrl);
+				const res = await fetch(parsedConfigUrl, {
+					signal: AbortSignal.timeout(5000),
+					redirect: "error",
+				});
 				if (!res.ok) {
 					errors.push(`Impossible de récupérer le fichier de configuration (HTTP ${res.status}).`);
 				} else {
-					const raw = await res.text();
-					let parsed: Record<string, unknown>;
-					try {
-						parsed = JSON.parse(raw);
-					} catch {
-						errors.push("Le fichier .agentjson n'est pas un JSON valide.");
-						parsed = {};
+					const contentLength = Number(res.headers.get("content-length") ?? "0");
+					if (contentLength > MAX_CONFIG_BYTES) {
+						errors.push("Le fichier .agentjson dépasse la taille maximale autorisée.");
+					} else {
+						const raw = await readLimitedText(res, MAX_CONFIG_BYTES);
+						let parsed: Record<string, unknown>;
+						try {
+							parsed = JSON.parse(raw);
+						} catch {
+							errors.push("Le fichier .agentjson n'est pas un JSON valide.");
+							parsed = {};
+						}
+						const fileSystemPrompt =
+							typeof parsed.system_prompt === "string"
+								? parsed.system_prompt
+								: typeof parsed.systemPrompt === "string"
+									? parsed.systemPrompt
+									: "";
+						scanText(fileSystemPrompt, "le system_prompt du fichier .agentjson", errors, warnings);
+						scanText(raw, "le fichier .agentjson (contenu brut)", errors, warnings);
 					}
-					const fileSystemPrompt =
-						typeof parsed.system_prompt === "string"
-							? parsed.system_prompt
-							: typeof parsed.systemPrompt === "string"
-								? parsed.systemPrompt
-								: "";
-					scanText(fileSystemPrompt, "le system_prompt du fichier .agentjson", errors, warnings);
-					scanText(raw, "le fichier .agentjson (contenu brut)", errors, warnings);
 				}
-			} catch {
-				warnings.push("Le fichier de configuration n'a pas pu être vérifié (timeout ou réseau).");
+			} catch (error) {
+				if (error instanceof Error && error.message === "CONFIG_TOO_LARGE") {
+					errors.push("Le fichier .agentjson dépasse la taille maximale autorisée.");
+				} else if (error instanceof Error && error.message.includes("blocked address")) {
+					errors.push("L'URL du fichier de configuration pointe vers une adresse interdite.");
+				} else {
+					warnings.push("Le fichier de configuration n'a pas pu être vérifié (timeout ou réseau).");
+				}
 			}
 		}
 

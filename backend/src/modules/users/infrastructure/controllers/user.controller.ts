@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { RequirePermission } from "../../../../common/decorators/admin-permission.decorator.js";
 import { CurrentUser } from "../../../../common/decorators/current-user.decorator.js";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
@@ -70,6 +71,7 @@ export class AuthController {
 	}
 
 	@Post("api-keys")
+	@Throttle({ default: { ttl: 60_000, limit: 5 } })
 	async addApiKey(@Req() req: any, @Body() body: AddApiKeyDto) {
 		return this.manageApiKeys.addKey(req.user.id, body.provider, body.label, body.key);
 	}

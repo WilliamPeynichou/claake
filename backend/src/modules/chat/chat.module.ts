@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { PrismaModule } from "../../prisma/prisma.module.js";
 import { AgentModule } from "../agents/agent.module.js";
+import { UploadsModule } from "../uploads/uploads.module.js";
 import { ManageApiKeysUseCase } from "../users/application/usecases/manage-api-keys.usecase.js";
 import { UserModule } from "../users/user.module.js";
 import {
@@ -24,7 +25,7 @@ import { OpenAIProvider } from "./infrastructure/providers/openai.provider.js";
 import { PrismaChatRepository } from "./infrastructure/repositories/prisma-chat.repository.js";
 
 @Module({
-	imports: [AgentModule, UserModule, PrismaModule],
+	imports: [AgentModule, UserModule, PrismaModule, UploadsModule],
 	controllers: [ChatController],
 	providers: [
 		CreateSessionUseCase,

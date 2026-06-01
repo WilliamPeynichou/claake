@@ -1,5 +1,6 @@
 import { FileText, Loader2, Paperclip, Send, Square, X } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
+import { API_BASE_URL } from "@/lib/api";
 
 interface PendingFile {
 	id: string;
@@ -21,7 +22,7 @@ interface Props {
 	onFileRemoved?: (fileId: string) => void;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3002/v1";
+const API_BASE = API_BASE_URL;
 
 export function ChatInputDA({
 	value,

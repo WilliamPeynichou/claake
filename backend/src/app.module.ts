@@ -26,10 +26,34 @@ function validateEnv(config: Record<string, unknown>) {
 		"SUPABASE_SERVICE_ROLE_KEY",
 		"ENCRYPTION_KEY",
 	];
+	const isProduction = config.NODE_ENV === "production";
+	if (isProduction) {
+		required.push("WEB_URL", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET");
+	}
+
 	const missing = required.filter((key) => !config[key]);
 	if (missing.length > 0) {
 		throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
 	}
+
+	const encryptionKey = String(config.ENCRYPTION_KEY ?? "");
+	if (!/^[a-fA-F0-9]{64}$/.test(encryptionKey)) {
+		throw new Error("ENCRYPTION_KEY must be 64 hexadecimal characters (32 bytes)");
+	}
+
+	const webUrl = String(config.WEB_URL ?? "");
+	if (isProduction) {
+		if (!/^https:\/\//.test(webUrl)) {
+			throw new Error("WEB_URL must be an https:// origin in production");
+		}
+		for (const key of ["SUPABASE_URL", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"]) {
+			const value = String(config[key] ?? "");
+			if (/changeme|example|placeholder|your-/i.test(value)) {
+				throw new Error(`${key} must not use a placeholder value in production`);
+			}
+		}
+	}
+
 	return config;
 }
 

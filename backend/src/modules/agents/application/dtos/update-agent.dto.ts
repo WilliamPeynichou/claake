@@ -1,35 +1,53 @@
-import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import {
+	ArrayMaxSize,
+	IsArray,
+	IsEnum,
+	IsInt,
+	IsNumber,
+	IsOptional,
+	IsString,
+	Max,
+	MaxLength,
+	Min,
+} from "class-validator";
 import { IsPublicUrl } from "../../../../common/validators/is-public-url.validator.js";
 
 export class UpdateAgentDto {
 	@IsOptional()
 	@IsString()
+	@MaxLength(80)
 	name?: string;
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(100)
 	slug?: string;
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(1000)
 	description?: string;
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(5000)
 	long_description?: string;
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(80)
 	category?: string;
 
 	@IsOptional()
 	@IsArray()
-	@IsString({ each: true })
+	@ArrayMaxSize(20)
+	@MaxLength(40, { each: true })
 	tags?: string[];
 
 	@IsOptional()
 	@IsArray()
-	@IsString({ each: true })
+	@ArrayMaxSize(10)
+	@MaxLength(80, { each: true })
 	models?: string[];
 
 	@IsOptional()
@@ -42,6 +60,7 @@ export class UpdateAgentDto {
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(10000)
 	system_prompt?: string;
 
 	@IsOptional()
@@ -51,11 +70,13 @@ export class UpdateAgentDto {
 	@IsOptional()
 	@IsNumber()
 	@Min(0)
+	@Max(1_000_000)
 	price?: number;
 
 	@IsOptional()
 	@IsInt()
 	@Min(1)
+	@Max(1_000_000)
 	credit_cost?: number;
 
 	@IsOptional()
@@ -90,18 +111,22 @@ export class UpdateAgentDto {
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(2048)
 	seller_api_key?: string;
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(80)
 	seller_api_provider?: string;
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(80)
 	required_user_provider?: string;
 
 	@IsOptional()
 	@IsString()
+	@MaxLength(200)
 	docker_image?: string;
 
 	@IsOptional()

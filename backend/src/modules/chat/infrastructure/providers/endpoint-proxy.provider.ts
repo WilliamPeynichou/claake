@@ -1,4 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
+import { assertPublicHttpUrl } from "../../../../common/security/public-url.js";
 import type {
 	AIProviderPort,
 	FileAttachment,
@@ -7,6 +8,7 @@ import type {
 
 const MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10MB
 const TIMEOUT_MS = 60_000;
+const GENERIC_VENDOR_ERROR = "External AI endpoint is currently unavailable";
 
 // Formats that use the OpenAI-compatible chat/completions API
 const OPENAI_COMPATIBLE_FORMATS = new Set([
@@ -63,15 +65,20 @@ function buildAnthropicContent(
 
 @Injectable()
 export class EndpointProxyProvider implements AIProviderPort {
+	private readonly logger = new Logger(EndpointProxyProvider.name);
+
 	async *streamText(params: StreamTextParams): AsyncIterable<string> {
 		if (!params.baseUrl) {
 			throw new Error("No endpoint URL provided for proxy provider");
 		}
 
 		const endpointFormat = ((params as any).endpointFormat as string)?.toLowerCase() ?? "openai";
-		const { url, init } = this.buildRequest(params, endpointFormat);
+		const parsedBaseUrl = await assertPublicHttpUrl(params.baseUrl!);
+		const { url, init } = this.buildRequest(
+			{ ...params, baseUrl: parsedBaseUrl.toString() },
+			endpointFormat,
+		);
 
-		this.validateUrl(params.baseUrl!);
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -79,8 +86,8 @@ export class EndpointProxyProvider implements AIProviderPort {
 			const res = await fetch(url, { ...init, signal: controller.signal, redirect: "error" });
 
 			if (!res.ok) {
-				const err = await res.text();
-				throw new Error(`Vendor endpoint error ${res.status}: ${err}`);
+				await this.readErrorSnippet(res);
+				throw new Error(GENERIC_VENDOR_ERROR);
 			}
 
 			// Google Gemini returns JSON, not SSE
@@ -97,51 +104,26 @@ export class EndpointProxyProvider implements AIProviderPort {
 
 			// All other formats use standard SSE (OpenAI-compatible or Anthropic)
 			yield* this.parseStandardSSE(res, endpointFormat);
+		} catch (error) {
+			this.logger.warn(`Vendor endpoint request failed: ${this.redactError(error)}`);
+			throw new Error(GENERIC_VENDOR_ERROR);
 		} finally {
 			clearTimeout(timeout);
 		}
 	}
 
-	private validateUrl(url: string): void {
-		let parsed: URL;
+	private async readErrorSnippet(res: Response): Promise<void> {
 		try {
-			parsed = new URL(url);
+			const snippet = (await res.text()).slice(0, 500);
+			this.logger.warn(`Vendor endpoint returned HTTP ${res.status}: ${snippet.replace(/[\r\n]+/g, " ")}`);
 		} catch {
-			throw new Error("Invalid endpoint URL");
+			this.logger.warn(`Vendor endpoint returned HTTP ${res.status}`);
 		}
+	}
 
-		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-			throw new Error("Endpoint URL must use http or https protocol");
-		}
-
-		const hostname = parsed.hostname.toLowerCase();
-
-		// Block loopback
-		if (hostname === "localhost" || hostname === "::1") {
-			throw new Error("Endpoint URL points to a blocked address");
-		}
-
-		// Block by numeric IP ranges
-		const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-		if (ipv4Match) {
-			const [, a, b] = ipv4Match.map(Number);
-			const octets = ipv4Match.slice(1).map(Number);
-			// 127.x.x.x — loopback
-			if (octets[0] === 127) throw new Error("Endpoint URL points to a blocked address");
-			// 10.x.x.x — private
-			if (octets[0] === 10) throw new Error("Endpoint URL points to a blocked address");
-			// 172.16-31.x.x — private
-			if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31)
-				throw new Error("Endpoint URL points to a blocked address");
-			// 192.168.x.x — private
-			if (octets[0] === 192 && octets[1] === 168)
-				throw new Error("Endpoint URL points to a blocked address");
-			// 169.254.x.x — link-local / AWS metadata
-			if (octets[0] === 169 && octets[1] === 254)
-				throw new Error("Endpoint URL points to a blocked address");
-			// 0.x.x.x — invalid
-			if (octets[0] === 0) throw new Error("Endpoint URL points to a blocked address");
-		}
+	private redactError(error: unknown): string {
+		if (!(error instanceof Error)) return "unknown error";
+		return error.message.replace(/(bearer|api[_-]?key|token|secret)\s+[^\s,;]+/gi, "$1 [REDACTED]");
 	}
 
 	private async *parseStandardSSE(res: Response, format: string): AsyncIterable<string> {

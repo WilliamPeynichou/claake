@@ -11,6 +11,9 @@ export interface PaymentRepositoryPort {
 		stripePaymentId?: string;
 	}): Promise<PurchaseEntity>;
 	findPurchaseByUserAndAgent(userId: string, agentId: string): Promise<PurchaseEntity | null>;
+	findPurchaseByStripePaymentId(stripePaymentId: string): Promise<PurchaseEntity | null>;
 	findPurchasesByUser(userId: string): Promise<PurchaseEntity[]>;
+	hasProcessedStripeEvent(eventId: string): Promise<boolean>;
+	recordStripeEvent(eventId: string, type: string): Promise<void>;
 	hasAccess(userId: string, agentId: string): Promise<boolean>;
 }

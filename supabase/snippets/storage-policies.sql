@@ -4,14 +4,14 @@
 -- or via `supabase db push` if using the local CLI.
 --
 -- Buckets:
---   agent-images  — public read, authenticated write namespaced by user_id
---   agent-files   — public read, authenticated write namespaced by user_id
---                   (two path conventions coexist, both prefixed by user_id)
+--   agent-images          — public read, authenticated write namespaced by user_id
+--   agent-files           — public config files only; authenticated write namespaced by user_id
+--   agent-files-private   — private runtime uploads served by short-lived signed URLs from backend
 --
 -- Path conventions:
---   agent-images : {user_id}/{slug}/icon-{timestamp}.{ext}       (flux A — publication)
---   agent-files  : {user_id}/{slug}/{version}.agentjson           (flux A — publication)
---   agent-files  : uploads/{agentId|sessionId|userId}/{uuid}{ext} (flux B — runtime)
+--   agent-images        : {user_id}/{slug}/icon-{timestamp}.{ext}       (flux A — publication)
+--   agent-files         : {user_id}/{slug}/{version}.agentjson           (flux A — publication)
+--   agent-files-private : uploads/{userId}/{agentId|sessionId|unattached}/{uuid}{ext} (flux B — runtime)
 -- =============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ USING (
 -- BUCKET: agent-files
 -- ----------------------------------------------------------------------------
 
--- Anyone can read (public config files + public uploaded attachments)
+-- Anyone can read public agent config files only. Runtime uploads must use agent-files-private.
 CREATE POLICY "agent-files: public read"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'agent-files');
@@ -67,9 +67,6 @@ WITH CHECK (
     bucket_id = 'agent-files'
     AND (storage.foldername(name))[1] = auth.uid()::text
 );
-
--- Backend service role bypasses RLS for flux B (uploads/ prefix written by NestJS with service role key).
--- No additional policy needed — service role key ignores RLS by default.
 
 -- Authenticated users can update their own files (flux A)
 CREATE POLICY "agent-files: owner update"
@@ -88,3 +85,11 @@ USING (
     bucket_id = 'agent-files'
     AND (storage.foldername(name))[1] = auth.uid()::text
 );
+
+-- ----------------------------------------------------------------------------
+-- BUCKET: agent-files-private
+-- ----------------------------------------------------------------------------
+
+-- Intentionally no public read policy. Service role bypasses RLS for backend writes,
+-- reads and deletes; callers must go through the backend, which returns short-lived
+-- signed URLs only after checking the uploaded_files owner/agent/session.

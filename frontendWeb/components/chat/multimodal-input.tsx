@@ -3,6 +3,7 @@
 import type { Agent } from "@claake/shared";
 import { FileText, Loader2, Paperclip, Send, Square, X } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
+import { API_BASE_URL } from "@/lib/api-config";
 
 interface PendingFile {
 	id: string;
@@ -25,7 +26,7 @@ interface MultimodalInputProps {
 	onFileRemoved?: (fileId: string) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
+const API_BASE = API_BASE_URL;
 
 export function MultimodalInput({
 	value,

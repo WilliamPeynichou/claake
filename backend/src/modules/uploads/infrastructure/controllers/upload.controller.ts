@@ -13,6 +13,7 @@ import {
 	UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { Throttle } from "@nestjs/throttler";
 import type { UserRole } from "@prisma/client";
 import type { Request } from "express";
 import { memoryStorage } from "multer";
@@ -32,6 +33,7 @@ export class UploadController {
 	constructor(private readonly uploadService: UploadService) {}
 
 	@Post()
+	@Throttle({ default: { limit: 20, ttl: 60_000 } })
 	@UseInterceptors(
 		FileInterceptor("file", {
 			storage: memoryStorage(),

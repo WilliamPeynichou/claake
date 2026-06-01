@@ -1,42 +1,24 @@
 import { randomUUID } from "node:crypto";
-import { extname } from "node:path";
 import {
 	BadRequestException,
 	ForbiddenException,
 	Injectable,
+	Logger,
 	NotFoundException,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import type { UserRole } from "@prisma/client";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
-
-const ALLOWED_MIME_TYPES = [
-	"image/jpeg",
-	"image/png",
-	"image/webp",
-	"image/gif",
-	"application/pdf",
-];
-const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-
-// TODO: Create the bucket "agent-files" in Supabase dashboard with public read access
-// before deploying this module.
-const BUCKET = "agent-files";
+import { validateUploadFile } from "./upload-file.validator.js";
+import { UploadStorageService } from "./upload-storage.service.js";
 
 @Injectable()
 export class UploadService {
-	private readonly supabase: SupabaseClient;
+	private readonly logger = new Logger(UploadService.name);
 
 	constructor(
 		private readonly prisma: PrismaService,
-		private readonly config: ConfigService,
-	) {
-		this.supabase = createClient(
-			this.config.getOrThrow<string>("SUPABASE_URL"),
-			this.config.getOrThrow<string>("SUPABASE_SERVICE_ROLE_KEY"),
-		);
-	}
+		private readonly storage: UploadStorageService,
+	) {}
 
 	async upload(
 		file: Express.Multer.File,
@@ -45,39 +27,24 @@ export class UploadService {
 	) {
 		await this.assertUploadTargetAccess(userId, opts);
 
-		if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-			throw new BadRequestException(
-				`Type de fichier non supporté : ${file.mimetype}. Types acceptés : JPG, PNG, WebP, GIF, PDF.`,
+		const validatedFile = validateUploadFile(file);
+		const storagePath = `uploads/${userId}/${opts.agentId ?? opts.sessionId ?? "unattached"}/${randomUUID()}${validatedFile.extension}`;
+
+		try {
+			await this.storage.uploadPrivateObject(storagePath, file.buffer, validatedFile.mimeType);
+		} catch (error) {
+			this.logger.warn(
+				`Private upload storage error for user=${userId}: ${error instanceof Error ? error.message : "unknown"}`,
 			);
+			throw new BadRequestException("Erreur lors de l'enregistrement du fichier.");
 		}
-		if (file.size > MAX_SIZE_BYTES) {
-			throw new BadRequestException("Fichier trop volumineux (max 10 Mo).");
-		}
-
-		const ext = extname(file.originalname).toLowerCase();
-		const storagePath = `uploads/${opts.agentId ?? opts.sessionId ?? userId}/${randomUUID()}${ext}`;
-
-		const { error: storageError } = await this.supabase.storage
-			.from(BUCKET)
-			.upload(storagePath, file.buffer, {
-				contentType: file.mimetype,
-				upsert: false,
-			});
-
-		if (storageError) {
-			throw new BadRequestException(`Erreur upload Supabase : ${storageError.message}`);
-		}
-
-		const { data: publicData } = this.supabase.storage.from(BUCKET).getPublicUrl(storagePath);
-
-		const type = file.mimetype === "application/pdf" ? "DOCUMENT" : "IMAGE";
 
 		const record = await this.prisma.uploadedFile.create({
 			data: {
-				type,
-				url: publicData.publicUrl,
+				type: validatedFile.type,
+				url: storagePath,
 				fileName: file.originalname,
-				mimeType: file.mimetype,
+				mimeType: validatedFile.mimeType,
 				size: file.size,
 				userId,
 				agentId: opts.agentId ?? null,
@@ -86,7 +53,7 @@ export class UploadService {
 			},
 		});
 
-		return record;
+		return this.withSignedUrl(record);
 	}
 
 	async listForAgent(agentId: string, userId: string, role: UserRole) {
@@ -101,10 +68,11 @@ export class UploadService {
 			throw new ForbiddenException("Accès refusé.");
 		}
 
-		return this.prisma.uploadedFile.findMany({
+		const files = await this.prisma.uploadedFile.findMany({
 			where: { agentId },
 			orderBy: { createdAt: "desc" },
 		});
+		return Promise.all(files.map((file) => this.withSignedUrl(file)));
 	}
 
 	async listForSession(sessionId: string, userId: string) {
@@ -119,10 +87,11 @@ export class UploadService {
 			throw new ForbiddenException("Accès refusé.");
 		}
 
-		return this.prisma.uploadedFile.findMany({
+		const files = await this.prisma.uploadedFile.findMany({
 			where: { sessionId, userId },
 			orderBy: { createdAt: "desc" },
 		});
+		return Promise.all(files.map((file) => this.withSignedUrl(file)));
 	}
 
 	async delete(fileId: string, userId: string) {
@@ -131,14 +100,22 @@ export class UploadService {
 			throw new BadRequestException("Fichier introuvable ou accès refusé.");
 		}
 
-		// Extract storage path from URL
-		const url = new URL(file.url);
-		const storagePath = url.pathname.split(`/object/public/${BUCKET}/`)[1];
-		if (storagePath) {
-			await this.supabase.storage.from(BUCKET).remove([storagePath]);
+		if (file.url) {
+			await this.storage.removePrivateObjects([file.url]);
 		}
 
 		await this.prisma.uploadedFile.delete({ where: { id: fileId } });
+	}
+
+	async createSignedUrl(storagePath: string): Promise<string> {
+		try {
+			return await this.storage.createSignedUrl(storagePath);
+		} catch (error) {
+			this.logger.warn(
+				`Signed URL creation failed for upload path=${storagePath}: ${error instanceof Error ? error.message : "unknown"}`,
+			);
+			throw new BadRequestException("Impossible de préparer l'accès temporaire au fichier.");
+		}
 	}
 
 	private async assertUploadTargetAccess(
@@ -148,7 +125,7 @@ export class UploadService {
 		if (opts.sessionId) {
 			const session = await this.prisma.chatSession.findUnique({
 				where: { id: opts.sessionId },
-				select: { userId: true },
+				select: { userId: true, agentId: true },
 			});
 			if (!session) {
 				throw new NotFoundException("Session introuvable.");
@@ -156,18 +133,24 @@ export class UploadService {
 			if (session.userId !== userId) {
 				throw new ForbiddenException("Accès refusé.");
 			}
+			if (opts.agentId && session.agentId !== opts.agentId) {
+				throw new BadRequestException("Agent et session incohérents.");
+			}
 		}
 
 		if (opts.messageId) {
 			const message = await this.prisma.chatMessage.findUnique({
 				where: { id: opts.messageId },
-				select: { session: { select: { userId: true } } },
+				select: { sessionId: true, session: { select: { userId: true } } },
 			});
 			if (!message) {
 				throw new NotFoundException("Message introuvable.");
 			}
 			if (message.session.userId !== userId) {
 				throw new ForbiddenException("Accès refusé.");
+			}
+			if (opts.sessionId && message.sessionId !== opts.sessionId) {
+				throw new BadRequestException("Message et session incohérents.");
 			}
 		}
 
@@ -183,5 +166,9 @@ export class UploadService {
 				throw new ForbiddenException("Accès refusé.");
 			}
 		}
+	}
+
+	private async withSignedUrl<T extends { url: string }>(file: T): Promise<T> {
+		return { ...file, url: await this.createSignedUrl(file.url) };
 	}
 }

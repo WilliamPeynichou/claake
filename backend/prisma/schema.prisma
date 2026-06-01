@@ -236,7 +236,7 @@ model Purchase {
   id              String   @id @default(uuid())
   amount          Decimal  @db.Decimal(10, 2)
   currency        String   @default("eur") @db.Char(3)
-  stripePaymentId String?  @map("stripe_payment_id")
+  stripePaymentId String?  @unique @map("stripe_payment_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
   userId  String @map("user_id")
@@ -248,6 +248,16 @@ model Purchase {
   @@index([userId])
   @@index([agentId])
   @@map("purchases")
+}
+
+model StripeWebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique @map("event_id")
+  type        String
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@index([type])
+  @@map("stripe_webhook_events")
 }
 
 model Subscription {

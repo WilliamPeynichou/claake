@@ -10,7 +10,7 @@ import {
 	Req,
 	UseGuards,
 } from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
+import { SkipThrottle, Throttle } from "@nestjs/throttler";
 import { SkipTransform } from "../../../../common/decorators/skip-transform.decorator.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import {
@@ -38,6 +38,7 @@ export class PaymentController {
 	) {}
 
 	@Post("checkout")
+	@Throttle({ default: { limit: 10, ttl: 60_000 } })
 	@UseGuards(SupabaseAuthGuard)
 	async checkout(@Body() dto: CheckoutRequestDto, @Req() req: any) {
 		return this.createCheckout.execute(dto.agent_id, req.user.id);

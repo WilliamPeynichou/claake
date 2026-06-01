@@ -15,20 +15,24 @@ async function bootstrap() {
 
 	// CORS — must be first so OPTIONS preflight is handled before any other middleware
 	const isProduction = process.env.NODE_ENV === "production";
+	const productionOrigin = process.env.WEB_URL;
+	if (isProduction && !productionOrigin) {
+		throw new Error("WEB_URL is required in production for CORS");
+	}
 	app.enableCors({
 		origin: isProduction
-			? [process.env.WEB_URL ?? ""].filter(Boolean)
+			? productionOrigin
 			: [
 					"http://localhost:3000",
 					"http://localhost:3001",
 					"http://localhost:5173",
 					"tauri://localhost",
 					"http://localhost:8081",
-					process.env.WEB_URL ?? "",
+					productionOrigin ?? "",
 				].filter(Boolean),
 		credentials: true,
 		methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
-		allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+		allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Stripe-Signature"],
 	});
 
 	// Compression
@@ -40,13 +44,18 @@ async function bootstrap() {
 			contentSecurityPolicy: {
 				directives: {
 					defaultSrc: ["'self'"],
+					baseUri: ["'self'"],
+					formAction: ["'self'"],
+					frameAncestors: ["'none'"],
+					objectSrc: ["'none'"],
 					scriptSrc: ["'self'"],
 					styleSrc: ["'self'", "'unsafe-inline'"],
 					imgSrc: ["'self'", "data:", "https:"],
 				},
 			},
 			crossOriginEmbedderPolicy: false,
-			crossOriginResourcePolicy: { policy: "cross-origin" },
+			crossOriginResourcePolicy: { policy: "same-site" },
+			hsts: isProduction ? undefined : false,
 		}),
 	);
 

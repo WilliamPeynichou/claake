@@ -13,6 +13,7 @@ import {
 	Req,
 	UseGuards,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { RequirePermission } from "../../../../common/decorators/admin-permission.decorator.js";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
 import { AdminPermissionGuard } from "../../../../common/guards/admin-permission.guard.js";
@@ -109,6 +110,7 @@ export class AgentController {
 
 	@Post()
 	@UseGuards(SupabaseAuthGuard)
+	@Throttle({ default: { ttl: 60_000, limit: 10 } })
 	async create(@Body() dto: CreateAgentDto, @Req() req: { user: RequestUser }) {
 		const agent = await this.createAgent.execute(dto, req.user.id);
 
@@ -120,6 +122,7 @@ export class AgentController {
 
 	@Patch(":id")
 	@UseGuards(SupabaseAuthGuard)
+	@Throttle({ default: { ttl: 60_000, limit: 20 } })
 	async update(
 		@Param("id") id: string,
 		@Body() dto: UpdateAgentDto,

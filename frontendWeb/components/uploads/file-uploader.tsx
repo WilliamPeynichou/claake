@@ -3,6 +3,7 @@
 import { FileText, Loader2, Trash2, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/lib/api-config";
 
 interface UploadedFile {
 	id: string;
@@ -22,7 +23,7 @@ interface FileUploaderProps {
 	onDelete?: (fileId: string) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
+const API_BASE = API_BASE_URL;
 const ACCEPTED = "image/jpeg,image/png,image/webp,application/pdf";
 const MAX_SIZE = 10 * 1024 * 1024;
 

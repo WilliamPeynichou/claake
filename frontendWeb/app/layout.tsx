@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/lib/theme/context";
 import "./globals.css";
 
 export const metadata: Metadata = {
+	metadataBase: new URL(process.env.NEXT_PUBLIC_WEB_URL ?? "https://claake.com"),
 	title: "Claake — One click to intelligence",
 	description:
 		"Découvrez, testez et déployez des agents IA créés par la communauté. L'intelligence à portée de clic.",

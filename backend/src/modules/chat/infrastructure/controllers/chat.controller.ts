@@ -4,6 +4,7 @@ import {
 	Controller,
 	Delete,
 	Get,
+	Logger,
 	Param,
 	Post,
 	Query,
@@ -11,11 +12,13 @@ import {
 	Res,
 	UseGuards,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import type { UserRole } from "@prisma/client";
 import type { Request, Response } from "express";
 import { SkipTransform } from "../../../../common/decorators/skip-transform.decorator.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
+import { UploadService } from "../../../uploads/application/upload.service.js";
 import { CreateSessionDto } from "../../application/dtos/create-session.dto.js";
 import { SendMessageDto } from "../../application/dtos/send-message.dto.js";
 import { CreateSessionUseCase } from "../../application/usecases/create-session.usecase.js";
@@ -35,6 +38,8 @@ type AuthenticatedRequest = Request & {
 @Controller("chat")
 @UseGuards(SupabaseAuthGuard)
 export class ChatController {
+	private readonly logger = new Logger(ChatController.name);
+
 	constructor(
 		private readonly createSession: CreateSessionUseCase,
 		private readonly listSessions: ListSessionsUseCase,
@@ -42,9 +47,11 @@ export class ChatController {
 		private readonly sendMessage: SendMessageUseCase,
 		private readonly deleteSession: DeleteSessionUseCase,
 		private readonly prisma: PrismaService,
+		private readonly uploadService: UploadService,
 	) {}
 
 	@Post("sessions")
+	@Throttle({ default: { ttl: 60_000, limit: 20 } })
 	async create(@Body() dto: CreateSessionDto, @Req() req: AuthenticatedRequest) {
 		const session = await this.createSession.execute(dto.agent_id, req.user.id);
 		return {
@@ -60,11 +67,9 @@ export class ChatController {
 		@Query("limit") limit?: string,
 		@Query("offset") offset?: string,
 	) {
-		return this.listSessions.execute(
-			req.user.id,
-			limit ? Number.parseInt(limit, 10) : 20,
-			offset ? Number.parseInt(offset, 10) : 0,
-		);
+		const parsedLimit = this.parseBoundedInt(limit, 20, 1, 50);
+		const parsedOffset = this.parseBoundedInt(offset, 0, 0, 10_000);
+		return this.listSessions.execute(req.user.id, parsedLimit, parsedOffset);
 	}
 
 	@Get("sessions/:id/messages")
@@ -74,15 +79,13 @@ export class ChatController {
 		@Query("limit") limit?: string,
 		@Query("offset") offset?: string,
 	) {
-		return this.getSessionMessages.execute(
-			id,
-			req.user.id,
-			limit ? Number.parseInt(limit, 10) : 50,
-			offset ? Number.parseInt(offset, 10) : 0,
-		);
+		const parsedLimit = this.parseBoundedInt(limit, 50, 1, 100);
+		const parsedOffset = this.parseBoundedInt(offset, 0, 0, 10_000);
+		return this.getSessionMessages.execute(id, req.user.id, parsedLimit, parsedOffset);
 	}
 
 	@Post("sessions/:id/messages")
+	@Throttle({ default: { ttl: 60_000, limit: 10 } })
 	@SkipTransform()
 	async sendMsg(
 		@Param("id") id: string,
@@ -108,7 +111,13 @@ export class ChatController {
 					"Un ou plusieurs fichiers sont introuvables ou non autorisés.",
 				);
 			}
-			attachments = files.map((f) => ({
+			const signedFiles = await Promise.all(
+				files.map(async (file) => ({
+					...file,
+					url: await this.uploadService.createSignedUrl(file.url),
+				})),
+			);
+			attachments = signedFiles.map((f) => ({
 				type: f.type === "DOCUMENT" ? "document" : "image",
 				url: f.url,
 				mimeType: f.mimeType,
@@ -144,9 +153,11 @@ export class ChatController {
 			// d: finish step
 			res.write(`d:${JSON.stringify({ finishReason: "stop" })}\n`);
 		} catch (error) {
-			const errMsg = error instanceof Error ? error.message : "Stream error";
-			// 3: error
-			res.write(`3:${JSON.stringify(errMsg)}\n`);
+			this.logger.warn(
+				`AI stream failed for session ${id}: ${error instanceof Error ? error.message : "unknown error"}`,
+			);
+			// 3: error — never expose provider/vendor details to the client
+			res.write(`3:${JSON.stringify("La réponse IA est momentanément indisponible.")}\n`);
 		} finally {
 			res.end();
 		}
@@ -156,5 +167,12 @@ export class ChatController {
 	async remove(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
 		await this.deleteSession.execute(id, req.user.id);
 		return { deleted: true };
+	}
+
+	private parseBoundedInt(value: string | undefined, fallback: number, min: number, max: number): number {
+		if (value === undefined) return fallback;
+		const parsed = Number.parseInt(value, 10);
+		if (!Number.isFinite(parsed) || parsed < min) return fallback;
+		return Math.min(parsed, max);
 	}
 }

@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { safeRedirectPath } from "@/lib/auth/safe-redirect";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
@@ -36,7 +37,7 @@ function LoginForm() {
 			if (error) {
 				setError(error.message);
 			} else {
-				const redirect = searchParams.get("redirect") ?? "/dashboard";
+				const redirect = safeRedirectPath(searchParams.get("redirect"));
 				router.push(redirect);
 				router.refresh();
 			}

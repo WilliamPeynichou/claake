@@ -7,7 +7,6 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { PrismaService } from "../../prisma/prisma.service.js";
-import { normalizeUserRole } from "../auth/role-normalization.js";
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
@@ -42,17 +41,15 @@ export class SupabaseAuthGuard implements CanActivate {
 			throw new UnauthorizedException("Invalid or expired token");
 		}
 
-		// DB is the authorization source of truth. Supabase metadata is used only
-		// when the local user row is first created.
-		const cloudRole = normalizeUserRole(user.app_metadata?.role);
-
+		// DB is the authorization source of truth. New local users are always
+		// provisioned as USER; admin elevation must go through controlled backend flows.
 		// Ensure the authenticated Supabase user exists locally without overwriting DB-managed roles.
 		const dbUser = await this.prisma.user.upsert({
 			where: { id: user.id },
 			create: {
 				id: user.id,
 				email: user.email ?? "",
-				role: cloudRole ?? "USER",
+				role: "USER",
 			},
 			update: {},
 			select: { role: true },
