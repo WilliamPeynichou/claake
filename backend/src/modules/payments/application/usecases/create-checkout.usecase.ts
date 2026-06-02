@@ -4,6 +4,10 @@ import {
 	type AgentRepositoryPort,
 } from "../../../agents/domain/ports/agent.repository.port.js";
 import {
+	USER_REPOSITORY,
+	type UserRepositoryPort,
+} from "../../../users/domain/ports/user.repository.port.js";
+import {
 	PAYMENT_REPOSITORY,
 	type PaymentRepositoryPort,
 } from "../../domain/ports/payment.repository.port.js";
@@ -15,6 +19,7 @@ export class CreateCheckoutUseCase {
 		@Inject(STRIPE_SERVICE) private readonly stripe: StripeServicePort,
 		@Inject(AGENT_REPOSITORY) private readonly agentRepo: AgentRepositoryPort,
 		@Inject(PAYMENT_REPOSITORY) private readonly paymentRepo: PaymentRepositoryPort,
+		@Inject(USER_REPOSITORY) private readonly userRepo: UserRepositoryPort,
 	) {}
 
 	async execute(agentId: string, userId: string): Promise<{ url: string }> {
@@ -28,6 +33,14 @@ export class CreateCheckoutUseCase {
 		if (existing) throw new BadRequestException("Already purchased");
 
 		const webUrl = process.env.WEB_URL ?? "http://localhost:3000";
+		const creator = await this.userRepo.findById(agent.creatorId);
+		if (!creator?.stripeAccountId) {
+			throw new BadRequestException("Seller Stripe account is not configured");
+		}
+		const accountStatus = await this.stripe.getAccountStatus(creator.stripeAccountId);
+		if (!accountStatus.details_submitted) {
+			throw new BadRequestException("Seller Stripe onboarding is incomplete");
+		}
 
 		return this.stripe.createCheckoutSession({
 			agentId: agent.id,
@@ -35,6 +48,7 @@ export class CreateCheckoutUseCase {
 			priceInCents: Math.round(agent.price * 100),
 			currency: "eur",
 			userId,
+			creatorStripeAccountId: creator.stripeAccountId,
 			successUrl: `${webUrl}/checkout/success?agent=${agentId}`,
 			cancelUrl: `${webUrl}/checkout/cancel?agent=${agentId}`,
 		});

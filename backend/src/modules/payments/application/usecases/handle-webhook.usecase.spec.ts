@@ -153,4 +153,15 @@ describe("HandleWebhookUseCase — Stripe webhook hardening", () => {
 
 		expect(paymentRepo.createPurchase).not.toHaveBeenCalled();
 	});
+
+	it("ne marque pas un event Stripe comme traité si l'effet métier échoue", async () => {
+		const { useCase, paymentRepo } = createSubject(checkoutCompleted());
+		paymentRepo.createPurchase.mockRejectedValue(new Error("transient db outage"));
+
+		await expect(useCase.execute(Buffer.from("{}"), "valid-signature")).rejects.toThrow(
+			"transient db outage",
+		);
+
+		expect(paymentRepo.recordStripeEvent).not.toHaveBeenCalled();
+	});
 });

@@ -33,6 +33,10 @@ export class GetAgentDownloadInfoUseCase {
 
 		const isOwner = agent.isOwnedBy(userId);
 
+		if (!agent.isPublished() && !isOwner) {
+			throw new BadRequestException("This agent is not available");
+		}
+
 		if (!agent.isFree() && !isOwner) {
 			const [purchased, subscribed] = await Promise.all([
 				this.repo.hasPurchased(userId, agentId),

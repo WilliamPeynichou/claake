@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { assertPublicHttpUrl } from "../../../../common/security/public-url.js";
+import { redactSensitive } from "../../../../common/security/redact-sensitive.js";
 import type {
 	AIProviderPort,
 	FileAttachment,
@@ -113,17 +114,15 @@ export class EndpointProxyProvider implements AIProviderPort {
 	}
 
 	private async readErrorSnippet(res: Response): Promise<void> {
-		try {
-			const snippet = (await res.text()).slice(0, 500);
-			this.logger.warn(`Vendor endpoint returned HTTP ${res.status}: ${snippet.replace(/[\r\n]+/g, " ")}`);
-		} catch {
-			this.logger.warn(`Vendor endpoint returned HTTP ${res.status}`);
-		}
+		await res.body?.cancel().catch(() => undefined);
+		this.logger.warn(
+			`Vendor endpoint returned HTTP ${res.status} content_length=${res.headers.get("content-length") ?? "unknown"}`,
+		);
 	}
 
 	private redactError(error: unknown): string {
 		if (!(error instanceof Error)) return "unknown error";
-		return error.message.replace(/(bearer|api[_-]?key|token|secret)\s+[^\s,;]+/gi, "$1 [REDACTED]");
+		return redactSensitive(error.message);
 	}
 
 	private async *parseStandardSSE(res: Response, format: string): AsyncIterable<string> {

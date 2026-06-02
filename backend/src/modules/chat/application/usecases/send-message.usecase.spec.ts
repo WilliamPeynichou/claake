@@ -33,6 +33,8 @@ const mockAgentRepo = {
 	update: jest.fn(),
 	updateStatus: jest.fn(),
 	softDelete: jest.fn(),
+	hasPurchased: jest.fn(),
+	hasActiveSubscription: jest.fn(),
 };
 
 const mockStrategyResolver = { resolve: jest.fn() };
@@ -51,7 +53,13 @@ function makeSession(
 }
 
 function makeAgent(
-	overrides: { models?: string[]; systemPrompt?: string | null } = {},
+	overrides: {
+		models?: string[];
+		systemPrompt?: string | null;
+		status?: string;
+		pricingModel?: string;
+		creatorId?: string;
+	} = {},
 ): AgentEntity {
 	return new AgentEntity(
 		"agent-1",
@@ -66,15 +74,15 @@ function makeAgent(
 		null,
 		null,
 		[],
-		"FREE",
+		overrides.pricingModel ?? "FREE",
 		0,
 		1,
-		"APPROVED",
+		overrides.status ?? "APPROVED",
 		null,
 		0,
 		0,
 		0,
-		"creator-1",
+		overrides.creatorId ?? "creator-1",
 		null,
 		new Date(),
 		new Date(),
@@ -102,6 +110,8 @@ describe("SendMessageUseCase", () => {
 		mockStrategyResolver.resolve.mockResolvedValue({ provider: mockProvider, extraParams: {} });
 		mockChatRepo.addMessage.mockResolvedValue({ id: "msg-1", role: "USER", content: "hello" });
 		mockChatRepo.getMessages.mockResolvedValue({ messages: [], total: 0 });
+		mockAgentRepo.hasPurchased.mockResolvedValue(false);
+		mockAgentRepo.hasActiveSubscription.mockResolvedValue(false);
 	});
 
 	it("retourne un stream et un onComplete callable", async () => {
@@ -277,5 +287,37 @@ describe("SendMessageUseCase", () => {
 		await expect(useCase.execute("session-1", "user-1", "Hello")).rejects.toThrow(
 			NotFoundException,
 		);
+	});
+
+	it("refuse d'envoyer un message si l'agent de la session n'est plus publié", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(makeAgent({ status: "SUSPENDED" }));
+
+		await expect(useCase.execute("session-1", "user-1", "Hello")).rejects.toThrow(
+			"This agent is not available",
+		);
+		expect(mockChatRepo.addMessage).not.toHaveBeenCalled();
+	});
+
+	it("revérifie l'achat ou l'abonnement à chaque message pour un agent payant", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(makeAgent({ pricingModel: "ONE_TIME" }));
+
+		await expect(useCase.execute("session-1", "user-1", "Hello")).rejects.toThrow(
+			ForbiddenException,
+		);
+		expect(mockAgentRepo.hasPurchased).toHaveBeenCalledWith("user-1", "agent-1");
+		expect(mockAgentRepo.hasActiveSubscription).toHaveBeenCalledWith("user-1", "agent-1");
+		expect(mockChatRepo.addMessage).not.toHaveBeenCalled();
+	});
+
+	it("autorise un agent payant si l'achat est encore actif au moment du message", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(makeAgent({ pricingModel: "ONE_TIME" }));
+		mockAgentRepo.hasPurchased.mockResolvedValue(true);
+
+		await useCase.execute("session-1", "user-1", "Hello");
+
+		expect(mockChatRepo.addMessage).toHaveBeenCalled();
 	});
 });

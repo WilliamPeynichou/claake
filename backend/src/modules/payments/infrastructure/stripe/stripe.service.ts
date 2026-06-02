@@ -25,6 +25,12 @@ export class StripeService implements StripeServicePort {
 		successUrl: string;
 		cancelUrl: string;
 	}): Promise<{ url: string }> {
+		const platformFeePercent = Number(this.config.get<string>("STRIPE_PLATFORM_FEE_PERCENT") ?? "10");
+		const applicationFeeAmount = Math.max(
+			0,
+			Math.round(params.priceInCents * (platformFeePercent / 100)),
+		);
+
 		const sessionParams: Stripe.Checkout.SessionCreateParams = {
 			mode: "payment",
 			line_items: [
@@ -43,6 +49,12 @@ export class StripeService implements StripeServicePort {
 			},
 			success_url: params.successUrl,
 			cancel_url: params.cancelUrl,
+			payment_intent_data: params.creatorStripeAccountId
+				? {
+						application_fee_amount: applicationFeeAmount,
+						transfer_data: { destination: params.creatorStripeAccountId },
+					}
+				: undefined,
 		};
 
 		const session = await this.stripe.checkout.sessions.create(sessionParams);

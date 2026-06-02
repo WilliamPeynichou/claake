@@ -27,11 +27,11 @@ export class HandleWebhookUseCase {
 			return { received: true };
 		}
 
-		await this.paymentRepo.recordStripeEvent(event.id, event.type);
-
 		if (event.type === "checkout.session.completed") {
 			await this.handleCheckoutSessionCompleted(event.data);
 		}
+
+		await this.paymentRepo.recordStripeEvent(event.id, event.type);
 
 		return { received: true };
 	}

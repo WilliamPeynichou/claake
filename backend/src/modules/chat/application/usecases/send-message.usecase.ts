@@ -1,4 +1,10 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+	BadRequestException,
+	ForbiddenException,
+	Inject,
+	Injectable,
+	NotFoundException,
+} from "@nestjs/common";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
@@ -46,6 +52,18 @@ export class SendMessageUseCase {
 		const agent = await this.agentRepo.findById(session.agentId);
 		if (!agent) {
 			throw new NotFoundException("Agent not found");
+		}
+		if (!agent.isPublished()) {
+			throw new BadRequestException("This agent is not available");
+		}
+		if (!agent.isFree() && !agent.isOwnedBy(userId)) {
+			const [purchased, subscribed] = await Promise.all([
+				this.agentRepo.hasPurchased(userId, agent.id),
+				this.agentRepo.hasActiveSubscription(userId, agent.id),
+			]);
+			if (!purchased && !subscribed) {
+				throw new ForbiddenException("Purchase required to use this agent");
+			}
 		}
 
 		// Save user message
