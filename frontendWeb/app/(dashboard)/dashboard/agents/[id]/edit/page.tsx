@@ -57,6 +57,9 @@ export default function EditAgentPage() {
 		cloudStrategy: "USER_API_KEY" as "USER_API_KEY" | "SELLER_API_KEY" | "SELLER_ENDPOINT",
 		requiredUserProvider: "anthropic",
 		systemPrompt: "",
+		welcomeMessage: "",
+		suggestedPrompts: "",
+		limitations: "",
 		endpoint: "",
 		endpointFormat: "OPENAI" as
 			| "OPENAI"
@@ -90,6 +93,9 @@ export default function EditAgentPage() {
 						| "SELLER_ENDPOINT",
 					requiredUserProvider: agentData.required_user_provider ?? "anthropic",
 					systemPrompt: agentData.system_prompt ?? "",
+					welcomeMessage: agentData.welcome_message ?? "",
+					suggestedPrompts: agentData.suggested_prompts.join("\n"),
+					limitations: agentData.limitations.join("\n"),
 					endpoint: "",
 					endpointFormat: (agentData.endpoint_format?.toUpperCase() ?? "OPENAI") as any,
 					sellerApiProvider: "anthropic",
@@ -150,6 +156,15 @@ export default function EditAgentPage() {
 		setSuccess(false);
 
 		try {
+			const suggestedPrompts = formData.suggestedPrompts
+				.split("\n")
+				.map((prompt) => prompt.trim())
+				.filter(Boolean);
+			const limitations = formData.limitations
+				.split("\n")
+				.map((limitation) => limitation.trim())
+				.filter(Boolean);
+
 			let imageUrl: string | undefined;
 			if (imageFile) {
 				imageUrl = await uploadAgentImage(imageFile, agent.slug, user.id);
@@ -176,6 +191,9 @@ export default function EditAgentPage() {
 					image_url: imageUrl ?? undefined,
 					config_url: configUrl ?? undefined,
 					system_prompt: formData.systemPrompt || undefined,
+					welcome_message: formData.welcomeMessage || undefined,
+					suggested_prompts: suggestedPrompts,
+					limitations,
 					cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
 					required_user_provider:
 						formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
@@ -465,6 +483,44 @@ export default function EditAgentPage() {
 								rows={6}
 								disabled={!isEditable}
 							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="welcomeMessage">Message d&apos;accueil</Label>
+							<Textarea
+								id="welcomeMessage"
+								value={formData.welcomeMessage}
+								onChange={(e) => updateField("welcomeMessage", e.target.value)}
+								rows={3}
+								disabled={!isEditable}
+							/>
+						</div>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div className="space-y-2">
+								<Label htmlFor="suggestedPrompts">Prompts suggérés</Label>
+								<Textarea
+									id="suggestedPrompts"
+									value={formData.suggestedPrompts}
+									onChange={(e) => updateField("suggestedPrompts", e.target.value)}
+									placeholder={"Analyse ce document\nRésume les points clés"}
+									rows={4}
+									disabled={!isEditable}
+								/>
+								<p className="text-xs text-muted-foreground">Un prompt par ligne.</p>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="limitations">Limites / avertissements</Label>
+								<Textarea
+									id="limitations"
+									value={formData.limitations}
+									onChange={(e) => updateField("limitations", e.target.value)}
+									placeholder={"Ne remplace pas un professionnel qualifié"}
+									rows={4}
+									disabled={!isEditable}
+								/>
+								<p className="text-xs text-muted-foreground">Une limite par ligne.</p>
+							</div>
 						</div>
 
 						{formData.mode !== "LOCAL" && (

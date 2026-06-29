@@ -11,9 +11,21 @@ interface MessagesProps {
 	error?: string | null;
 	agentName?: string | null;
 	agentInitial?: string;
+	welcomeMessage?: string | null;
+	suggestedPrompts?: string[];
+	onSuggestedPrompt?: (prompt: string) => void;
 }
 
-export function Messages({ messages, streaming, error, agentName, agentInitial }: MessagesProps) {
+export function Messages({
+	messages,
+	streaming,
+	error,
+	agentName,
+	agentInitial,
+	welcomeMessage,
+	suggestedPrompts = [],
+	onSuggestedPrompt,
+}: MessagesProps) {
 	const bottomRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -45,16 +57,33 @@ export function Messages({ messages, streaming, error, agentName, agentInitial }
 						{agentName ?? "Sélectionnez un agent"}
 					</p>
 					<p
+						className="mx-auto max-w-xl"
 						style={{
 							fontFamily: "'DM Sans', system-ui",
 							fontSize: "0.8rem",
 							color: "#a09a8a",
 							marginTop: "0.25rem",
+							lineHeight: 1.6,
 						}}
 					>
-						Démarrez la conversation
+						{welcomeMessage || "Démarrez la conversation"}
 					</p>
 				</div>
+				{suggestedPrompts.length > 0 && (
+					<div className="flex max-w-2xl flex-wrap justify-center gap-2 px-4">
+						{suggestedPrompts.map((prompt) => (
+							<button
+								key={prompt}
+								type="button"
+								onClick={() => onSuggestedPrompt?.(prompt)}
+								className="rounded-full border px-3 py-2 text-xs transition-colors hover:bg-[#e8ede0]"
+								style={{ borderColor: "#e8e4d8", color: "#6b6558" }}
+							>
+								{prompt}
+							</button>
+						))}
+					</div>
+				)}
 			</div>
 		);
 	}

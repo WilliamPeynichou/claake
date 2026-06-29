@@ -44,7 +44,6 @@ function AgentChatInner() {
 		error,
 		sessionId,
 		sessions,
-		pendingFileIds,
 		addPendingFile,
 		removePendingFile,
 		sendMessage,
@@ -215,6 +214,9 @@ function AgentChatInner() {
 					error={error}
 					agentName={currentAgent?.name}
 					agentInitial={currentAgent?.name?.[0]?.toUpperCase()}
+					welcomeMessage={currentAgent?.welcome_message}
+					suggestedPrompts={currentAgent?.suggested_prompts}
+					onSuggestedPrompt={setInput}
 				/>
 
 				{/* Input */}
