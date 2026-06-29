@@ -64,6 +64,29 @@ export class UpdateAgentDto {
 	system_prompt?: string;
 
 	@IsOptional()
+	@IsString()
+	@MaxLength(1000)
+	welcome_message?: string;
+
+	@IsOptional()
+	@IsArray()
+	@ArrayMaxSize(6)
+	@MaxLength(200, { each: true })
+	suggested_prompts?: string[];
+
+	@IsOptional()
+	@IsArray()
+	@ArrayMaxSize(10)
+	@MaxLength(300, { each: true })
+	limitations?: string[];
+
+	@IsOptional()
+	model_settings?: Record<string, unknown>;
+
+	@IsOptional()
+	capabilities?: Record<string, unknown>;
+
+	@IsOptional()
 	@IsEnum(["FREE", "ONE_TIME", "SUBSCRIPTION", "PAY_PER_USE"])
 	pricing_model?: string;
 

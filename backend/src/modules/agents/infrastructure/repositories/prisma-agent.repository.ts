@@ -115,6 +115,11 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 				configUrl: data.configUrl,
 				imageUrl: data.imageUrl,
 				systemPrompt: data.systemPrompt,
+				welcomeMessage: data.welcomeMessage,
+				suggestedPrompts: data.suggestedPrompts ?? [],
+				limitations: data.limitations ?? [],
+				modelSettings: (data.modelSettings as any) ?? undefined,
+				capabilities: (data.capabilities as any) ?? undefined,
 				pricingModel: (data.pricingModel as any) ?? "FREE",
 				price: data.price ?? 0,
 				creditCost: data.creditCost ?? 1,
@@ -147,6 +152,11 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		if (data.configUrl !== undefined) updateData.configUrl = data.configUrl;
 		if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
 		if (data.systemPrompt !== undefined) updateData.systemPrompt = data.systemPrompt;
+		if (data.welcomeMessage !== undefined) updateData.welcomeMessage = data.welcomeMessage;
+		if (data.suggestedPrompts !== undefined) updateData.suggestedPrompts = data.suggestedPrompts;
+		if (data.limitations !== undefined) updateData.limitations = data.limitations;
+		if (data.modelSettings !== undefined) updateData.modelSettings = data.modelSettings;
+		if (data.capabilities !== undefined) updateData.capabilities = data.capabilities;
 		if (data.pricingModel !== undefined) updateData.pricingModel = data.pricingModel;
 		if (data.cloudStrategy !== undefined) updateData.cloudStrategy = data.cloudStrategy;
 		if (data.endpointUrl !== undefined) updateData.endpointUrl = data.endpointUrl;

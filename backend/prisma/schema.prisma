@@ -179,6 +179,12 @@ model Agent {
 
   systemPrompt String? @map("system_prompt")
 
+  welcomeMessage   String?  @map("welcome_message")
+  suggestedPrompts String[] @default([]) @map("suggested_prompts")
+  limitations      String[] @default([])
+  modelSettings    Json?    @map("model_settings")
+  capabilities     Json?
+
   cloudStrategy       CloudStrategy?  @map("cloud_strategy")
   endpointUrl         String?         @map("endpoint_url")
   endpointFormat      EndpointFormat? @map("endpoint_format")

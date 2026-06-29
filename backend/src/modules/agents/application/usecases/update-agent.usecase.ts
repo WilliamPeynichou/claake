@@ -62,6 +62,11 @@ export class UpdateAgentUseCase {
 		if (dto.config_url !== undefined) updateData.configUrl = dto.config_url;
 		if (dto.image_url !== undefined) updateData.imageUrl = dto.image_url;
 		if (dto.system_prompt !== undefined) updateData.systemPrompt = dto.system_prompt;
+		if (dto.welcome_message !== undefined) updateData.welcomeMessage = dto.welcome_message;
+		if (dto.suggested_prompts !== undefined) updateData.suggestedPrompts = dto.suggested_prompts;
+		if (dto.limitations !== undefined) updateData.limitations = dto.limitations;
+		if (dto.model_settings !== undefined) updateData.modelSettings = dto.model_settings;
+		if (dto.capabilities !== undefined) updateData.capabilities = dto.capabilities;
 		if (dto.cloud_strategy !== undefined) updateData.cloudStrategy = dto.cloud_strategy;
 		if (dto.endpoint_url !== undefined) updateData.endpointUrl = dto.endpoint_url;
 		if (dto.endpoint_format !== undefined) updateData.endpointFormat = dto.endpoint_format;

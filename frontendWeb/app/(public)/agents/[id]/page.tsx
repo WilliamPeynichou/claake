@@ -94,6 +94,36 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 					{/* Chat */}
 					<AgentDetailChat agent={agent} />
 
+					{agent.suggested_prompts.length > 0 && (
+						<>
+							<Separator />
+							<section>
+								<h2 className="text-lg font-semibold">Exemples de demandes</h2>
+								<div className="mt-3 flex flex-wrap gap-2">
+									{agent.suggested_prompts.map((prompt) => (
+										<Badge key={prompt} variant="outline">
+											{prompt}
+										</Badge>
+									))}
+								</div>
+							</section>
+						</>
+					)}
+
+					{agent.limitations.length > 0 && (
+						<>
+							<Separator />
+							<section>
+								<h2 className="text-lg font-semibold">Limites</h2>
+								<ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+									{agent.limitations.map((limitation) => (
+										<li key={limitation}>{limitation}</li>
+									))}
+								</ul>
+							</section>
+						</>
+					)}
+
 					<Separator />
 
 					{/* Reviews */}
@@ -137,9 +167,11 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 						</CardContent>
 					</Card>
 
-					<Button className="w-full" size="lg">
-						<Download className="mr-2 h-4 w-4" />
-						Utiliser cet agent
+					<Button className="w-full" size="lg" asChild>
+						<Link href={`/chat/${agent.id}`}>
+							<Bot className="mr-2 h-4 w-4" />
+							Utiliser dans le chat
+						</Link>
 					</Button>
 				</div>
 			</div>

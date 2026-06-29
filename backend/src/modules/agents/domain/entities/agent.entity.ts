@@ -33,6 +33,11 @@ export class AgentEntity {
 		public readonly requiredUserProvider: string | null = null,
 		public readonly dockerImage: string | null = null,
 		public readonly downloadUrl: string | null = null,
+		public readonly welcomeMessage: string | null = null,
+		public readonly suggestedPrompts: string[] = [],
+		public readonly limitations: string[] = [],
+		public readonly modelSettings: Record<string, unknown> | null = null,
+		public readonly capabilities: Record<string, unknown> | null = null,
 	) {}
 
 	isOwnedBy(userId: string): boolean {

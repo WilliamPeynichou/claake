@@ -46,6 +46,11 @@ export interface CreateAgentInput {
 	config_url?: string;
 	image_url?: string;
 	system_prompt?: string;
+	welcome_message?: string;
+	suggested_prompts?: string[];
+	limitations?: string[];
+	model_settings?: Record<string, unknown>;
+	capabilities?: Record<string, unknown>;
 	pricing_model?: "FREE";
 	cloud_strategy?: CreateCloudStrategy;
 	required_user_provider?: string;
@@ -83,6 +88,11 @@ export interface Agent {
 	created_at: string;
 	updated_at: string;
 	system_prompt?: string | null;
+	welcome_message: string | null;
+	suggested_prompts: string[];
+	limitations: string[];
+	model_settings: Record<string, unknown> | null;
+	capabilities: Record<string, unknown> | null;
 	cloud_strategy: CloudStrategy | null;
 	endpoint_format: EndpointFormat | null;
 	required_user_provider: string | null;

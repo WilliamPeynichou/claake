@@ -30,6 +30,9 @@ const INITIAL_FORM = {
 	cloudStrategy: "USER_API_KEY" as "USER_API_KEY" | "SELLER_API_KEY" | "SELLER_ENDPOINT",
 	requiredUserProvider: "anthropic",
 	systemPrompt: "",
+	welcomeMessage: "",
+	suggestedPrompts: "",
+	limitations: "",
 	endpoint: "",
 	endpointFormat: "OPENAI" as
 		| "OPENAI"
@@ -105,6 +108,16 @@ export default function NewAgentPage() {
 				cloudStrategy: parsed.cloud_strategy ?? prev.cloudStrategy,
 				requiredUserProvider: parsed.required_user_provider ?? prev.requiredUserProvider,
 				systemPrompt: parsed.system_prompt ?? parsed.systemPrompt ?? prev.systemPrompt,
+				welcomeMessage:
+					parsed.welcome_message ?? parsed.welcomeMessage ?? parsed.welcome ?? prev.welcomeMessage,
+				suggestedPrompts: Array.isArray(parsed.suggested_prompts)
+					? parsed.suggested_prompts.join("\n")
+					: Array.isArray(parsed.suggestedPrompts)
+						? parsed.suggestedPrompts.join("\n")
+						: prev.suggestedPrompts,
+				limitations: Array.isArray(parsed.limitations)
+					? parsed.limitations.join("\n")
+					: prev.limitations,
 				endpoint: parsed.endpoint ?? parsed.config_url ?? prev.endpoint,
 				endpointFormat: parsed.endpoint_format ?? prev.endpointFormat,
 				sellerApiProvider: parsed.seller_api_provider ?? prev.sellerApiProvider,
@@ -211,6 +224,15 @@ export default function NewAgentPage() {
 				}
 			}
 
+			const suggestedPrompts = formData.suggestedPrompts
+				.split("\n")
+				.map((prompt) => prompt.trim())
+				.filter(Boolean);
+			const limitations = formData.limitations
+				.split("\n")
+				.map((limitation) => limitation.trim())
+				.filter(Boolean);
+
 			const payload: CreateAgentInput = {
 				name: formData.name,
 				slug,
@@ -249,6 +271,9 @@ export default function NewAgentPage() {
 						: undefined,
 				config_url: configUrl || undefined,
 				system_prompt: formData.systemPrompt || undefined,
+				welcome_message: formData.welcomeMessage || undefined,
+				suggested_prompts: suggestedPrompts.length ? suggestedPrompts : undefined,
+				limitations: limitations.length ? limitations : undefined,
 				pricing_model: "FREE",
 			};
 
@@ -619,6 +644,43 @@ export default function NewAgentPage() {
 								/>
 								<p className="text-xs text-muted-foreground">Max. 10 000 caractères</p>
 							</div>
+							<div className="space-y-2">
+								<Label htmlFor="welcomeMessage">Message d&apos;accueil</Label>
+								<Textarea
+									id="welcomeMessage"
+									value={formData.welcomeMessage}
+									onChange={(e) => updateField("welcomeMessage", e.target.value)}
+									placeholder="Bonjour, je suis votre agent..."
+									rows={3}
+								/>
+								<p className="text-xs text-muted-foreground">
+									Affiché dans le chat avant le premier message.
+								</p>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="suggestedPrompts">Prompts suggérés</Label>
+								<Textarea
+									id="suggestedPrompts"
+									value={formData.suggestedPrompts}
+									onChange={(e) => updateField("suggestedPrompts", e.target.value)}
+									placeholder={"Analyse ce document\nRésume les points clés\nListe les risques"}
+									rows={4}
+								/>
+								<p className="text-xs text-muted-foreground">Un prompt par ligne, maximum 6.</p>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="limitations">Limites / avertissements</Label>
+								<Textarea
+									id="limitations"
+									value={formData.limitations}
+									onChange={(e) => updateField("limitations", e.target.value)}
+									placeholder={
+										"Ne remplace pas un professionnel qualifié\nDomaine : droit français uniquement"
+									}
+									rows={3}
+								/>
+								<p className="text-xs text-muted-foreground">Une limite par ligne.</p>
+							</div>
 							{formData.mode !== "LOCAL" && (
 								<div className="space-y-2">
 									<Label>Stratégie d&apos;exécution cloud</Label>
@@ -830,6 +892,20 @@ export default function NewAgentPage() {
 										{formData.systemPrompt
 											? `${formData.systemPrompt.length} caractères`
 											: "Non renseigné"}
+									</span>
+								</div>
+								<Separator />
+								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">Message d'accueil</span>
+									<span className="text-xs">
+										{formData.welcomeMessage ? "Renseigné" : "Non renseigné"}
+									</span>
+								</div>
+								<Separator />
+								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">Prompts suggérés</span>
+									<span className="text-xs">
+										{formData.suggestedPrompts.split("\n").filter((p) => p.trim()).length}
 									</span>
 								</div>
 								<Separator />
