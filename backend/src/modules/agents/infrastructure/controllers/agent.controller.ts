@@ -26,6 +26,7 @@ import { ReviewAgentDto } from "../../application/dtos/review-agent.dto.js";
 import { UpdateAgentDto } from "../../application/dtos/update-agent.dto.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
+import { GetAgentChatConfigUseCase } from "../../application/usecases/get-agent-chat-config.usecase.js";
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
 import { GetAgentDownloadInfoUseCase } from "../../application/usecases/get-agent-download-info.usecase.js";
 import { ListAgentsUseCase } from "../../application/usecases/list-agents.usecase.js";
@@ -41,6 +42,7 @@ export class AgentController {
 	constructor(
 		private readonly listAgents: ListAgentsUseCase,
 		private readonly getAgent: GetAgentUseCase,
+		private readonly getAgentChatConfig: GetAgentChatConfigUseCase,
 		private readonly createAgent: CreateAgentUseCase,
 		private readonly updateAgent: UpdateAgentUseCase,
 		private readonly validateAgent: ValidateAgentUseCase,
@@ -92,6 +94,12 @@ export class AgentController {
 			publishedOnly: false,
 			creatorId: req.user.id,
 		});
+	}
+
+	@Get(":id/chat-config")
+	@UseGuards(OptionalSupabaseAuthGuard)
+	async chatConfig(@Param("id") id: string, @Req() req: { user?: RequestUser }) {
+		return this.getAgentChatConfig.execute(id, req.user);
 	}
 
 	@Get(":id")

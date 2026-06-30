@@ -3,6 +3,7 @@ import type {
 	AdminPermissions,
 	Agent,
 	AgentCategory,
+	AgentChatConfig,
 	ApiKeyConfig,
 	ChatMessage,
 	ChatSession,
@@ -109,6 +110,11 @@ export function createApiClient(baseUrl: string) {
 				);
 			},
 			get: (id: string) => fetchJson<Agent>(`/agents/${id}`),
+			chatConfig: (id: string, token?: string) =>
+				fetchJson<AgentChatConfig>(
+					`/agents/${id}/chat-config`,
+					token ? withAuth(token) : undefined,
+				),
 			mine: (token: string) => fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
 			create: (agent: CreateAgentInput, token: string) =>
 				fetchJson<Agent & { validation: ValidationResult }>(

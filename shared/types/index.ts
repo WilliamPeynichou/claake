@@ -191,6 +191,31 @@ export interface Pipeline {
 	created_at: string;
 }
 
+export interface AgentChatConfig {
+	id: string;
+	name: string;
+	description: string;
+	image_url: string | null;
+	status: "approved" | "draft" | "pending" | "rejected" | "suspended";
+	mode: "cloud" | "local" | "hybrid";
+	models: string[];
+	provider: string | null;
+	cloud_strategy: CloudStrategy | null;
+	required_user_provider: string | null;
+	welcome_message: string | null;
+	suggested_prompts: string[];
+	limitations: string[];
+	capabilities: {
+		files: boolean;
+		images: boolean;
+	};
+	access: {
+		can_chat: boolean;
+		reason?: "login_required" | "api_key_required" | "purchase_required" | "not_published";
+		required_provider?: string;
+	};
+}
+
 export interface ChatSession {
 	id: string;
 	agent_id: string;

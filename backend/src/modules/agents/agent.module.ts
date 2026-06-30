@@ -6,6 +6,7 @@ import { RolesGuard } from "../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../common/guards/supabase-auth.guard.js";
 import { CreateAgentUseCase } from "./application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "./application/usecases/delete-agent.usecase.js";
+import { GetAgentChatConfigUseCase } from "./application/usecases/get-agent-chat-config.usecase.js";
 import { GetAgentUseCase } from "./application/usecases/get-agent.usecase.js";
 import { GetAgentDownloadInfoUseCase } from "./application/usecases/get-agent-download-info.usecase.js";
 import { ListAgentsUseCase } from "./application/usecases/list-agents.usecase.js";
@@ -27,6 +28,7 @@ import { PrismaAgentRepository } from "./infrastructure/repositories/prisma-agen
 		AdminPermissionGuard,
 		ListAgentsUseCase,
 		GetAgentUseCase,
+		GetAgentChatConfigUseCase,
 		CreateAgentUseCase,
 		UpdateAgentUseCase,
 		ValidateAgentUseCase,
