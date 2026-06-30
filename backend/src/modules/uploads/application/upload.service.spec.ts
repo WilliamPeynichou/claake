@@ -1,0 +1,137 @@
+import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { UploadService } from "./upload.service";
+
+function createStorage() {
+	return {
+		uploadPrivateObject: jest.fn().mockResolvedValue(undefined),
+		removePrivateObjects: jest.fn().mockResolvedValue(undefined),
+		createSignedUrl: jest
+			.fn()
+			.mockResolvedValue(
+				"https://storage.example.test/object/sign/agent-files-private/uploads/user/file.png?token=short-lived",
+			),
+	};
+}
+
+function createPrisma(overrides: Record<string, unknown> = {}) {
+	return {
+		agent: {
+			findUnique: jest.fn().mockResolvedValue(null),
+		},
+		chatSession: {
+			findUnique: jest.fn().mockResolvedValue(null),
+		},
+		chatMessage: {
+			findUnique: jest.fn().mockResolvedValue(null),
+		},
+		uploadedFile: {
+			create: jest
+				.fn()
+				.mockImplementation(({ data }) => Promise.resolve({ id: "file-1", ...data })),
+			findUnique: jest.fn(),
+			findMany: jest.fn(),
+			delete: jest.fn(),
+		},
+		...overrides,
+	};
+}
+
+function createFile(params: Partial<Express.Multer.File> = {}): Express.Multer.File {
+	const buffer = params.buffer ?? Buffer.from("not-a-real-png");
+	return {
+		fieldname: "file",
+		originalname: params.originalname ?? "payload.png",
+		encoding: "7bit",
+		mimetype: params.mimetype ?? "image/png",
+		size: params.size ?? buffer.length,
+		buffer,
+		stream: undefined as any,
+		destination: "",
+		filename: "",
+		path: "",
+	} as Express.Multer.File;
+}
+
+describe("UploadService — validation et isolation des fichiers", () => {
+	it("rejette un fichier dont le MIME déclaré ne correspond pas à la signature binaire", async () => {
+		const storage = createStorage();
+		const service = new UploadService(createPrisma() as any, storage as any);
+
+		await expect(
+			service.upload(
+				createFile({ mimetype: "image/png", originalname: "payload.png" }),
+				"user-1",
+				{},
+			),
+		).rejects.toBeInstanceOf(BadRequestException);
+
+		expect(storage.uploadPrivateObject).not.toHaveBeenCalled();
+	});
+
+	it("rejette un upload dépassant 10 Mo avant tout stockage", async () => {
+		const storage = createStorage();
+		const service = new UploadService(createPrisma() as any, storage as any);
+		const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+		await expect(
+			service.upload(
+				createFile({
+					buffer: pngHeader,
+					mimetype: "image/png",
+					originalname: "large.png",
+					size: 10 * 1024 * 1024 + 1,
+				}),
+				"user-1",
+				{},
+			),
+		).rejects.toBeInstanceOf(BadRequestException);
+
+		expect(storage.uploadPrivateObject).not.toHaveBeenCalled();
+	});
+
+	it("empêche d'attacher un fichier à une session appartenant à un autre utilisateur", async () => {
+		const storage = createStorage();
+		const prisma = createPrisma({
+			chatSession: {
+				findUnique: jest.fn().mockResolvedValue({ userId: "other-user", agentId: "agent-1" }),
+			},
+		});
+		const service = new UploadService(prisma as any, storage as any);
+
+		await expect(
+			service.upload(createFile(), "user-1", { sessionId: "session-1" }),
+		).rejects.toBeInstanceOf(ForbiddenException);
+
+		expect(storage.uploadPrivateObject).not.toHaveBeenCalled();
+	});
+
+	it("stocke les uploads runtime par chemin privé et retourne une URL signée courte", async () => {
+		const storage = createStorage();
+		const prisma = createPrisma();
+		const service = new UploadService(prisma as any, storage as any);
+		const pngBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+
+		const record = await service.upload(
+			createFile({ buffer: pngBuffer, mimetype: "image/png", originalname: "safe.png" }),
+			"user-1",
+			{},
+		);
+
+		expect(storage.uploadPrivateObject).toHaveBeenCalledWith(
+			expect.stringMatching(/^uploads\/user-1\/unattached\/.+\.png$/),
+			pngBuffer,
+			"image/png",
+		);
+		expect(prisma.uploadedFile.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					url: expect.not.stringContaining("/object/public/"),
+				}),
+			}),
+		);
+		expect(storage.createSignedUrl).toHaveBeenCalledWith(
+			expect.stringMatching(/^uploads\/user-1\/unattached\/.+\.png$/),
+		);
+		expect(record.url).toContain("/object/sign/");
+	});
+});

@@ -8,9 +8,7 @@ import { CollectionTransformer } from "../transformers/collection.transformer.js
 
 @Injectable()
 export class ListCollectionsUseCase {
-	constructor(
-		@Inject(COLLECTION_REPOSITORY) private readonly repo: CollectionRepositoryPort,
-	) {}
+	constructor(@Inject(COLLECTION_REPOSITORY) private readonly repo: CollectionRepositoryPort) {}
 
 	async execute(userId: string): Promise<CollectionResponseDto[]> {
 		const collections = await this.repo.findByUser(userId);

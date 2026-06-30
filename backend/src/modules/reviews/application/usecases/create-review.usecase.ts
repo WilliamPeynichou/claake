@@ -9,12 +9,12 @@ import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
 } from "../../../agents/domain/ports/agent.repository.port.js";
+import type { ChatSessionRepositoryPort } from "../../../chat/domain/ports/chat-session.repository.port.js";
+import { CHAT_SESSION_REPOSITORY } from "../../../chat/domain/ports/chat-session.repository.port.js";
 import {
 	PAYMENT_REPOSITORY,
 	type PaymentRepositoryPort,
 } from "../../../payments/domain/ports/payment.repository.port.js";
-import { CHAT_SESSION_REPOSITORY } from "../../../chat/domain/ports/chat-session.repository.port.js";
-import type { ChatSessionRepositoryPort } from "../../../chat/domain/ports/chat-session.repository.port.js";
 import {
 	REVIEW_REPOSITORY,
 	type ReviewRepositoryPort,
@@ -32,11 +32,7 @@ export class CreateReviewUseCase {
 		@Inject(CHAT_SESSION_REPOSITORY) private readonly chatRepo: ChatSessionRepositoryPort,
 	) {}
 
-	async execute(
-		agentId: string,
-		dto: CreateReviewDto,
-		userId: string,
-	): Promise<ReviewResponseDto> {
+	async execute(agentId: string, dto: CreateReviewDto, userId: string): Promise<ReviewResponseDto> {
 		const agent = await this.agentRepo.findById(agentId);
 		if (!agent) throw new NotFoundException("Agent not found");
 
@@ -56,7 +52,7 @@ export class CreateReviewUseCase {
 		} else {
 			// Free agent: check chat interaction
 			const sessions = await this.chatRepo.findByUserAndAgent(userId, agentId);
-			verifiedInteraction = sessions !== null;
+			verifiedInteraction = sessions.length > 0;
 			if (!verifiedInteraction) {
 				throw new ForbiddenException("You must use this agent before reviewing");
 			}

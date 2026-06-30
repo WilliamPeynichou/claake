@@ -1,3 +1,4 @@
+import type { CreatorProfile } from "@claake/shared";
 import { ApiError, createApiClient } from "@claake/shared";
 import { ArrowLeft, Bot, ExternalLink, Github, Globe, Linkedin, Star, User } from "lucide-react";
 import Link from "next/link";
@@ -7,26 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error("NEXT_PUBLIC_API_URL is not set");
 const serverApiClient = createApiClient(API_URL);
 
 function getLinkIcon(label: string) {
 	const lower = label.toLowerCase();
 	if (lower.includes("github")) return Github;
 	if (lower.includes("linkedin")) return Linkedin;
-	if (lower.includes("site") || lower.includes("web") || lower.includes("portfolio"))
-		return Globe;
+	if (lower.includes("site") || lower.includes("web") || lower.includes("portfolio")) return Globe;
 	return ExternalLink;
 }
 
-export default async function CreatorProfilePage({
-	params,
-}: {
-	params: Promise<{ id: string }>;
-}) {
+export default async function CreatorProfilePage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
-	let creator;
+	let creator: CreatorProfile;
 	try {
 		creator = await serverApiClient.creators.get(id);
 	} catch (e) {
@@ -57,9 +54,7 @@ export default async function CreatorProfilePage({
 								</div>
 								<div>
 									<CardTitle>{creator.display_name ?? "Cr\u00e9ateur"}</CardTitle>
-									<p className="text-sm text-muted-foreground">
-										Cr\u00e9ateur sur Claake
-									</p>
+									<p className="text-sm text-muted-foreground">Cr\u00e9ateur sur Claake</p>
 								</div>
 							</div>
 						</CardHeader>

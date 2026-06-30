@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { assertPublicHttpUrl } from "../../../../common/security/public-url.js";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
@@ -12,16 +13,41 @@ export interface ValidationResult {
 }
 
 const DANGEROUS_PATTERNS = [
+	// Prompt injection
 	/ignore\s+(previous|above|all)\s+(instructions?|prompts?)/i,
-	/rm\s+-rf/i,
+	/disregard\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|context)/i,
+	/you\s+are\s+now\s+(a\s+)?(?!an?\s+ai)/i,
+	/act\s+as\s+(if\s+you\s+(were|are)\s+)?(?!an?\s+ai)/i,
+	/new\s+instructions?:/i,
+	/system\s*:\s*you/i,
+	// Shell injection
+	/rm\s+-[rRfF]{1,4}\b/,
+	/\bsudo\s+rm\b/i,
+	/\bchmod\s+[0-7]{3,4}/,
+	// Code execution
 	/\beval\s*\(/i,
 	/\bexec\s*\(/i,
-	/DROP\s+TABLE/i,
-	/DELETE\s+FROM/i,
-	/;\s*--/i,
-	/UNION\s+SELECT/i,
 	/\bsystem\s*\(/i,
+	/\bspawn\s*\(/i,
 	/\b__import__\s*\(/i,
+	/\bsubprocess\s*\./i,
+	/\bos\.system\s*\(/i,
+	/\bchild_process/i,
+	// SQL injection
+	/DROP\s+TABLE/i,
+	/TRUNCATE\s+TABLE/i,
+	/DELETE\s+FROM/i,
+	/INSERT\s+INTO/i,
+	/UPDATE\s+\w+\s+SET/i,
+	/;\s*--/,
+	/UNION\s+(?:ALL\s+)?SELECT/i,
+	/'\s*OR\s*'?\s*\d+\s*=\s*\d+/i,
+	/'\s*;\s*DROP/i,
+	// Path traversal
+	/\.\.[/\\]/,
+	// Data exfiltration hints
+	/fetch\s*\(\s*['"`]https?:/i,
+	/XMLHttpRequest/i,
 ];
 
 const WARNING_PATTERNS = [
@@ -30,7 +56,62 @@ const WARNING_PATTERNS = [
 	/\btoken\b/i,
 	/\bapi[_\s]?key\b/i,
 	/\bcredential/i,
+	/\bprivate[_\s]?key\b/i,
+	/\baccess[_\s]?key\b/i,
 ];
+
+function normalizeForScan(text: string): string {
+	return text
+		.normalize("NFKD")
+		.replace(/\s+/g, " ")
+		.replace(/[^\x20-\x7E]/g, "")
+		.trim();
+}
+
+const MAX_CONFIG_BYTES = 256 * 1024;
+
+async function readLimitedText(res: Response, maxBytes: number): Promise<string> {
+	const reader = res.body?.getReader();
+	if (!reader) return "";
+	const chunks: Uint8Array[] = [];
+	let total = 0;
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			total += value.byteLength;
+			if (total > maxBytes) {
+				throw new Error("CONFIG_TOO_LARGE");
+			}
+			chunks.push(value);
+		}
+	} finally {
+		reader.releaseLock();
+	}
+	const buffer = new Uint8Array(total);
+	let offset = 0;
+	for (const chunk of chunks) {
+		buffer.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return new TextDecoder().decode(buffer);
+}
+
+function scanText(text: string, label: string, errors: string[], warnings: string[]): void {
+	if (!text) return;
+	const normalized = normalizeForScan(text);
+	const collapsed = text.replace(/\s/g, "");
+	for (const pattern of DANGEROUS_PATTERNS) {
+		if (pattern.test(text) || pattern.test(normalized) || pattern.test(collapsed)) {
+			errors.push(`Contenu potentiellement dangereux détecté dans ${label} : ${pattern.source}`);
+		}
+	}
+	for (const pattern of WARNING_PATTERNS) {
+		if (pattern.test(text) || pattern.test(normalized)) {
+			warnings.push(`${label} contient un mot sensible : ${pattern.source}`);
+		}
+	}
+}
 
 @Injectable()
 export class ValidateAgentUseCase {
@@ -51,21 +132,51 @@ export class ValidateAgentUseCase {
 		if (!agent.category?.trim()) errors.push("La catégorie est requise.");
 		if (!agent.models?.length) errors.push("Au moins un modèle doit être sélectionné.");
 
-		// System prompt security scan
-		const systemPrompt = agent.systemPrompt ?? "";
-		if (systemPrompt) {
-			for (const pattern of DANGEROUS_PATTERNS) {
-				if (pattern.test(systemPrompt)) {
-					errors.push(
-						`Contenu potentiellement dangereux détecté dans le system prompt : ${pattern.source}`,
-					);
+		// Security scan on all text fields stored in DB
+		scanText(agent.systemPrompt ?? "", "le system prompt", errors, warnings);
+		scanText(agent.name ?? "", "le nom", errors, warnings);
+		scanText(agent.description ?? "", "la description", errors, warnings);
+
+		// Validate .agentjson content from storage if config_url is provided
+		if (agent.configUrl) {
+			try {
+				const parsedConfigUrl = await assertPublicHttpUrl(agent.configUrl);
+				const res = await fetch(parsedConfigUrl, {
+					signal: AbortSignal.timeout(5000),
+					redirect: "error",
+				});
+				if (!res.ok) {
+					errors.push(`Impossible de récupérer le fichier de configuration (HTTP ${res.status}).`);
+				} else {
+					const contentLength = Number(res.headers.get("content-length") ?? "0");
+					if (contentLength > MAX_CONFIG_BYTES) {
+						errors.push("Le fichier .agentjson dépasse la taille maximale autorisée.");
+					} else {
+						const raw = await readLimitedText(res, MAX_CONFIG_BYTES);
+						let parsed: Record<string, unknown>;
+						try {
+							parsed = JSON.parse(raw);
+						} catch {
+							errors.push("Le fichier .agentjson n'est pas un JSON valide.");
+							parsed = {};
+						}
+						const fileSystemPrompt =
+							typeof parsed.system_prompt === "string"
+								? parsed.system_prompt
+								: typeof parsed.systemPrompt === "string"
+									? parsed.systemPrompt
+									: "";
+						scanText(fileSystemPrompt, "le system_prompt du fichier .agentjson", errors, warnings);
+						scanText(raw, "le fichier .agentjson (contenu brut)", errors, warnings);
+					}
 				}
-			}
-			for (const pattern of WARNING_PATTERNS) {
-				if (pattern.test(systemPrompt)) {
-					warnings.push(
-						`Le system prompt contient un mot sensible : ${pattern.source}`,
-					);
+			} catch (error) {
+				if (error instanceof Error && error.message === "CONFIG_TOO_LARGE") {
+					errors.push("Le fichier .agentjson dépasse la taille maximale autorisée.");
+				} else if (error instanceof Error && error.message.includes("blocked address")) {
+					errors.push("L'URL du fichier de configuration pointe vers une adresse interdite.");
+				} else {
+					warnings.push("Le fichier de configuration n'a pas pu être vérifié (timeout ou réseau).");
 				}
 			}
 		}

@@ -23,6 +23,12 @@ export class AgentResponseDto {
 	creator_name!: string | null;
 	created_at!: string;
 	updated_at!: string;
+	system_prompt!: string | null;
+	welcome_message!: string | null;
+	suggested_prompts!: string[];
+	limitations!: string[];
+	model_settings!: Record<string, unknown> | null;
+	capabilities!: Record<string, unknown> | null;
 	cloud_strategy!: string | null;
 	endpoint_format!: string | null;
 	required_user_provider!: string | null;

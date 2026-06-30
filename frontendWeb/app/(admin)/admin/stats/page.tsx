@@ -22,9 +22,7 @@ export default function AdminStatsPage() {
 	return (
 		<div>
 			<h1 className="text-3xl font-bold">Statistiques</h1>
-			<p className="mt-2 text-muted-foreground">
-				Statistiques détaillées de la plateforme Claake.
-			</p>
+			<p className="mt-2 text-muted-foreground">Statistiques détaillées de la plateforme Claake.</p>
 
 			<div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<Card>

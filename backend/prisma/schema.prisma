@@ -93,6 +93,11 @@ enum MessageRole {
   SYSTEM
 }
 
+enum UploadedFileType {
+  IMAGE
+  DOCUMENT
+}
+
 // ─── Users & Teams ──────────────────────────────────────────────────────────
 
 model User {
@@ -111,8 +116,9 @@ model User {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   teamId String? @map("team_id")
-  team   Team?   @relation(fields: [teamId], references: [id])
+  team   Team?   @relation("TeamMember", fields: [teamId], references: [id])
 
+  ownedTeams    Team[]         @relation("TeamOwner")
   agents        Agent[]
   purchases     Purchase[]
   subscriptions Subscription[]
@@ -122,6 +128,7 @@ model User {
   favorites     Favorite[]
   usageCredits  UsageCredit[]
   chatSessions  ChatSession[]
+  uploadedFiles UploadedFile[]
 
   @@index([email])
   @@map("users")
@@ -136,7 +143,8 @@ model Team {
   ssoConfig        Json?    @map("sso_config")
   createdAt        DateTime @default(now()) @map("created_at")
 
-  members User[]
+  owner   User   @relation("TeamOwner", fields: [ownerId], references: [id])
+  members User[] @relation("TeamMember")
 
   @@index([ownerId])
   @@map("teams")
@@ -171,6 +179,12 @@ model Agent {
 
   systemPrompt String? @map("system_prompt")
 
+  welcomeMessage   String?  @map("welcome_message")
+  suggestedPrompts String[] @default([]) @map("suggested_prompts")
+  limitations      String[] @default([])
+  modelSettings    Json?    @map("model_settings")
+  capabilities     Json?
+
   cloudStrategy       CloudStrategy?  @map("cloud_strategy")
   endpointUrl         String?         @map("endpoint_url")
   endpointFormat      EndpointFormat? @map("endpoint_format")
@@ -180,15 +194,22 @@ model Agent {
   dockerImage         String?         @map("docker_image")
   downloadUrl         String?         @map("download_url")
 
+  deletedAt DateTime? @map("deleted_at")
+
   creatorId String @map("creator_id")
   creator   User   @relation(fields: [creatorId], references: [id])
 
-  versions      AgentVersion[]
-  purchases     Purchase[]
-  subscriptions Subscription[]
-  reviews       Review[]
-  favorites     Favorite[]
-  chatSessions  ChatSession[]
+  categoryRelation Category @relation("AgentCategory", fields: [category], references: [slug])
+
+  versions         AgentVersion[]
+  purchases        Purchase[]
+  subscriptions    Subscription[]
+  reviews          Review[]
+  favorites        Favorite[]
+  chatSessions     ChatSession[]
+  collectionAgents CollectionAgent[]
+  pipelineSteps    PipelineStep[]
+  uploadedFiles    UploadedFile[]
 
   @@index([slug])
   @@index([creatorId])
@@ -221,7 +242,7 @@ model Purchase {
   id              String   @id @default(uuid())
   amount          Decimal  @db.Decimal(10, 2)
   currency        String   @default("eur") @db.Char(3)
-  stripePaymentId String?  @map("stripe_payment_id")
+  stripePaymentId String?  @unique @map("stripe_payment_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
   userId  String @map("user_id")
@@ -233,6 +254,16 @@ model Purchase {
   @@index([userId])
   @@index([agentId])
   @@map("purchases")
+}
+
+model StripeWebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique @map("event_id")
+  type        String
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@index([type])
+  @@map("stripe_webhook_events")
 }
 
 model Subscription {
@@ -326,15 +357,27 @@ model Collection {
   name        String
   description String?
   isPublic    Boolean  @default(false) @map("is_public")
-  agentIds    String[] @map("agent_ids")
   createdAt   DateTime @default(now()) @map("created_at")
 
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id])
 
+  agents CollectionAgent[]
+
   @@index([userId])
   @@index([isPublic])
   @@map("collections")
+}
+
+model CollectionAgent {
+  collectionId String @map("collection_id")
+  agentId      String @map("agent_id")
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  agent      Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, agentId])
+  @@map("collection_agents")
 }
 
 model Favorite {
@@ -354,21 +397,36 @@ model Favorite {
 // ─── Pipelines (Orchestration multi-agents) ─────────────────────────────────
 
 model Pipeline {
-  id            String   @id @default(uuid())
-  name          String
-  description   String?
-  agentSequence Json     @map("agent_sequence")
-  config        Json?
-  isPublic      Boolean  @default(false) @map("is_public")
-  price         Decimal? @db.Decimal(10, 2)
-  createdAt     DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  config      Json?
+  isPublic    Boolean  @default(false) @map("is_public")
+  price       Decimal? @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
 
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id])
 
+  steps PipelineStep[]
+
   @@index([userId])
   @@index([isPublic])
   @@map("pipelines")
+}
+
+model PipelineStep {
+  id         String @id @default(uuid())
+  step       Int
+  config     Json?
+  pipelineId String @map("pipeline_id")
+  agentId    String @map("agent_id")
+
+  pipeline Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  agent    Agent    @relation(fields: [agentId], references: [id], onDelete: Restrict)
+
+  @@unique([pipelineId, step])
+  @@map("pipeline_steps")
 }
 
 // ─── Catalogue ──────────────────────────────────────────────────────────────
@@ -382,6 +440,8 @@ model Category {
   agentCount  Int      @default(0) @map("agent_count")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  agents Agent[] @relation("AgentCategory")
 
   @@map("categories")
 }
@@ -400,7 +460,8 @@ model ChatSession {
   agentId String @map("agent_id")
   agent   Agent  @relation(fields: [agentId], references: [id])
 
-  messages ChatMessage[]
+  messages      ChatMessage[]
+  uploadedFiles UploadedFile[]
 
   @@index([userId, updatedAt])
   @@map("chat_sessions")
@@ -418,6 +479,40 @@ model ChatMessage {
   sessionId String      @map("session_id")
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
+  attachments UploadedFile[]
+
   @@index([sessionId, createdAt])
   @@map("chat_messages")
+}
+
+// ─── Fichiers uploadés ───────────────────────────────────────────────────────
+
+model UploadedFile {
+  id        String           @id @default(uuid())
+  type      UploadedFileType @default(IMAGE)
+  url       String
+  fileName  String           @map("file_name")
+  mimeType  String           @map("mime_type")
+  size      Int
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  // Uploader (user or creator/dev)
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Liens optionnels — un fichier peut être rattaché à un agent, une session ou un message
+  agentId   String? @map("agent_id")
+  agent     Agent?  @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  sessionId String?      @map("session_id")
+  session   ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  messageId String?      @map("message_id")
+  message   ChatMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([sessionId])
+  @@index([messageId])
+  @@map("uploaded_files")
 }

@@ -17,9 +17,28 @@
 		"web-build": "npm -w @claake/frontend-web run build",
 		"api-build": "npm -w @claake/backend run build",
 		"desktop-build": "npm -w @claake/frontend-app run build",
+		"pake-dev": "node Pake/dist/cli.js http://localhost:3000/chat --name Claake --hide-title-bar --new-window --width 1200 --height 800 --identifier com.claake.chat",
+		"pake-build": "node Pake/dist/cli.js https://claake.com/chat --name Claake --hide-title-bar --new-window --width 1200 --height 800 --icon frontendWeb/public/logoClaakeGreen.png --identifier com.claake.chat",
 		"lint": "biome check .",
 		"lint-fix": "biome check --fix .",
-		"format": "biome format --write ."
+		"format": "biome format --write .",
+		"audit:high": "npm audit --omit=dev --workspaces --include-workspace-root --audit-level=high",
+		"secrets:scan": "node scripts/scan-secrets.mjs",
+		"security:check": "npm run secrets:scan && npm run audit:high"
+	},
+	"overrides": {
+		"ajv": "8.20.0",
+		"@angular-devkit/core": {
+			"rxjs": "7.8.1"
+		},
+		"@angular-devkit/schematics": {
+			"rxjs": "7.8.1"
+		},
+		"picomatch": "4.0.4",
+		"postcss": "8.5.14",
+		"qs": "6.15.2",
+		"rxjs": "7.8.1",
+		"ws": "8.21.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.6"

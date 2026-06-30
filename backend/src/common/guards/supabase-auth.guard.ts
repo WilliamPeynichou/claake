@@ -41,24 +41,23 @@ export class SupabaseAuthGuard implements CanActivate {
 			throw new UnauthorizedException("Invalid or expired token");
 		}
 
-		// Role from Supabase cloud app_metadata (source of truth)
-		const cloudRole = (user.app_metadata?.role as string) ?? null;
-
-		// Upsert user in local DB, syncing role from cloud
+		// DB is the authorization source of truth. New local users are always
+		// provisioned as USER; admin elevation must go through controlled backend flows.
+		// Ensure the authenticated Supabase user exists locally without overwriting DB-managed roles.
 		const dbUser = await this.prisma.user.upsert({
 			where: { id: user.id },
 			create: {
 				id: user.id,
 				email: user.email ?? "",
-				role: (cloudRole as import("@prisma/client").UserRole) ?? "USER",
+				role: "USER",
 			},
-			update: cloudRole ? { role: cloudRole as import("@prisma/client").UserRole } : {},
+			update: {},
 			select: { role: true },
 		});
 
 		request.user = {
 			id: user.id,
-			email: user.email,
+			email: user.email ?? "",
 			role: dbUser.role,
 		};
 

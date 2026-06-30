@@ -20,9 +20,17 @@ export function AgentCard({ agent }: AgentCardProps) {
 			<Card className="h-full border-border/60 transition-all hover:border-brand/40">
 				<CardHeader className="pb-3">
 					<div className="flex items-start justify-between">
-						<div className="flex h-12 w-12 items-center justify-center border border-brand/20 bg-brand-subtle">
-							<Bot className="h-6 w-6 text-brand" />
-						</div>
+						{agent.image_url ? (
+							<img
+								src={agent.image_url}
+								alt={agent.name}
+								className="h-12 w-12 object-cover border border-border/60"
+							/>
+						) : (
+							<div className="flex h-12 w-12 items-center justify-center border border-brand/20 bg-brand-subtle">
+								<Bot className="h-6 w-6 text-brand" />
+							</div>
+						)}
 						<div className="flex items-center gap-1">
 							<FavoriteButton agentId={agent.id} />
 							<Badge variant="secondary" className="text-xs">

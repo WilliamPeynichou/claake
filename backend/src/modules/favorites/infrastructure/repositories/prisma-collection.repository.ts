@@ -4,6 +4,8 @@ import type { CollectionEntity } from "../../domain/entities/collection.entity.j
 import type { CollectionRepositoryPort } from "../../domain/ports/collection.repository.port.js";
 import { CollectionMapper } from "../mappers/collection.mapper.js";
 
+const includeAgents = { agents: true } as const;
+
 @Injectable()
 export class PrismaCollectionRepository implements CollectionRepositoryPort {
 	constructor(private readonly prisma: PrismaService) {}
@@ -21,18 +23,23 @@ export class PrismaCollectionRepository implements CollectionRepositoryPort {
 				isPublic: data.isPublic ?? false,
 				userId: data.userId,
 			},
+			include: includeAgents,
 		});
 		return CollectionMapper.toDomain(collection);
 	}
 
 	async findById(id: string): Promise<CollectionEntity | null> {
-		const collection = await this.prisma.collection.findUnique({ where: { id } });
+		const collection = await this.prisma.collection.findUnique({
+			where: { id },
+			include: includeAgents,
+		});
 		return collection ? CollectionMapper.toDomain(collection) : null;
 	}
 
 	async findByUser(userId: string): Promise<CollectionEntity[]> {
 		const collections = await this.prisma.collection.findMany({
 			where: { userId },
+			include: includeAgents,
 			orderBy: { createdAt: "desc" },
 		});
 		return collections.map(CollectionMapper.toDomain);
@@ -49,6 +56,7 @@ export class PrismaCollectionRepository implements CollectionRepositoryPort {
 				description: data.description,
 				isPublic: data.isPublic,
 			},
+			include: includeAgents,
 		});
 		return CollectionMapper.toDomain(collection);
 	}
@@ -58,22 +66,25 @@ export class PrismaCollectionRepository implements CollectionRepositoryPort {
 	}
 
 	async addAgent(id: string, agentId: string): Promise<CollectionEntity> {
-		const collection = await this.prisma.collection.update({
+		await this.prisma.collectionAgent.upsert({
+			where: { collectionId_agentId: { collectionId: id, agentId } },
+			create: { collectionId: id, agentId },
+			update: {},
+		});
+		const collection = await this.prisma.collection.findUniqueOrThrow({
 			where: { id },
-			data: {
-				agentIds: { push: agentId },
-			},
+			include: includeAgents,
 		});
 		return CollectionMapper.toDomain(collection);
 	}
 
 	async removeAgent(id: string, agentId: string): Promise<CollectionEntity> {
-		const current = await this.prisma.collection.findUniqueOrThrow({ where: { id } });
-		const collection = await this.prisma.collection.update({
+		await this.prisma.collectionAgent.deleteMany({
+			where: { collectionId: id, agentId },
+		});
+		const collection = await this.prisma.collection.findUniqueOrThrow({
 			where: { id },
-			data: {
-				agentIds: current.agentIds.filter((aid) => aid !== agentId),
-			},
+			include: includeAgents,
 		});
 		return CollectionMapper.toDomain(collection);
 	}

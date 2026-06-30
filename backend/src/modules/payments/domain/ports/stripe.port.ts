@@ -1,5 +1,11 @@
 export const STRIPE_SERVICE = Symbol("STRIPE_SERVICE");
 
+export interface StripeWebhookEventData {
+	id: string;
+	type: string;
+	data: Record<string, any>;
+}
+
 export interface StripeServicePort {
 	createCheckoutSession(params: {
 		agentId: string;
@@ -14,7 +20,7 @@ export interface StripeServicePort {
 	constructWebhookEvent(
 		rawBody: Buffer,
 		signature: string,
-	): Promise<{ type: string; data: Record<string, any> }>;
+	): Promise<StripeWebhookEventData>;
 	createConnectAccount(email: string): Promise<{ accountId: string }>;
 	createAccountLink(accountId: string, returnUrl: string): Promise<{ url: string }>;
 	getAccountStatus(accountId: string): Promise<{ details_submitted: boolean }>;

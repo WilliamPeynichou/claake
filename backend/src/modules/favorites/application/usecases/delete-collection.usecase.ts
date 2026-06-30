@@ -6,9 +6,7 @@ import {
 
 @Injectable()
 export class DeleteCollectionUseCase {
-	constructor(
-		@Inject(COLLECTION_REPOSITORY) private readonly repo: CollectionRepositoryPort,
-	) {}
+	constructor(@Inject(COLLECTION_REPOSITORY) private readonly repo: CollectionRepositoryPort) {}
 
 	async execute(id: string, userId: string): Promise<{ deleted: boolean }> {
 		const collection = await this.repo.findById(id);

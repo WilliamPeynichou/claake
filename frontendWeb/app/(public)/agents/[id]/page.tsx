@@ -1,3 +1,4 @@
+import type { Agent } from "@claake/shared";
 import { ApiError, createApiClient } from "@claake/shared";
 import { ArrowLeft, Bot, Cloud, Download, HardDrive, Star, Tag, User } from "lucide-react";
 import Link from "next/link";
@@ -9,13 +10,14 @@ import { Separator } from "@/components/ui/separator";
 import { AgentDetailChat } from "./agent-detail-chat";
 import { AgentDetailReviews } from "./agent-detail-reviews";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error("NEXT_PUBLIC_API_URL is not set");
 const serverApiClient = createApiClient(API_URL);
 
 export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
-	let agent;
+	let agent: Agent;
 	try {
 		agent = await serverApiClient.agents.get(id);
 	} catch (e) {
@@ -52,12 +54,12 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 							</div>
 							<div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
 								<Link
-								href={`/creators/${agent.creator_id}`}
-								className="flex items-center gap-1 hover:text-foreground"
-							>
-								<User className="h-3.5 w-3.5" />
-								{agent.creator_name ?? "Anonyme"}
-							</Link>
+									href={`/creators/${agent.creator_id}`}
+									className="flex items-center gap-1 hover:text-foreground"
+								>
+									<User className="h-3.5 w-3.5" />
+									{agent.creator_name ?? "Anonyme"}
+								</Link>
 								<span className="flex items-center gap-1">
 									<Star className="h-3.5 w-3.5 fill-current text-yellow-500" />
 									{agent.rating.toFixed(1)} ({agent.review_count} avis)
@@ -91,6 +93,36 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 
 					{/* Chat */}
 					<AgentDetailChat agent={agent} />
+
+					{agent.suggested_prompts.length > 0 && (
+						<>
+							<Separator />
+							<section>
+								<h2 className="text-lg font-semibold">Exemples de demandes</h2>
+								<div className="mt-3 flex flex-wrap gap-2">
+									{agent.suggested_prompts.map((prompt) => (
+										<Badge key={prompt} variant="outline">
+											{prompt}
+										</Badge>
+									))}
+								</div>
+							</section>
+						</>
+					)}
+
+					{agent.limitations.length > 0 && (
+						<>
+							<Separator />
+							<section>
+								<h2 className="text-lg font-semibold">Limites</h2>
+								<ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+									{agent.limitations.map((limitation) => (
+										<li key={limitation}>{limitation}</li>
+									))}
+								</ul>
+							</section>
+						</>
+					)}
 
 					<Separator />
 
@@ -135,9 +167,11 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 						</CardContent>
 					</Card>
 
-					<Button className="w-full" size="lg">
-						<Download className="mr-2 h-4 w-4" />
-						Utiliser cet agent
+					<Button className="w-full" size="lg" asChild>
+						<Link href={`/chat/${agent.id}`}>
+							<Bot className="mr-2 h-4 w-4" />
+							Utiliser dans le chat
+						</Link>
 					</Button>
 				</div>
 			</div>

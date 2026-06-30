@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
 import { PurchaseEntity } from "../../domain/entities/purchase.entity.js";
@@ -53,6 +54,22 @@ export class PrismaPaymentRepository implements PaymentRepositoryPort {
 		);
 	}
 
+	async findPurchaseByStripePaymentId(stripePaymentId: string): Promise<PurchaseEntity | null> {
+		const purchase = await this.prisma.purchase.findUnique({
+			where: { stripePaymentId },
+		});
+		if (!purchase) return null;
+		return new PurchaseEntity(
+			purchase.id,
+			purchase.userId,
+			purchase.agentId,
+			Number(purchase.amount),
+			purchase.currency,
+			purchase.stripePaymentId,
+			purchase.createdAt,
+		);
+	}
+
 	async findPurchasesByUser(userId: string): Promise<PurchaseEntity[]> {
 		const purchases = await this.prisma.purchase.findMany({
 			where: { userId },
@@ -70,6 +87,20 @@ export class PrismaPaymentRepository implements PaymentRepositoryPort {
 					p.createdAt,
 				),
 		);
+	}
+
+	async hasProcessedStripeEvent(eventId: string): Promise<boolean> {
+		const event = await this.prisma.stripeWebhookEvent.findUnique({
+			where: { eventId },
+			select: { id: true },
+		});
+		return event !== null;
+	}
+
+	async recordStripeEvent(eventId: string, type: string): Promise<void> {
+		await this.prisma.stripeWebhookEvent.create({
+			data: { id: randomUUID(), eventId, type },
+		});
 	}
 
 	async hasAccess(userId: string, agentId: string): Promise<boolean> {

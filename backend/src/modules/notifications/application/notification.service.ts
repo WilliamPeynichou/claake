@@ -1,8 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import {
-	EMAIL_SERVICE,
-	type EmailServicePort,
-} from "../domain/email-service.port.js";
+import { EMAIL_SERVICE, type EmailServicePort } from "../domain/email-service.port.js";
 import { agentApprovedTemplate } from "./templates/agent-approved.template.js";
 import { agentRejectedTemplate } from "./templates/agent-rejected.template.js";
 import { paymentConfirmedTemplate } from "./templates/payment-confirmed.template.js";
@@ -53,22 +50,14 @@ export class NotificationService {
 					await this.email.sendEmail({
 						to: event.to,
 						subject: `Achat confirm\u00e9 : ${event.agentName}`,
-						html: paymentConfirmedTemplate(
-							event.agentName,
-							event.amount,
-							event.currency,
-						),
+						html: paymentConfirmedTemplate(event.agentName, event.amount, event.currency),
 					});
 					break;
 				case "review.received":
 					await this.email.sendEmail({
 						to: event.to,
 						subject: `Nouvel avis sur "${event.agentName}"`,
-						html: reviewReceivedTemplate(
-							event.agentName,
-							event.rating,
-							event.reviewerName,
-						),
+						html: reviewReceivedTemplate(event.agentName, event.rating, event.reviewerName),
 					});
 					break;
 			}

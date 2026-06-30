@@ -1,4 +1,7 @@
 import { Module } from "@nestjs/common";
+import { AdminPermissionGuard } from "../../common/guards/admin-permission.guard.js";
+import { RolesGuard } from "../../common/guards/roles.guard.js";
+import { SupabaseAuthGuard } from "../../common/guards/supabase-auth.guard.js";
 import { AgentModule } from "../agents/agent.module.js";
 import { GetCreatorProfileUseCase } from "./application/usecases/get-creator-profile.usecase.js";
 import { GetUserProfileUseCase } from "./application/usecases/get-user-profile.usecase.js";
@@ -24,6 +27,9 @@ import { PrismaUserRepository } from "./infrastructure/repositories/prisma-user.
 		UpdateUserRoleUseCase,
 		GetCreatorProfileUseCase,
 		ManageApiKeysUseCase,
+		SupabaseAuthGuard,
+		RolesGuard,
+		AdminPermissionGuard,
 		{ provide: USER_REPOSITORY, useClass: PrismaUserRepository },
 	],
 	exports: [USER_REPOSITORY, ManageApiKeysUseCase],

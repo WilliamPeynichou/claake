@@ -43,12 +43,38 @@ describe("CreateSessionUseCase", () => {
 
 	it("creates a session when agent exists", async () => {
 		const agent = new AgentEntity(
-			"agent-1", "Agent", "agent", "desc", null, "cat", [], [],
-			"CLOUD", null, null, [], "FREE", 0, 1, "APPROVED",
-			null, 0, 0, 0, "u1", null, new Date(), new Date(),
+			"agent-1",
+			"Agent",
+			"agent",
+			"desc",
+			null,
+			"cat",
+			[],
+			[],
+			"CLOUD",
+			null,
+			null,
+			[],
+			"FREE",
+			0,
+			1,
+			"APPROVED",
+			null,
+			0,
+			0,
+			0,
+			"u1",
+			null,
+			new Date(),
+			new Date(),
 		);
 		const session = new ChatSessionEntity(
-			"session-1", "user-1", "agent-1", null, new Date(), new Date(),
+			"session-1",
+			"user-1",
+			"agent-1",
+			null,
+			new Date(),
+			new Date(),
 		);
 
 		mockAgentRepo.findById.mockResolvedValue(agent);

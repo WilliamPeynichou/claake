@@ -3,10 +3,12 @@ import type {
 	AdminPermissions,
 	Agent,
 	AgentCategory,
+	AgentChatConfig,
 	ApiKeyConfig,
 	ChatMessage,
 	ChatSession,
 	Collection,
+	CreateAgentInput,
 	CreatorProfile,
 	Favorite,
 	Purchase,
@@ -54,12 +56,20 @@ export interface UserWithAgentsCount extends UserProfile {
 export function createApiClient(baseUrl: string) {
 	async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 		const res = await fetch(`${baseUrl}${path}`, {
-			headers: { "Content-Type": "application/json" },
 			...init,
+			headers: {
+				"Content-Type": "application/json",
+				...init?.headers,
+			},
 		});
 		if (!res.ok) {
 			const body = await res.json().catch(() => ({}));
-			throw new ApiError(res.status, body.error ?? `API error: ${res.status} ${res.statusText}`);
+			// AllExceptionsFilter returns { error: { code, message, statusCode } }
+			const message =
+				typeof body.error === "string"
+					? body.error
+					: (body.error?.message ?? `API error: ${res.status} ${res.statusText}`);
+			throw new ApiError(res.status, message);
 		}
 		const json = await res.json();
 		// Unwrap { data: ... } envelope from ResponseTransformInterceptor
@@ -81,7 +91,7 @@ export function createApiClient(baseUrl: string) {
 
 	return {
 		agents: {
-			list: (params?: AgentSearchParams) => {
+			list: (params?: AgentSearchParams, token?: string) => {
 				const qs = new URLSearchParams();
 				if (params?.q) qs.set("q", params.q);
 				if (params?.category) qs.set("category", params.category);
@@ -94,12 +104,19 @@ export function createApiClient(baseUrl: string) {
 				if (params?.page) qs.set("page", String(params.page));
 				if (params?.limit) qs.set("limit", String(params.limit));
 				const query = qs.toString();
-				return fetchJson<AgentListResponse>(`/agents${query ? `?${query}` : ""}`);
+				return fetchJson<AgentListResponse>(
+					`/agents${query ? `?${query}` : ""}`,
+					token ? withAuth(token) : undefined,
+				);
 			},
 			get: (id: string) => fetchJson<Agent>(`/agents/${id}`),
-			mine: (token: string) =>
-				fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
-			create: (agent: Partial<Agent>, token: string) =>
+			chatConfig: (id: string, token?: string) =>
+				fetchJson<AgentChatConfig>(
+					`/agents/${id}/chat-config`,
+					token ? withAuth(token) : undefined,
+				),
+			mine: (token: string) => fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
+			create: (agent: CreateAgentInput, token: string) =>
 				fetchJson<Agent & { validation: ValidationResult }>(
 					"/agents",
 					withAuth(token, {
@@ -107,12 +124,15 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(agent),
 					}),
 				),
-			review: (
-				agentId: string,
-				decision: "approve" | "reject",
-				token: string,
-				reason?: string,
-			) =>
+			update: (agentId: string, agent: Partial<Agent>, token: string) =>
+				fetchJson<Agent>(
+					`/agents/${agentId}`,
+					withAuth(token, {
+						method: "PATCH",
+						body: JSON.stringify(agent),
+					}),
+				),
+			review: (agentId: string, decision: "approve" | "reject", token: string, reason?: string) =>
 				fetchJson<{ status: string; reason?: string }>(
 					`/agents/${agentId}/review`,
 					withAuth(token, {
@@ -127,6 +147,25 @@ export function createApiClient(baseUrl: string) {
 					models: string[];
 					system_prompt: string | null;
 				}>(`/agents/${agentId}/download-info`, withAuth(token)),
+			delete: async (agentId: string, token: string): Promise<void> => {
+				const res = await fetch(
+					`${baseUrl}/agents/${agentId}`,
+					withAuth(token, { method: "DELETE" }),
+				);
+				if (!res.ok) {
+					const body = await res.json().catch(() => ({}));
+					const message =
+						typeof body.error === "string"
+							? body.error
+							: (body.error?.message ?? `API error: ${res.status} ${res.statusText}`);
+					throw new ApiError(res.status, message);
+				}
+			},
+			unpublish: (agentId: string, token: string) =>
+				fetchJson<{ status: string }>(
+					`/agents/${agentId}/unpublish`,
+					withAuth(token, { method: "PATCH" }),
+				),
 		},
 		categories: {
 			list: () => fetchJson<AgentCategory[]>("/categories"),
@@ -170,15 +209,27 @@ export function createApiClient(baseUrl: string) {
 					`/chat/sessions/${sessionId}/messages?limit=${limit}&offset=${offset}`,
 					withAuth(token),
 				),
-			sendMessageSSE: (sessionId: string, content: string, token: string) =>
+			sendMessageSSE: (sessionId: string, content: string, token: string, fileIds?: string[]) =>
 				fetch(`${baseUrl}/chat/sessions/${sessionId}/messages`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
 						Authorization: `Bearer ${token}`,
 					},
-					body: JSON.stringify({ content }),
+					body: JSON.stringify({ content, ...(fileIds?.length ? { file_ids: fileIds } : {}) }),
 				}),
+			uploadFile: (file: File, token: string, opts: { sessionId?: string; agentId?: string }) => {
+				const formData = new FormData();
+				formData.append("file", file);
+				const params = new URLSearchParams();
+				if (opts.sessionId) params.set("sessionId", opts.sessionId);
+				if (opts.agentId) params.set("agentId", opts.agentId);
+				return fetch(`${baseUrl}/uploads?${params}`, {
+					method: "POST",
+					headers: { Authorization: `Bearer ${token}` },
+					body: formData,
+				});
+			},
 			deleteSession: (sessionId: string, token: string) =>
 				fetchJson<{ deleted: boolean }>(
 					`/chat/sessions/${sessionId}`,
@@ -196,8 +247,7 @@ export function createApiClient(baseUrl: string) {
 					}),
 				),
 			apiKeys: {
-				list: (token: string) =>
-					fetchJson<ApiKeyConfig[]>("/auth/api-keys", withAuth(token)),
+				list: (token: string) => fetchJson<ApiKeyConfig[]>("/auth/api-keys", withAuth(token)),
 				add: (provider: string, label: string, key: string, token: string) =>
 					fetchJson<ApiKeyConfig>(
 						"/auth/api-keys",
@@ -221,10 +271,7 @@ export function createApiClient(baseUrl: string) {
 				),
 			list: (token: string) => fetchJson<Favorite[]>("/favorites", withAuth(token)),
 			check: (agentId: string, token: string) =>
-				fetchJson<{ favorited: boolean }>(
-					`/favorites/check/${agentId}`,
-					withAuth(token),
-				),
+				fetchJson<{ favorited: boolean }>(`/favorites/check/${agentId}`, withAuth(token)),
 		},
 		collections: {
 			list: (token: string) => fetchJson<Collection[]>("/collections", withAuth(token)),
@@ -238,7 +285,11 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(data),
 					}),
 				),
-			update: (id: string, data: { name?: string; description?: string; is_public?: boolean }, token: string) =>
+			update: (
+				id: string,
+				data: { name?: string; description?: string; is_public?: boolean },
+				token: string,
+			) =>
 				fetchJson<Collection>(
 					`/collections/${id}`,
 					withAuth(token, {
@@ -275,7 +326,12 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(data),
 					}),
 				),
-			update: (agentId: string, reviewId: string, data: { rating?: number; comment?: string }, token: string) =>
+			update: (
+				agentId: string,
+				reviewId: string,
+				data: { rating?: number; comment?: string },
+				token: string,
+			) =>
 				fetchJson<Review>(
 					`/agents/${agentId}/reviews/${reviewId}`,
 					withAuth(token, {
@@ -298,13 +354,9 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify({ agent_id: agentId }),
 					}),
 				),
-			purchases: (token: string) =>
-				fetchJson<Purchase[]>("/payments/purchases", withAuth(token)),
+			purchases: (token: string) => fetchJson<Purchase[]>("/payments/purchases", withAuth(token)),
 			checkAccess: (agentId: string, token: string) =>
-				fetchJson<{ has_access: boolean }>(
-					`/payments/access/${agentId}`,
-					withAuth(token),
-				),
+				fetchJson<{ has_access: boolean }>(`/payments/access/${agentId}`, withAuth(token)),
 			connectOnboard: (token: string) =>
 				fetchJson<{ url: string }>(
 					"/payments/connect/onboard",

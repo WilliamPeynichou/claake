@@ -28,6 +28,7 @@ export interface ChatSessionRepositoryPort {
 		contentType?: string,
 		mediaUrl?: string | null,
 		metadata?: Record<string, unknown> | null,
+		attachmentIds?: string[],
 	): Promise<ChatMessageEntity>;
 	getMessages(
 		sessionId: string,

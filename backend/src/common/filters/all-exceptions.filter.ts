@@ -7,6 +7,7 @@ import {
 	Logger,
 } from "@nestjs/common";
 import type { Response } from "express";
+import { redactSensitive } from "../security/redact-sensitive.js";
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -15,6 +16,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 	catch(exception: unknown, host: ArgumentsHost) {
 		const ctx = host.switchToHttp();
 		const response = ctx.getResponse<Response>();
+		const request = ctx.getRequest<{ method?: string; url?: string }>();
 
 		let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
 		let message = "Internal server error";
@@ -31,7 +33,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
 		}
 
 		if (statusCode >= 500) {
-			this.logger.error(exception);
+			const errorText = exception instanceof Error ? `${exception.name}: ${exception.message}` : exception;
+			this.logger.error(
+				`Unhandled exception method=${request.method ?? "unknown"} url=${request.url ?? "unknown"} error=${redactSensitive(errorText)}`,
+			);
 		}
 
 		response.status(statusCode).json({

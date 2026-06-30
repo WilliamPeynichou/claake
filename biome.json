@@ -48,7 +48,9 @@
 			"!!**/*.config.ts",
 			"!!**/components/ui",
 			"!!**/.claude",
-			"!!**/dist"
+			"!!**/dist",
+			"!!Pake",
+			"!!skills"
 		]
 	}
 }

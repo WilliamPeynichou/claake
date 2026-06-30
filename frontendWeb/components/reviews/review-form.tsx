@@ -54,9 +54,7 @@ export function ReviewForm({ agentId, onReviewCreated }: ReviewFormProps) {
 		<form onSubmit={handleSubmit} className="space-y-4 rounded-md border p-4">
 			<p className="text-sm font-medium">Donner votre avis</p>
 			{error && (
-				<div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-					{error}
-				</div>
+				<div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
 			)}
 			<div className="flex items-center gap-1">
 				{[1, 2, 3, 4, 5].map((n) => (
@@ -77,9 +75,7 @@ export function ReviewForm({ agentId, onReviewCreated }: ReviewFormProps) {
 						/>
 					</button>
 				))}
-				{rating > 0 && (
-					<span className="ml-2 text-sm text-muted-foreground">{rating}/5</span>
-				)}
+				{rating > 0 && <span className="ml-2 text-sm text-muted-foreground">{rating}/5</span>}
 			</div>
 			<Textarea
 				value={comment}

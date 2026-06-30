@@ -6,9 +6,32 @@ import { ThemeProvider } from "@/lib/theme/context";
 import "./globals.css";
 
 export const metadata: Metadata = {
+	metadataBase: new URL(process.env.NEXT_PUBLIC_WEB_URL ?? "https://claake.com"),
 	title: "Claake — One click to intelligence",
 	description:
-		"Discover, test and deploy AI agents built by the community. Intelligence can be yours.",
+		"Découvrez, testez et déployez des agents IA créés par la communauté. L'intelligence à portée de clic.",
+	icons: {
+		icon: "/logoClaakeGreen.png",
+		apple: "/logoClaakeGreen.png",
+		shortcut: "/logoClaakeGreen.png",
+	},
+	openGraph: {
+		title: "Claake — One click to intelligence",
+		description:
+			"Découvrez, testez et déployez des agents IA créés par la communauté. L'intelligence à portée de clic.",
+		url: "https://claake.com",
+		siteName: "Claake",
+		images: [{ url: "/logoClaakeGreen.png", width: 512, height: 512 }],
+		locale: "fr_FR",
+		type: "website",
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Claake — One click to intelligence",
+		description:
+			"Découvrez, testez et déployez des agents IA créés par la communauté. L'intelligence à portée de clic.",
+		images: ["/logoClaakeGreen.png"],
+	},
 };
 
 export default function RootLayout({
@@ -17,7 +40,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="fr" suppressHydrationWarning>
 			<body className="font-sans antialiased">
 				<ThemeProvider>
 					<I18nProvider>

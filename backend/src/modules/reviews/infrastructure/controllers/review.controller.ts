@@ -11,7 +11,8 @@ import {
 	UseGuards,
 } from "@nestjs/common";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
-import type { CreateReviewDto } from "../../application/dtos/create-review.dto.js";
+import { CreateReviewDto } from "../../application/dtos/create-review.dto.js";
+import { UpdateReviewDto } from "../../application/dtos/update-review.dto.js";
 import { CreateReviewUseCase } from "../../application/usecases/create-review.usecase.js";
 import { DeleteReviewUseCase } from "../../application/usecases/delete-review.usecase.js";
 import { ListReviewsUseCase } from "../../application/usecases/list-reviews.usecase.js";
@@ -32,20 +33,12 @@ export class ReviewController {
 		@Query("page") page?: string,
 		@Query("limit") limit?: string,
 	) {
-		return this.listReviews.execute(
-			agentId,
-			page ? Number(page) : 1,
-			limit ? Number(limit) : 10,
-		);
+		return this.listReviews.execute(agentId, page ? Number(page) : 1, limit ? Number(limit) : 10);
 	}
 
 	@Post()
 	@UseGuards(SupabaseAuthGuard)
-	async create(
-		@Param("agentId") agentId: string,
-		@Body() dto: CreateReviewDto,
-		@Req() req: any,
-	) {
+	async create(@Param("agentId") agentId: string, @Body() dto: CreateReviewDto, @Req() req: any) {
 		return this.createReview.execute(agentId, dto, req.user.id);
 	}
 
@@ -53,7 +46,7 @@ export class ReviewController {
 	@UseGuards(SupabaseAuthGuard)
 	async update(
 		@Param("reviewId") reviewId: string,
-		@Body() body: { rating?: number; comment?: string },
+		@Body() body: UpdateReviewDto,
 		@Req() req: any,
 	) {
 		return this.updateReview.execute(reviewId, body, req.user.id);

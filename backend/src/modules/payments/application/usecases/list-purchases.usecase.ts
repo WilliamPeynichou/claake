@@ -7,9 +7,7 @@ import type { PurchaseResponseDto } from "../dtos/purchase-response.dto.js";
 
 @Injectable()
 export class ListPurchasesUseCase {
-	constructor(
-		@Inject(PAYMENT_REPOSITORY) private readonly repo: PaymentRepositoryPort,
-	) {}
+	constructor(@Inject(PAYMENT_REPOSITORY) private readonly repo: PaymentRepositoryPort) {}
 
 	async execute(userId: string): Promise<PurchaseResponseDto[]> {
 		const purchases = await this.repo.findPurchasesByUser(userId);

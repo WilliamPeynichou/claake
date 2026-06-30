@@ -24,6 +24,44 @@ export type EndpointFormat =
 	| "huggingface"
 	| "claake";
 
+export type CreateCloudStrategy = "USER_API_KEY" | "SELLER_API_KEY" | "SELLER_ENDPOINT";
+export type CreateEndpointFormat =
+	| "OPENAI"
+	| "ANTHROPIC"
+	| "GOOGLE"
+	| "MISTRAL"
+	| "GROQ"
+	| "HUGGINGFACE"
+	| "CLAAKE";
+
+export interface CreateAgentInput {
+	name: string;
+	slug: string;
+	description: string;
+	long_description?: string;
+	category: string;
+	tags: string[];
+	models: string[];
+	mode: "LOCAL" | "CLOUD" | "HYBRID";
+	config_url?: string;
+	image_url?: string;
+	system_prompt?: string;
+	welcome_message?: string;
+	suggested_prompts?: string[];
+	limitations?: string[];
+	model_settings?: Record<string, unknown>;
+	capabilities?: Record<string, unknown>;
+	pricing_model?: "FREE";
+	cloud_strategy?: CreateCloudStrategy;
+	required_user_provider?: string;
+	endpoint_url?: string;
+	endpoint_format?: CreateEndpointFormat;
+	seller_api_key?: string;
+	seller_api_provider?: string;
+	docker_image?: string;
+	download_url?: string;
+}
+
 export interface Agent {
 	id: string;
 	name: string;
@@ -50,6 +88,11 @@ export interface Agent {
 	created_at: string;
 	updated_at: string;
 	system_prompt?: string | null;
+	welcome_message: string | null;
+	suggested_prompts: string[];
+	limitations: string[];
+	model_settings: Record<string, unknown> | null;
+	capabilities: Record<string, unknown> | null;
 	cloud_strategy: CloudStrategy | null;
 	endpoint_format: EndpointFormat | null;
 	required_user_provider: string | null;
@@ -146,6 +189,31 @@ export interface Pipeline {
 	is_public: boolean;
 	price: number | null;
 	created_at: string;
+}
+
+export interface AgentChatConfig {
+	id: string;
+	name: string;
+	description: string;
+	image_url: string | null;
+	status: "approved" | "draft" | "pending" | "rejected" | "suspended";
+	mode: "cloud" | "local" | "hybrid";
+	models: string[];
+	provider: string | null;
+	cloud_strategy: CloudStrategy | null;
+	required_user_provider: string | null;
+	welcome_message: string | null;
+	suggested_prompts: string[];
+	limitations: string[];
+	capabilities: {
+		files: boolean;
+		images: boolean;
+	};
+	access: {
+		can_chat: boolean;
+		reason?: "login_required" | "api_key_required" | "purchase_required" | "not_published";
+		required_provider?: string;
+	};
 }
 
 export interface ChatSession {

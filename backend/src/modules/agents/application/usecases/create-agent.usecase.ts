@@ -38,7 +38,13 @@ export class CreateAgentUseCase {
 			models: dto.models,
 			mode,
 			configUrl: dto.config_url ?? null,
+			imageUrl: dto.image_url ?? null,
 			systemPrompt: dto.system_prompt ?? null,
+			welcomeMessage: dto.welcome_message ?? null,
+			suggestedPrompts: dto.suggested_prompts ?? [],
+			limitations: dto.limitations ?? [],
+			modelSettings: dto.model_settings ?? null,
+			capabilities: dto.capabilities ?? null,
 			pricingModel: (dto.pricing_model ?? "FREE").toUpperCase(),
 			price: dto.price ?? 0,
 			creditCost: dto.credit_cost ?? 1,
@@ -61,9 +67,7 @@ export class CreateAgentUseCase {
 		const isLocal = mode === "LOCAL" || mode === "HYBRID";
 
 		if (isCloud && !dto.cloud_strategy) {
-			throw new BadRequestException(
-				"cloud_strategy is required for CLOUD or HYBRID mode agents",
-			);
+			throw new BadRequestException("cloud_strategy is required for CLOUD or HYBRID mode agents");
 		}
 
 		if (dto.cloud_strategy === "SELLER_ENDPOINT") {
@@ -71,17 +75,13 @@ export class CreateAgentUseCase {
 				throw new BadRequestException("endpoint_url is required for SELLER_ENDPOINT strategy");
 			}
 			if (!dto.endpoint_format) {
-				throw new BadRequestException(
-					"endpoint_format is required for SELLER_ENDPOINT strategy",
-				);
+				throw new BadRequestException("endpoint_format is required for SELLER_ENDPOINT strategy");
 			}
 		}
 
 		if (dto.cloud_strategy === "SELLER_API_KEY") {
 			if (!dto.seller_api_key) {
-				throw new BadRequestException(
-					"seller_api_key is required for SELLER_API_KEY strategy",
-				);
+				throw new BadRequestException("seller_api_key is required for SELLER_API_KEY strategy");
 			}
 			if (!dto.seller_api_provider) {
 				throw new BadRequestException(

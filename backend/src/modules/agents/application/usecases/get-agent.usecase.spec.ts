@@ -5,10 +5,30 @@ import { AGENT_REPOSITORY } from "../../domain/ports/agent.repository.port";
 import { GetAgentUseCase } from "./get-agent.usecase";
 
 const mockAgent = new AgentEntity(
-	"agent-1", "Test Agent", "test-agent", "Description", null,
-	"coding", ["ai"], ["claude-sonnet-4-20250514"], "CLOUD", null, null, [],
-	"FREE", 0, 1, "APPROVED", null, 50, 4.0, 5, "user-1", "Creator",
-	new Date("2025-01-01"), new Date("2025-01-02"),
+	"agent-1",
+	"Test Agent",
+	"test-agent",
+	"Description",
+	null,
+	"coding",
+	["ai"],
+	["claude-sonnet-4-20250514"],
+	"CLOUD",
+	null,
+	null,
+	[],
+	"FREE",
+	0,
+	1,
+	"APPROVED",
+	null,
+	50,
+	4.0,
+	5,
+	"user-1",
+	"Creator",
+	new Date("2025-01-01"),
+	new Date("2025-01-02"),
 );
 
 const mockRepo = {
@@ -24,10 +44,7 @@ describe("GetAgentUseCase", () => {
 
 	beforeEach(async () => {
 		const module = await Test.createTestingModule({
-			providers: [
-				GetAgentUseCase,
-				{ provide: AGENT_REPOSITORY, useValue: mockRepo },
-			],
+			providers: [GetAgentUseCase, { provide: AGENT_REPOSITORY, useValue: mockRepo }],
 		}).compile();
 
 		useCase = module.get(GetAgentUseCase);

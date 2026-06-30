@@ -2,7 +2,7 @@
 
 import type { Agent } from "@claake/shared";
 import { Bot, Check, ShieldCheck, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,20 +18,21 @@ export default function AdminReviewPage() {
 	const [rejectReason, setRejectReason] = useState("");
 	const [actionLoading, setActionLoading] = useState(false);
 
-	useEffect(() => {
-		loadPending();
-	}, []);
-
-	async function loadPending() {
+	const loadPending = useCallback(async () => {
+		if (!token) return;
 		try {
-			const result = await apiClient.agents.list({ all: true });
+			const result = await apiClient.agents.list({ all: true }, token);
 			setAgents(result.agents.filter((a) => a.status === "pending"));
 		} catch {
 			// Silently fail
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, [token]);
+
+	useEffect(() => {
+		void loadPending();
+	}, [loadPending]);
 
 	async function handleApprove(agentId: string) {
 		if (!token) return;
@@ -97,9 +98,7 @@ export default function AdminReviewPage() {
 											<h3 className="font-semibold">{agent.name}</h3>
 											<Badge variant="outline">En attente</Badge>
 										</div>
-										<p className="mt-1 text-sm text-muted-foreground">
-											{agent.description}
-										</p>
+										<p className="mt-1 text-sm text-muted-foreground">{agent.description}</p>
 										<div className="mt-2 flex flex-wrap gap-2">
 											<Badge variant="secondary">{agent.category}</Badge>
 											<span className="text-xs text-muted-foreground">
@@ -133,11 +132,7 @@ export default function AdminReviewPage() {
 										<Button
 											size="sm"
 											variant="destructive"
-											onClick={() =>
-												setReviewingId(
-													reviewingId === agent.id ? null : agent.id,
-												)
-											}
+											onClick={() => setReviewingId(reviewingId === agent.id ? null : agent.id)}
 											disabled={actionLoading}
 										>
 											<X className="mr-1 h-4 w-4" />

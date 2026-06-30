@@ -1,10 +1,17 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+	BadRequestException,
+	ForbiddenException,
+	Inject,
+	Injectable,
+	NotFoundException,
+} from "@nestjs/common";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
 } from "../../../agents/domain/ports/agent.repository.port.js";
 import type { ChatMessageEntity } from "../../domain/entities/chat-message.entity.js";
 import { ChatSessionEntity } from "../../domain/entities/chat-session.entity.js";
+import type { FileAttachment } from "../../domain/ports/ai-provider.port.js";
 import {
 	CHAT_SESSION_REPOSITORY,
 	type ChatSessionRepositoryPort,
@@ -28,6 +35,8 @@ export class SendMessageUseCase {
 		userId: string,
 		content: string,
 		contentType = "TEXT",
+		attachments: FileAttachment[] = [],
+		attachmentIds: string[] = [],
 	): Promise<{
 		stream: AsyncIterable<string>;
 		onComplete: (fullText: string) => Promise<ChatMessageEntity>;
@@ -44,9 +53,29 @@ export class SendMessageUseCase {
 		if (!agent) {
 			throw new NotFoundException("Agent not found");
 		}
+		if (!agent.isPublished()) {
+			throw new BadRequestException("This agent is not available");
+		}
+		if (!agent.isFree() && !agent.isOwnedBy(userId)) {
+			const [purchased, subscribed] = await Promise.all([
+				this.agentRepo.hasPurchased(userId, agent.id),
+				this.agentRepo.hasActiveSubscription(userId, agent.id),
+			]);
+			if (!purchased && !subscribed) {
+				throw new ForbiddenException("Purchase required to use this agent");
+			}
+		}
 
 		// Save user message
-		await this.chatRepo.addMessage(sessionId, "USER", content, contentType);
+		await this.chatRepo.addMessage(
+			sessionId,
+			"USER",
+			content,
+			contentType,
+			null,
+			null,
+			attachmentIds,
+		);
 
 		// Update title on first message
 		if (!session.title) {
@@ -67,9 +96,10 @@ export class SendMessageUseCase {
 		const model = agent.models[0] ?? "claude-sonnet-4-20250514";
 		const stream = provider.streamText({
 			model,
-			systemPrompt: agent.systemPrompt ?? agent.longDescription ?? agent.description,
+			systemPrompt: agent.systemPrompt ?? agent.longDescription ?? null,
 			messages: formattedHistory,
 			maxTokens: 4096,
+			attachments: attachments.length > 0 ? attachments : undefined,
 			...extraParams,
 		});
 

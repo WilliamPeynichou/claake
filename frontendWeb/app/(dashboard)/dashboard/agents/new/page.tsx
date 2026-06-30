@@ -1,8 +1,9 @@
 "use client";
 
-import type { AgentCategory, ValidationResult } from "@claake/shared";
+import type { AgentCategory, CreateAgentInput, ValidationResult } from "@claake/shared";
 import { AI_MODELS, EXECUTION_MODES } from "@claake/shared";
-import { AlertCircle, ArrowLeft, ArrowRight, Check, Upload } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Check, ImagePlus, Upload, X } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -14,39 +15,72 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { uploadAgentConfigFile, uploadAgentImage } from "@/lib/supabase/storage";
 
 const steps = ["Fichier .agentjson", "Métadonnées", "Configuration", "Tarification", "Validation"];
 
+const INITIAL_FORM = {
+	name: "",
+	description: "",
+	longDescription: "",
+	category: "",
+	tags: "",
+	model: "claude-sonnet-4-20250514",
+	mode: "CLOUD" as "LOCAL" | "CLOUD" | "HYBRID",
+	cloudStrategy: "USER_API_KEY" as "USER_API_KEY" | "SELLER_API_KEY" | "SELLER_ENDPOINT",
+	requiredUserProvider: "anthropic",
+	systemPrompt: "",
+	welcomeMessage: "",
+	suggestedPrompts: "",
+	limitations: "",
+	endpoint: "",
+	endpointFormat: "OPENAI" as
+		| "OPENAI"
+		| "ANTHROPIC"
+		| "GOOGLE"
+		| "MISTRAL"
+		| "GROQ"
+		| "HUGGINGFACE"
+		| "CLAAKE",
+	sellerApiKey: "",
+	sellerApiProvider: "anthropic",
+	dockerImage: "",
+	downloadUrl: "",
+	priceType: "free",
+	price: "0",
+};
+
 export default function NewAgentPage() {
 	const router = useRouter();
-	const { token } = useAuth();
+	const { token, user } = useAuth();
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const imageInputRef = useRef<HTMLInputElement>(null);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
 	const [currentStep, setCurrentStep] = useState(0);
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [submitWarnings, setSubmitWarnings] = useState<string[]>([]);
 	const [validation, setValidation] = useState<ValidationResult | null>(null);
+	const [backendError, setBackendError] = useState<string | null>(null);
+	const [formData, setFormData] = useState(INITIAL_FORM);
+	const [submitted, setSubmitted] = useState(false);
+
+	// File states
+	const [agentJsonFile, setAgentJsonFile] = useState<File | null>(null);
+	const [imageFile, setImageFile] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [dropDragOver, setDropDragOver] = useState(false);
 
 	useEffect(() => {
 		apiClient.categories
 			.list()
 			.then(setCategories)
-			.catch(() => {});
+			.catch(() => {
+				setBackendError(
+					"Impossible de contacter le serveur. Vérifiez que le backend est démarré (npm run api).",
+				);
+			});
 	}, []);
-	const [formData, setFormData] = useState({
-		name: "",
-		description: "",
-		longDescription: "",
-		category: "",
-		tags: "",
-		model: "claude-sonnet-4-20250514",
-		mode: "cloud" as "local" | "cloud" | "hybrid",
-		systemPrompt: "",
-		endpoint: "",
-		priceType: "free",
-		price: "0",
-	});
-	const [submitted, setSubmitted] = useState(false);
 
 	function updateField(field: string, value: string) {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -60,6 +94,8 @@ export default function NewAgentPage() {
 			const text = await file.text();
 			const parsed = JSON.parse(text);
 
+			setAgentJsonFile(file);
+
 			setFormData((prev) => ({
 				...prev,
 				name: parsed.name ?? prev.name,
@@ -68,26 +104,93 @@ export default function NewAgentPage() {
 				category: parsed.category ?? prev.category,
 				tags: Array.isArray(parsed.tags) ? parsed.tags.join(", ") : prev.tags,
 				model: parsed.model ?? parsed.models?.[0] ?? prev.model,
-				mode: parsed.mode ?? prev.mode,
+				mode: (parsed.mode?.toUpperCase() ?? prev.mode) as "LOCAL" | "CLOUD" | "HYBRID",
+				cloudStrategy: parsed.cloud_strategy ?? prev.cloudStrategy,
+				requiredUserProvider: parsed.required_user_provider ?? prev.requiredUserProvider,
 				systemPrompt: parsed.system_prompt ?? parsed.systemPrompt ?? prev.systemPrompt,
+				welcomeMessage:
+					parsed.welcome_message ?? parsed.welcomeMessage ?? parsed.welcome ?? prev.welcomeMessage,
+				suggestedPrompts: Array.isArray(parsed.suggested_prompts)
+					? parsed.suggested_prompts.join("\n")
+					: Array.isArray(parsed.suggestedPrompts)
+						? parsed.suggestedPrompts.join("\n")
+						: prev.suggestedPrompts,
+				limitations: Array.isArray(parsed.limitations)
+					? parsed.limitations.join("\n")
+					: prev.limitations,
 				endpoint: parsed.endpoint ?? parsed.config_url ?? prev.endpoint,
+				endpointFormat: parsed.endpoint_format ?? prev.endpointFormat,
+				sellerApiProvider: parsed.seller_api_provider ?? prev.sellerApiProvider,
+				dockerImage: parsed.docker_image ?? prev.dockerImage,
+				downloadUrl: parsed.download_url ?? prev.downloadUrl,
 			}));
 
-			// Auto-advance to metadata step
 			setCurrentStep(1);
 		} catch {
 			setSubmitError("Fichier .agentjson invalide.");
 		}
 	}
 
+	function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		if (!file.type.startsWith("image/")) {
+			setSubmitError("Le fichier doit être une image (PNG, JPG, WebP).");
+			return;
+		}
+
+		if (file.size > 2 * 1024 * 1024) {
+			setSubmitError("L'image ne doit pas dépasser 2 Mo.");
+			return;
+		}
+
+		setImageFile(file);
+		setImagePreview(URL.createObjectURL(file));
+		setSubmitError(null);
+	}
+
+	function removeImage() {
+		setImageFile(null);
+		if (imagePreview) {
+			URL.revokeObjectURL(imagePreview);
+			setImagePreview(null);
+		}
+	}
+
+	function canAdvance(): boolean {
+		switch (currentStep) {
+			case 1:
+				return !!(formData.name && formData.description && formData.category);
+			case 2: {
+				const isCloud = formData.mode !== "LOCAL";
+				const isLocal = formData.mode === "LOCAL" || formData.mode === "HYBRID";
+				if (isCloud && formData.cloudStrategy === "SELLER_ENDPOINT" && !formData.endpoint)
+					return false;
+				if (isCloud && formData.cloudStrategy === "SELLER_API_KEY" && !formData.sellerApiKey)
+					return false;
+				if (isLocal && !formData.dockerImage && !formData.downloadUrl) return false;
+				return true;
+			}
+			default:
+				return true;
+		}
+	}
+
 	async function handleSubmit() {
-		if (!token) {
+		if (!token || !user) {
 			setSubmitError("Vous devez être connecté.");
+			return;
+		}
+
+		if (!formData.name || !formData.description || !formData.category) {
+			setSubmitError("Veuillez remplir les champs obligatoires (nom, description, catégorie).");
 			return;
 		}
 
 		setSubmitting(true);
 		setSubmitError(null);
+		setSubmitWarnings([]);
 
 		try {
 			const slug = formData.name
@@ -95,26 +198,89 @@ export default function NewAgentPage() {
 				.replace(/[^a-z0-9]+/g, "-")
 				.replace(/^-|-$/g, "");
 
-			const result = await apiClient.agents.create(
-				{
-					name: formData.name,
-					slug,
-					description: formData.description,
-					long_description: formData.longDescription || null,
-					category: formData.category,
-					tags: formData.tags
-						.split(",")
-						.map((t) => t.trim())
-						.filter(Boolean),
-					models: [formData.model],
-					mode: formData.mode,
-					config_url: formData.endpoint || null,
-					system_prompt: formData.systemPrompt || null,
-				} as any,
-				token,
-			);
+			const warnings: string[] = [];
+
+			// Upload image if provided
+			let imageUrl: string | undefined;
+			if (imageFile) {
+				try {
+					imageUrl = await uploadAgentImage(imageFile, slug, user.id);
+				} catch (err) {
+					warnings.push(
+						`L'icône n'a pas pu être uploadée : ${err instanceof Error ? err.message : "erreur inconnue"}`,
+					);
+				}
+			}
+
+			// Upload .agentjson file if provided
+			let configUrl: string | undefined;
+			if (agentJsonFile) {
+				try {
+					configUrl = await uploadAgentConfigFile(agentJsonFile, slug, user.id);
+				} catch (err) {
+					warnings.push(
+						`Le fichier .agentjson n'a pas pu être uploadé : ${err instanceof Error ? err.message : "erreur inconnue"}`,
+					);
+				}
+			}
+
+			const suggestedPrompts = formData.suggestedPrompts
+				.split("\n")
+				.map((prompt) => prompt.trim())
+				.filter(Boolean);
+			const limitations = formData.limitations
+				.split("\n")
+				.map((limitation) => limitation.trim())
+				.filter(Boolean);
+
+			const payload: CreateAgentInput = {
+				name: formData.name,
+				slug,
+				description: formData.description,
+				long_description: formData.longDescription || undefined,
+				category: formData.category,
+				tags: formData.tags
+					.split(",")
+					.map((t) => t.trim())
+					.filter(Boolean),
+				models: [formData.model],
+				mode: formData.mode,
+				image_url: imageUrl ?? undefined,
+				cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
+				required_user_provider:
+					formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
+				endpoint_url:
+					formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpoint || undefined : undefined,
+				endpoint_format:
+					formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpointFormat : undefined,
+				seller_api_key:
+					formData.cloudStrategy === "SELLER_API_KEY"
+						? formData.sellerApiKey || undefined
+						: undefined,
+				seller_api_provider:
+					formData.cloudStrategy === "SELLER_API_KEY"
+						? formData.sellerApiProvider || undefined
+						: undefined,
+				docker_image:
+					formData.mode === "LOCAL" || formData.mode === "HYBRID"
+						? formData.dockerImage || undefined
+						: undefined,
+				download_url:
+					formData.mode === "LOCAL" || formData.mode === "HYBRID"
+						? formData.downloadUrl || undefined
+						: undefined,
+				config_url: configUrl || undefined,
+				system_prompt: formData.systemPrompt || undefined,
+				welcome_message: formData.welcomeMessage || undefined,
+				suggested_prompts: suggestedPrompts.length ? suggestedPrompts : undefined,
+				limitations: limitations.length ? limitations : undefined,
+				pricing_model: "FREE",
+			};
+
+			const result = await apiClient.agents.create(payload, token);
 
 			setValidation(result.validation);
+			setSubmitWarnings(warnings);
 			setSubmitted(true);
 		} catch (err) {
 			setSubmitError(err instanceof Error ? err.message : "Erreur lors de la soumission.");
@@ -135,7 +301,23 @@ export default function NewAgentPage() {
 					une notification une fois la revue terminée.
 				</p>
 
-				{/* Validation feedback */}
+				{submitWarnings.length > 0 && (
+					<div className="mt-4 w-full max-w-md rounded-md border border-orange-500/50 bg-orange-50 p-3 text-left dark:bg-orange-900/20">
+						<p className="mb-1 text-sm font-medium text-orange-700 dark:text-orange-400">
+							Avertissements d&apos;upload
+						</p>
+						{submitWarnings.map((w) => (
+							<p
+								key={w}
+								className="flex items-start gap-1 text-sm text-orange-600 dark:text-orange-300"
+							>
+								<AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+								{w}
+							</p>
+						))}
+					</div>
+				)}
+
 				{validation && (
 					<div className="mt-6 w-full max-w-md text-left">
 						{validation.errors.length > 0 && (
@@ -155,10 +337,7 @@ export default function NewAgentPage() {
 									Avertissements
 								</p>
 								{validation.warnings.map((w) => (
-									<p
-										key={w}
-										className="text-sm text-yellow-600 dark:text-yellow-300"
-									>
+									<p key={w} className="text-sm text-yellow-600 dark:text-yellow-300">
 										{w}
 									</p>
 								))}
@@ -182,20 +361,11 @@ export default function NewAgentPage() {
 						onClick={() => {
 							setSubmitted(false);
 							setValidation(null);
+							setSubmitWarnings([]);
 							setCurrentStep(0);
-							setFormData({
-								name: "",
-								description: "",
-								longDescription: "",
-								category: "",
-								tags: "",
-								model: "claude-sonnet-4-20250514",
-								mode: "cloud",
-								systemPrompt: "",
-								endpoint: "",
-								priceType: "free",
-								price: "0",
-							});
+							setFormData(INITIAL_FORM);
+							setAgentJsonFile(null);
+							removeImage();
 						}}
 					>
 						Publier un autre agent
@@ -209,6 +379,13 @@ export default function NewAgentPage() {
 		<div>
 			<h1 className="text-3xl font-bold">Publier un agent</h1>
 			<p className="mt-2 text-muted-foreground">Créez et publiez un nouvel agent IA en 5 étapes.</p>
+
+			{backendError && (
+				<div className="mt-4 flex items-center gap-2 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
+					<AlertCircle className="h-4 w-4 shrink-0" />
+					{backendError}
+				</div>
+			)}
 
 			{/* Step indicator */}
 			<div className="mt-8 flex items-center gap-2">
@@ -250,40 +427,49 @@ export default function NewAgentPage() {
 									Uploadez votre fichier de définition d&apos;agent ou créez-en un manuellement.
 								</p>
 							</div>
-							<div
-								className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors hover:bg-muted/50"
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".agentjson,.json"
+								onChange={handleFileUpload}
+								className="hidden"
+							/>
+							<button
+								type="button"
+								className={`flex w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors ${
+									dropDragOver ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+								}`}
 								onClick={() => fileInputRef.current?.click()}
-								onKeyDown={() => {}}
-								role="button"
-								tabIndex={0}
+								onDragOver={(e) => {
+									e.preventDefault();
+									setDropDragOver(true);
+								}}
+								onDragLeave={() => setDropDragOver(false)}
+								onDrop={(e) => {
+									e.preventDefault();
+									setDropDragOver(false);
+									const file = e.dataTransfer.files?.[0];
+									if (file) {
+										const syntheticEvent = {
+											target: { files: e.dataTransfer.files },
+										} as unknown as React.ChangeEvent<HTMLInputElement>;
+										handleFileUpload(syntheticEvent);
+									}
+								}}
 							>
 								<div className="text-center">
 									<Upload className="mx-auto h-8 w-8 text-muted-foreground" />
 									<p className="mt-2 text-sm font-medium">Glissez votre fichier .agentjson ici</p>
 									<p className="text-xs text-muted-foreground">ou cliquez pour sélectionner</p>
-									<input
-										ref={fileInputRef}
-										type="file"
-										accept=".agentjson,.json"
-										onChange={handleFileUpload}
-										className="hidden"
-									/>
-									<Button
-										variant="outline"
-										size="sm"
-										className="mt-4"
-										onClick={(e) => {
-											e.stopPropagation();
-											fileInputRef.current?.click();
-										}}
-									>
+									{agentJsonFile && (
+										<p className="mt-2 text-sm text-green-600">{agentJsonFile.name}</p>
+									)}
+									<span className="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors">
 										Sélectionner un fichier
-									</Button>
+									</span>
 								</div>
-							</div>
-							{submitError && (
-								<p className="text-sm text-destructive">{submitError}</p>
-							)}
+							</button>
+							{submitError && <p className="text-sm text-destructive">{submitError}</p>}
 							<Separator />
 							<p className="text-center text-sm text-muted-foreground">
 								Pas de fichier ? Remplissez les informations manuellement à l&apos;étape suivante.
@@ -295,8 +481,64 @@ export default function NewAgentPage() {
 					{currentStep === 1 && (
 						<div className="space-y-4">
 							<h3 className="text-lg font-semibold">Métadonnées</h3>
+
+							{/* Image upload */}
 							<div className="space-y-2">
-								<Label htmlFor="name">Nom de l&apos;agent</Label>
+								<Label>Icône de l&apos;agent</Label>
+								<div className="flex items-center gap-4">
+									{imagePreview ? (
+										<div className="relative">
+											<Image
+												src={imagePreview}
+												alt="Agent icon preview"
+												width={80}
+												height={80}
+												className="rounded-lg border object-cover"
+											/>
+											<button
+												type="button"
+												onClick={removeImage}
+												className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
+											>
+												<X className="h-3 w-3" />
+											</button>
+										</div>
+									) : (
+										<button
+											type="button"
+											onClick={() => imageInputRef.current?.click()}
+											className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed transition-colors hover:bg-muted/50"
+										>
+											<ImagePlus className="h-6 w-6 text-muted-foreground" />
+										</button>
+									)}
+									<div className="text-sm text-muted-foreground">
+										<p>PNG, JPG ou WebP. Max 2 Mo.</p>
+										{!imagePreview && (
+											<Button
+												variant="outline"
+												size="sm"
+												className="mt-1"
+												onClick={() => imageInputRef.current?.click()}
+											>
+												Choisir une image
+											</Button>
+										)}
+									</div>
+									<input
+										ref={imageInputRef}
+										type="file"
+										accept="image/png,image/jpeg,image/webp"
+										onChange={handleImageSelect}
+										className="hidden"
+									/>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="name">
+									Nom de l&apos;agent <span className="text-destructive">*</span>
+								</Label>
 								<Input
 									id="name"
 									value={formData.name}
@@ -305,7 +547,9 @@ export default function NewAgentPage() {
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="description">Description courte</Label>
+								<Label htmlFor="description">
+									Description courte <span className="text-destructive">*</span>
+								</Label>
 								<Input
 									id="description"
 									value={formData.description}
@@ -324,7 +568,9 @@ export default function NewAgentPage() {
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label>Catégorie</Label>
+								<Label>
+									Catégorie <span className="text-destructive">*</span>
+								</Label>
 								<select
 									className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
 									value={formData.category}
@@ -375,9 +621,9 @@ export default function NewAgentPage() {
 										<button
 											key={m.id}
 											type="button"
-											onClick={() => updateField("mode", m.id)}
+											onClick={() => updateField("mode", m.id.toUpperCase())}
 											className={`rounded-md border p-3 text-left text-sm transition-colors ${
-												formData.mode === m.id
+												formData.mode === m.id.toUpperCase()
 													? "border-primary bg-primary/5"
 													: "border-input hover:bg-accent"
 											}`}
@@ -398,16 +644,178 @@ export default function NewAgentPage() {
 								/>
 								<p className="text-xs text-muted-foreground">Max. 10 000 caractères</p>
 							</div>
-							{formData.mode !== "local" && (
+							<div className="space-y-2">
+								<Label htmlFor="welcomeMessage">Message d&apos;accueil</Label>
+								<Textarea
+									id="welcomeMessage"
+									value={formData.welcomeMessage}
+									onChange={(e) => updateField("welcomeMessage", e.target.value)}
+									placeholder="Bonjour, je suis votre agent..."
+									rows={3}
+								/>
+								<p className="text-xs text-muted-foreground">
+									Affiché dans le chat avant le premier message.
+								</p>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="suggestedPrompts">Prompts suggérés</Label>
+								<Textarea
+									id="suggestedPrompts"
+									value={formData.suggestedPrompts}
+									onChange={(e) => updateField("suggestedPrompts", e.target.value)}
+									placeholder={"Analyse ce document\nRésume les points clés\nListe les risques"}
+									rows={4}
+								/>
+								<p className="text-xs text-muted-foreground">Un prompt par ligne, maximum 6.</p>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="limitations">Limites / avertissements</Label>
+								<Textarea
+									id="limitations"
+									value={formData.limitations}
+									onChange={(e) => updateField("limitations", e.target.value)}
+									placeholder={
+										"Ne remplace pas un professionnel qualifié\nDomaine : droit français uniquement"
+									}
+									rows={3}
+								/>
+								<p className="text-xs text-muted-foreground">Une limite par ligne.</p>
+							</div>
+							{formData.mode !== "LOCAL" && (
 								<div className="space-y-2">
-									<Label htmlFor="endpoint">Endpoint (URL)</Label>
-									<Input
-										id="endpoint"
-										value={formData.endpoint}
-										onChange={(e) => updateField("endpoint", e.target.value)}
-										placeholder="https://api.example.com/agent"
-									/>
+									<Label>Stratégie d&apos;exécution cloud</Label>
+									<div className="grid grid-cols-3 gap-3">
+										{[
+											{
+												id: "USER_API_KEY",
+												label: "Clé API utilisateur",
+												desc: "L'utilisateur fournit sa propre clé",
+											},
+											{
+												id: "SELLER_API_KEY",
+												label: "Clé API vendeur",
+												desc: "Vous fournissez votre clé API",
+											},
+											{
+												id: "SELLER_ENDPOINT",
+												label: "Endpoint custom",
+												desc: "Votre propre serveur API",
+											},
+										].map((s) => (
+											<button
+												key={s.id}
+												type="button"
+												onClick={() => updateField("cloudStrategy", s.id)}
+												className={`rounded-md border p-3 text-left text-sm transition-colors ${
+													formData.cloudStrategy === s.id
+														? "border-primary bg-primary/5"
+														: "border-input hover:bg-accent"
+												}`}
+											>
+												<div className="font-medium">{s.label}</div>
+												<div className="mt-1 text-xs text-muted-foreground">{s.desc}</div>
+											</button>
+										))}
+									</div>
 								</div>
+							)}
+							{formData.cloudStrategy === "USER_API_KEY" && formData.mode !== "LOCAL" && (
+								<div className="space-y-2">
+									<Label>Provider requis</Label>
+									<select
+										className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+										value={formData.requiredUserProvider}
+										onChange={(e) => updateField("requiredUserProvider", e.target.value)}
+									>
+										<option value="anthropic">Anthropic (Claude)</option>
+										<option value="openai">OpenAI (GPT)</option>
+										<option value="google">Google (Gemini)</option>
+										<option value="mistral">Mistral</option>
+										<option value="groq">Groq</option>
+									</select>
+								</div>
+							)}
+							{formData.cloudStrategy === "SELLER_ENDPOINT" && formData.mode !== "LOCAL" && (
+								<>
+									<div className="space-y-2">
+										<Label htmlFor="endpoint">URL de l&apos;endpoint</Label>
+										<Input
+											id="endpoint"
+											value={formData.endpoint}
+											onChange={(e) => updateField("endpoint", e.target.value)}
+											placeholder="https://api.exemple.com/v1/chat"
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label>Format de l&apos;API</Label>
+										<select
+											className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+											value={formData.endpointFormat}
+											onChange={(e) => updateField("endpointFormat", e.target.value)}
+										>
+											<option value="OPENAI">OpenAI compatible</option>
+											<option value="ANTHROPIC">Anthropic</option>
+											<option value="GOOGLE">Google</option>
+											<option value="MISTRAL">Mistral</option>
+											<option value="GROQ">Groq</option>
+											<option value="HUGGINGFACE">HuggingFace</option>
+											<option value="CLAAKE">Claake</option>
+										</select>
+									</div>
+								</>
+							)}
+							{formData.cloudStrategy === "SELLER_API_KEY" && formData.mode !== "LOCAL" && (
+								<>
+									<div className="space-y-2">
+										<Label>Provider</Label>
+										<select
+											className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+											value={formData.sellerApiProvider}
+											onChange={(e) => updateField("sellerApiProvider", e.target.value)}
+										>
+											<option value="anthropic">Anthropic (Claude)</option>
+											<option value="openai">OpenAI (GPT)</option>
+											<option value="google">Google (Gemini)</option>
+											<option value="mistral">Mistral</option>
+											<option value="groq">Groq</option>
+										</select>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="sellerApiKey">Clé API vendeur</Label>
+										<Input
+											id="sellerApiKey"
+											type="password"
+											value={formData.sellerApiKey}
+											onChange={(e) => updateField("sellerApiKey", e.target.value)}
+											placeholder="sk-..."
+										/>
+										<p className="text-xs text-muted-foreground">
+											Stockée chiffrée — jamais exposée aux utilisateurs.
+										</p>
+									</div>
+								</>
+							)}
+							{(formData.mode === "LOCAL" || formData.mode === "HYBRID") && (
+								<>
+									<div className="space-y-2">
+										<Label htmlFor="dockerImage">Image Docker</Label>
+										<Input
+											id="dockerImage"
+											value={formData.dockerImage}
+											onChange={(e) => updateField("dockerImage", e.target.value)}
+											placeholder="ghcr.io/moncompte/mon-agent:latest"
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="downloadUrl">URL de téléchargement (optionnel)</Label>
+										<Input
+											id="downloadUrl"
+											value={formData.downloadUrl}
+											onChange={(e) => updateField("downloadUrl", e.target.value)}
+											placeholder="https://releases.exemple.com/agent-v1.0.zip"
+										/>
+									</div>
+								</>
 							)}
 						</div>
 					)}
@@ -434,6 +842,21 @@ export default function NewAgentPage() {
 						<div className="space-y-4">
 							<h3 className="text-lg font-semibold">Validation et soumission</h3>
 							<div className="space-y-3 rounded-md border p-4">
+								{imagePreview && (
+									<>
+										<div className="flex items-center gap-3">
+											<Image
+												src={imagePreview}
+												alt="Agent icon"
+												width={48}
+												height={48}
+												className="rounded-lg border object-cover"
+											/>
+											<span className="text-sm font-medium">{formData.name || "Sans nom"}</span>
+										</div>
+										<Separator />
+									</>
+								)}
 								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">Nom</span>
 									<span className="font-medium">{formData.name || "Non renseigné"}</span>
@@ -453,6 +876,15 @@ export default function NewAgentPage() {
 									<span className="text-muted-foreground">Mode</span>
 									<span className="capitalize">{formData.mode}</span>
 								</div>
+								{formData.mode !== "LOCAL" && (
+									<>
+										<Separator />
+										<div className="flex justify-between text-sm">
+											<span className="text-muted-foreground">Stratégie cloud</span>
+											<span>{formData.cloudStrategy}</span>
+										</div>
+									</>
+								)}
 								<Separator />
 								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">System Prompt</span>
@@ -460,6 +892,27 @@ export default function NewAgentPage() {
 										{formData.systemPrompt
 											? `${formData.systemPrompt.length} caractères`
 											: "Non renseigné"}
+									</span>
+								</div>
+								<Separator />
+								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">Message d'accueil</span>
+									<span className="text-xs">
+										{formData.welcomeMessage ? "Renseigné" : "Non renseigné"}
+									</span>
+								</div>
+								<Separator />
+								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">Prompts suggérés</span>
+									<span className="text-xs">
+										{formData.suggestedPrompts.split("\n").filter((p) => p.trim()).length}
+									</span>
+								</div>
+								<Separator />
+								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">Fichier .agentjson</span>
+									<span className="text-xs">
+										{agentJsonFile ? agentJsonFile.name : "Non fourni"}
 									</span>
 								</div>
 								<Separator />
@@ -495,7 +948,7 @@ export default function NewAgentPage() {
 							Précédent
 						</Button>
 						{currentStep < steps.length - 1 ? (
-							<Button onClick={() => setCurrentStep((s) => s + 1)}>
+							<Button onClick={() => setCurrentStep((s) => s + 1)} disabled={!canAdvance()}>
 								Suivant
 								<ArrowRight className="ml-2 h-4 w-4" />
 							</Button>

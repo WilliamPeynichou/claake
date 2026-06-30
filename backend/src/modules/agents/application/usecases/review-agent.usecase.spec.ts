@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { ActivityLogService } from "../../../activity/domain/activity-log.service";
 import { AgentEntity } from "../../domain/entities/agent.entity";
 import { AGENT_REPOSITORY } from "../../domain/ports/agent.repository.port";
 import { ReviewAgentUseCase } from "./review-agent.usecase";
@@ -12,12 +13,36 @@ const mockRepo = {
 	updateStatus: jest.fn(),
 };
 
+const mockActivityLog = {
+	log: jest.fn(),
+};
+
 function makeAgent(status = "PENDING"): AgentEntity {
 	return new AgentEntity(
-		"agent-1", "Test Agent", "test-agent", "Desc", null,
-		"coding", [], ["claude-sonnet-4-20250514"], "CLOUD", null, null, [],
-		"FREE", 0, 1, status, null, 0, 0, 0, "user-1", null,
-		new Date(), new Date(),
+		"agent-1",
+		"Test Agent",
+		"test-agent",
+		"Desc",
+		null,
+		"coding",
+		[],
+		["claude-sonnet-4-20250514"],
+		"CLOUD",
+		null,
+		null,
+		[],
+		"FREE",
+		0,
+		1,
+		status,
+		null,
+		0,
+		0,
+		0,
+		"user-1",
+		null,
+		new Date(),
+		new Date(),
 	);
 }
 
@@ -29,6 +54,7 @@ describe("ReviewAgentUseCase", () => {
 			providers: [
 				ReviewAgentUseCase,
 				{ provide: AGENT_REPOSITORY, useValue: mockRepo },
+				{ provide: ActivityLogService, useValue: mockActivityLog },
 			],
 		}).compile();
 

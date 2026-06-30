@@ -39,6 +39,11 @@ export class AgentMapper {
 			raw.requiredUserProvider,
 			raw.dockerImage,
 			raw.downloadUrl,
+			raw.welcomeMessage,
+			raw.suggestedPrompts,
+			raw.limitations,
+			raw.modelSettings as Record<string, unknown> | null,
+			raw.capabilities as Record<string, unknown> | null,
 		);
 	}
 }

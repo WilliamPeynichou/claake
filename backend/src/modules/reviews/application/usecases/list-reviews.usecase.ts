@@ -8,9 +8,7 @@ import { ReviewTransformer } from "../transformers/review.transformer.js";
 
 @Injectable()
 export class ListReviewsUseCase {
-	constructor(
-		@Inject(REVIEW_REPOSITORY) private readonly repo: ReviewRepositoryPort,
-	) {}
+	constructor(@Inject(REVIEW_REPOSITORY) private readonly repo: ReviewRepositoryPort) {}
 
 	async execute(
 		agentId: string,

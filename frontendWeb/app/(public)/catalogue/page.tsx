@@ -20,8 +20,56 @@ export default function CataloguePage() {
 	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	const resetToFirstPage = useCallback(() => {
+		setPage(1);
+	}, []);
+
+	const handleQueryChange = useCallback(
+		(value: string) => {
+			setQuery(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
+	const handleCategoryChange = useCallback(
+		(value: string) => {
+			setSelectedCategory(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
+	const handlePricingModelChange = useCallback(
+		(value: string) => {
+			setPricingModel(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
+	const handleModeChange = useCallback(
+		(value: string) => {
+			setMode(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
+
+	const handleSortByChange = useCallback(
+		(value: string) => {
+			setSortBy(value);
+			resetToFirstPage();
+		},
+		[resetToFirstPage],
+	);
 
 	const fetchAgents = useCallback(async () => {
+		setLoading(true);
+		setError(null);
 		try {
 			const res = await apiClient.agents.list({
 				q: query || undefined,
@@ -34,8 +82,10 @@ export default function CataloguePage() {
 			});
 			setAgents(res.agents);
 			setTotal(res.total);
-		} catch {
-			// ignore
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Erreur lors du chargement des agents");
+		} finally {
+			setLoading(false);
 		}
 	}, [query, selectedCategory, pricingModel, mode, sortBy, page]);
 
@@ -49,11 +99,6 @@ export default function CataloguePage() {
 			.then(setCategories)
 			.catch(() => {});
 	}, []);
-
-	// Reset page on filter change
-	useEffect(() => {
-		setPage(1);
-	}, [query, selectedCategory, pricingModel, mode, sortBy]);
 
 	const totalPages = Math.ceil(total / 24);
 
@@ -74,18 +119,18 @@ export default function CataloguePage() {
 					placeholder="Rechercher un agent par nom, description ou tag..."
 					className="pl-10"
 					value={query}
-					onChange={(e) => setQuery(e.target.value)}
+					onChange={(e) => handleQueryChange(e.target.value)}
 				/>
 			</div>
 
 			{/* Filters */}
 			<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div className="flex flex-wrap gap-2">
-					<button type="button" onClick={() => setSelectedCategory("all")}>
+					<button type="button" onClick={() => handleCategoryChange("all")}>
 						<Badge variant={selectedCategory === "all" ? "default" : "outline"}>Tous</Badge>
 					</button>
 					{categories.map((cat) => (
-						<button key={cat.id} type="button" onClick={() => setSelectedCategory(cat.slug)}>
+						<button key={cat.id} type="button" onClick={() => handleCategoryChange(cat.slug)}>
 							<Badge variant={selectedCategory === cat.slug ? "default" : "outline"}>
 								{cat.name}
 							</Badge>
@@ -94,16 +139,26 @@ export default function CataloguePage() {
 				</div>
 				<SearchFilters
 					pricingModel={pricingModel}
-					onPricingModelChange={setPricingModel}
+					onPricingModelChange={handlePricingModelChange}
 					mode={mode}
-					onModeChange={setMode}
+					onModeChange={handleModeChange}
 					sortBy={sortBy}
-					onSortByChange={setSortBy}
+					onSortByChange={handleSortByChange}
 				/>
 			</div>
 
 			{/* Results */}
-			{agents.length === 0 ? (
+			{error && (
+				<div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+					Erreur : {error}
+				</div>
+			)}
+			{loading ? (
+				<div className="flex flex-col items-center justify-center py-16 text-center">
+					<div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+					<p className="mt-4 text-sm text-muted-foreground">Chargement des agents...</p>
+				</div>
+			) : agents.length === 0 ? (
 				<div className="flex flex-col items-center justify-center py-16 text-center">
 					<Search className="h-12 w-12 text-muted-foreground/30" />
 					<h3 className="mt-4 text-lg font-semibold">Aucun agent trouv&eacute;</h3>

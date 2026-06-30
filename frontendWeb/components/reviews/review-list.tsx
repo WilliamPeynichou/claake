@@ -19,6 +19,7 @@ export function ReviewList({ agentId, refreshKey }: ReviewListProps) {
 	const limit = 5;
 
 	useEffect(() => {
+		void refreshKey;
 		apiClient.reviews
 			.list(agentId, page, limit)
 			.then((res) => {
@@ -31,9 +32,7 @@ export function ReviewList({ agentId, refreshKey }: ReviewListProps) {
 	const totalPages = Math.ceil(total / limit);
 
 	if (reviews.length === 0 && total === 0) {
-		return (
-			<p className="text-sm text-muted-foreground">Aucun avis pour le moment.</p>
-		);
+		return <p className="text-sm text-muted-foreground">Aucun avis pour le moment.</p>;
 	}
 
 	return (
@@ -44,9 +43,7 @@ export function ReviewList({ agentId, refreshKey }: ReviewListProps) {
 					<div className="flex items-start justify-between">
 						<div>
 							<div className="flex items-center gap-2">
-								<span className="text-sm font-medium">
-									{review.user_name ?? "Utilisateur"}
-								</span>
+								<span className="text-sm font-medium">{review.user_name ?? "Utilisateur"}</span>
 								{review.verified_purchase && (
 									<Badge variant="secondary" className="text-xs">
 										<BadgeCheck className="mr-1 h-3 w-3" />
@@ -77,9 +74,7 @@ export function ReviewList({ agentId, refreshKey }: ReviewListProps) {
 							{new Date(review.created_at).toLocaleDateString("fr-FR")}
 						</span>
 					</div>
-					{review.comment && (
-						<p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
-					)}
+					{review.comment && <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>}
 				</div>
 			))}
 

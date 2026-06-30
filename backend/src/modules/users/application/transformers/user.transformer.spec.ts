@@ -4,8 +4,15 @@ import { UserTransformer } from "./user.transformer";
 describe("UserTransformer", () => {
 	it("transforms USER entity to DTO", () => {
 		const entity = new UserEntity(
-			"user-1", "test@example.com", "Test User", "https://avatar.url",
-			"My bio", "USER", null, null, 3,
+			"user-1",
+			"test@example.com",
+			"Test User",
+			"https://avatar.url",
+			"My bio",
+			"USER",
+			null,
+			null,
+			3,
 			new Date("2025-01-01T00:00:00Z"),
 			new Date("2025-01-02T00:00:00Z"),
 		);
@@ -25,8 +32,17 @@ describe("UserTransformer", () => {
 
 	it("maps CREATOR role to developer", () => {
 		const entity = new UserEntity(
-			"u1", "e@e.com", null, null, null, "CREATOR",
-			null, null, 0, new Date(), new Date(),
+			"u1",
+			"e@e.com",
+			null,
+			null,
+			null,
+			"CREATOR",
+			null,
+			null,
+			0,
+			new Date(),
+			new Date(),
 		);
 
 		expect(UserTransformer.toDto(entity).role).toBe("developer");
@@ -34,8 +50,17 @@ describe("UserTransformer", () => {
 
 	it("maps ADMIN role and includes permissions", () => {
 		const entity = new UserEntity(
-			"u1", "e@e.com", null, null, null, "ADMIN",
-			FULL_ADMIN_PERMISSIONS, null, 0, new Date(), new Date(),
+			"u1",
+			"e@e.com",
+			null,
+			null,
+			null,
+			"ADMIN",
+			FULL_ADMIN_PERMISSIONS,
+			null,
+			0,
+			new Date(),
+			new Date(),
 		);
 
 		const dto = UserTransformer.toDto(entity);
@@ -46,8 +71,17 @@ describe("UserTransformer", () => {
 
 	it("maps SUPER_ADMIN role", () => {
 		const entity = new UserEntity(
-			"u1", "e@e.com", null, null, null, "SUPER_ADMIN",
-			null, null, 0, new Date(), new Date(),
+			"u1",
+			"e@e.com",
+			null,
+			null,
+			null,
+			"SUPER_ADMIN",
+			null,
+			null,
+			0,
+			new Date(),
+			new Date(),
 		);
 
 		expect(UserTransformer.toDto(entity).role).toBe("super_admin");
@@ -55,8 +89,17 @@ describe("UserTransformer", () => {
 
 	it("hides admin_permissions for non-admin users", () => {
 		const entity = new UserEntity(
-			"u1", "e@e.com", null, null, null, "USER",
-			null, null, 0, new Date(), new Date(),
+			"u1",
+			"e@e.com",
+			null,
+			null,
+			null,
+			"USER",
+			null,
+			null,
+			0,
+			new Date(),
+			new Date(),
 		);
 
 		expect(UserTransformer.toDto(entity).admin_permissions).toBeNull();

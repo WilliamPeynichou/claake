@@ -2,7 +2,7 @@
 
 import type { Agent, AgentCategory } from "@claake/shared";
 import { getFeaturedAgents, getTrendingAgents } from "@claake/shared";
-import { ArrowRight, Bot, Puzzle, Shield } from "lucide-react";
+import { ArrowRight, Bot, Download, MessageSquare, Puzzle, Shield } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AgentCard } from "@/components/agents/agent-card";
@@ -10,6 +10,14 @@ import { CategoryCard } from "@/components/agents/category-card";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api";
 import { useI18n } from "@/lib/i18n/context";
+
+const FEATURED_SKELETON_IDS = ["featured-skeleton-1", "featured-skeleton-2", "featured-skeleton-3"];
+const TRENDING_SKELETON_IDS = [
+	"trending-skeleton-1",
+	"trending-skeleton-2",
+	"trending-skeleton-3",
+	"trending-skeleton-4",
+];
 
 function useRevealOnScroll() {
 	const ref = useRef<HTMLDivElement>(null);
@@ -41,12 +49,15 @@ export default function HomePage() {
 	const pageRef = useRevealOnScroll();
 	const [agents, setAgents] = useState<Agent[]>([]);
 	const [categories, setCategories] = useState<AgentCategory[]>([]);
+	const [loadingAgents, setLoadingAgents] = useState(true);
 
 	useEffect(() => {
+		setLoadingAgents(true);
 		apiClient.agents
-			.list()
+			.list({ limit: 50 })
 			.then((res) => setAgents(res.agents))
-			.catch(() => {});
+			.catch(() => {})
+			.finally(() => setLoadingAgents(false));
 		apiClient.categories
 			.list()
 			.then(setCategories)
@@ -74,25 +85,55 @@ export default function HomePage() {
 					<p className="mt-5 max-w-xl text-lg text-muted-foreground" style={{ lineHeight: 1.7 }}>
 						{t("hero.subtitle")}
 					</p>
-					<div className="mt-6 flex gap-4">
+					<div className="mt-8 flex flex-col items-center gap-4">
+						{/* CTA principal */}
 						<Button
 							size="lg"
 							asChild
-							className="border border-brand bg-brand text-primary-foreground hover:bg-brand-dark"
+							className="border border-brand bg-brand px-8 py-6 text-base text-primary-foreground hover:bg-brand-dark"
 						>
-							<Link href="/catalogue">
-								{t("hero.cta.explore")}
-								<ArrowRight className="ml-2 h-4 w-4" />
+							<Link href="/chat">
+								<MessageSquare className="mr-2 h-5 w-5" />
+								{t("hero.cta.chat")}
 							</Link>
 						</Button>
-						<Button
-							size="lg"
-							variant="outline"
-							asChild
-							className="border-border hover:border-brand hover:text-brand"
-						>
-							<Link href="/dashboard/agents/new">{t("hero.cta.register")}</Link>
-						</Button>
+
+						{/* CTAs secondaires */}
+						<div className="flex items-center gap-5">
+							<Button
+								size="lg"
+								variant="outline"
+								asChild
+								className="border-border hover:border-brand hover:text-brand"
+							>
+								<Link href="/catalogue">
+									{t("hero.cta.explore")}
+									<ArrowRight className="ml-2 h-4 w-4" />
+								</Link>
+							</Button>
+							<a
+								href="/Claake.dmg"
+								download="Claake.dmg"
+								className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-brand"
+							>
+								<Download className="h-4 w-4" />
+								{t("hero.cta.download")}
+								<span
+									style={{
+										fontSize: "0.6rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										textTransform: "uppercase",
+										background: "#e8e4d8",
+										color: "#6b6558",
+										padding: "0.1rem 0.4rem",
+										borderRadius: "3px",
+									}}
+								>
+									Mac
+								</span>
+							</a>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -105,14 +146,21 @@ export default function HomePage() {
 						<h2 className="mt-2 font-display text-2xl sm:text-3xl">{t("featured.title")}</h2>
 					</div>
 					<div className="mt-6 flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
-						{featured.map((agent, i) => (
-							<div
-								key={agent.id}
-								className={`min-w-[280px] max-w-[320px] flex-shrink-0 snap-start reveal reveal-delay-${(i % 4) + 1}`}
-							>
-								<AgentCard agent={agent} />
-							</div>
-						))}
+						{loadingAgents && featured.length === 0
+							? FEATURED_SKELETON_IDS.map((skeletonId) => (
+									<div
+										key={skeletonId}
+										className="min-w-[280px] h-48 animate-pulse rounded bg-muted flex-shrink-0"
+									/>
+								))
+							: featured.map((agent, i) => (
+									<div
+										key={agent.id}
+										className={`min-w-[280px] max-w-[320px] flex-shrink-0 snap-start reveal reveal-delay-${(i % 4) + 1}`}
+									>
+										<AgentCard agent={agent} />
+									</div>
+								))}
 					</div>
 					<div className="mt-4 flex justify-center">
 						<Link
@@ -203,11 +251,15 @@ export default function HomePage() {
 						<h2 className="mt-2 font-display text-2xl sm:text-3xl">{t("trending.title")}</h2>
 					</div>
 					<div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-						{trending.map((agent, i) => (
-							<div key={agent.id} className={`reveal reveal-delay-${(i % 4) + 1}`}>
-								<AgentCard agent={agent} />
-							</div>
-						))}
+						{loadingAgents && trending.length === 0
+							? TRENDING_SKELETON_IDS.map((skeletonId) => (
+									<div key={skeletonId} className="h-48 animate-pulse rounded bg-muted" />
+								))
+							: trending.map((agent, i) => (
+									<div key={agent.id} className={`reveal reveal-delay-${(i % 4) + 1}`}>
+										<AgentCard agent={agent} />
+									</div>
+								))}
 					</div>
 				</div>
 			</section>
