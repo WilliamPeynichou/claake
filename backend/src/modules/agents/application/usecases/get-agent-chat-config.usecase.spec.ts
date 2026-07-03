@@ -5,9 +5,7 @@ import { AgentEntity } from "../../domain/entities/agent.entity";
 import { AGENT_REPOSITORY } from "../../domain/ports/agent.repository.port";
 import { GetAgentChatConfigUseCase } from "./get-agent-chat-config.usecase";
 
-function makeAgent(
-	overrides: Partial<ConstructorParameters<typeof AgentEntity>> = [],
-): AgentEntity {
+function makeAgent(overrides: Record<number, unknown> = {}): AgentEntity {
 	const defaults: ConstructorParameters<typeof AgentEntity> = [
 		"agent-1",
 		"Juriste IA",
@@ -49,9 +47,9 @@ function makeAgent(
 		{ files: true, images: false },
 	];
 	return new AgentEntity(
-		...(defaults.map((value, index) => overrides[index] ?? value) as ConstructorParameters<
-			typeof AgentEntity
-		>),
+		...(defaults.map((value, index) =>
+			index in overrides ? overrides[index] : value,
+		) as ConstructorParameters<typeof AgentEntity>),
 	);
 }
 
@@ -120,5 +118,86 @@ describe("GetAgentChatConfigUseCase", () => {
 		await expect(useCase.execute("agent-1", { id: "user-1", role: "USER" })).rejects.toThrow(
 			NotFoundException,
 		);
+	});
+
+	it("laisse le propriétaire ouvrir son agent DRAFT", async () => {
+		repo.findById.mockResolvedValue(makeAgent({ 15: "DRAFT", 25: null, 30: null }));
+
+		await expect(
+			useCase.execute("agent-1", { id: "creator-1", role: "USER" }),
+		).resolves.toMatchObject({
+			status: "draft",
+			access: { can_chat: true },
+		});
+	});
+
+	it("laisse un admin ouvrir un agent PENDING", async () => {
+		repo.findById.mockResolvedValue(makeAgent({ 15: "PENDING", 25: null, 30: null }));
+
+		await expect(
+			useCase.execute("agent-1", { id: "admin-1", role: "ADMIN" }),
+		).resolves.toMatchObject({
+			status: "pending",
+			access: { can_chat: true },
+		});
+	});
+
+	it("masque un agent PENDING à un utilisateur non propriétaire", async () => {
+		repo.findById.mockResolvedValue(makeAgent({ 15: "PENDING" }));
+
+		await expect(useCase.execute("agent-1", { id: "user-1", role: "USER" })).rejects.toThrow(
+			NotFoundException,
+		);
+	});
+
+	it("exige un achat pour un agent payant sans accès", async () => {
+		repo.findById.mockResolvedValue(
+			makeAgent({ 12: "ONE_TIME", 13: 12, 25: "SELLER_API_KEY", 30: null }),
+		);
+		repo.hasPurchased.mockResolvedValue(false);
+		repo.hasActiveSubscription.mockResolvedValue(false);
+
+		await expect(
+			useCase.execute("agent-1", { id: "user-1", role: "USER" }),
+		).resolves.toMatchObject({
+			access: { can_chat: false, reason: "purchase_required" },
+		});
+	});
+
+	it("autorise le chat pour un agent payant déjà acheté", async () => {
+		repo.findById.mockResolvedValue(
+			makeAgent({ 12: "ONE_TIME", 13: 12, 25: "SELLER_API_KEY", 30: null }),
+		);
+		repo.hasPurchased.mockResolvedValue(true);
+		repo.hasActiveSubscription.mockResolvedValue(false);
+
+		await expect(
+			useCase.execute("agent-1", { id: "user-1", role: "USER" }),
+		).resolves.toMatchObject({
+			access: { can_chat: true },
+		});
+	});
+
+	it("normalise capabilities null en files/images false", async () => {
+		repo.findById.mockResolvedValue(makeAgent({ 25: null, 30: null, 37: null }));
+
+		await expect(
+			useCase.execute("agent-1", { id: "creator-1", role: "USER" }),
+		).resolves.toMatchObject({
+			capabilities: { files: false, images: false },
+		});
+	});
+
+	it.each([
+		[["claude-sonnet-4-20250514"], "anthropic"],
+		[["gpt-4o"], "openai"],
+		[["mistral-large-latest"], "mistral"],
+		[["gemini-1.5-pro"], "google"],
+	])("déduit le provider %s → %s", async (models, expected) => {
+		repo.findById.mockResolvedValue(makeAgent({ 7: models, 25: null, 30: null }));
+
+		await expect(
+			useCase.execute("agent-1", { id: "creator-1", role: "USER" }),
+		).resolves.toMatchObject({ provider: expected });
 	});
 });
