@@ -4,7 +4,12 @@ import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
 } from "../../domain/ports/agent.repository.port.js";
-import type { AgentChatConfigResponseDto } from "../dtos/agent-chat-config-response.dto.js";
+import type {
+	AgentChatConfigCloudStrategy,
+	AgentChatConfigMode,
+	AgentChatConfigResponseDto,
+	AgentChatConfigStatus,
+} from "../dtos/agent-chat-config-response.dto.js";
 
 type RequestUser = { id: string; email?: string; role?: string };
 type StoredApiKey = { provider: string };
@@ -61,11 +66,12 @@ export class GetAgentChatConfigUseCase {
 			name: agent.name,
 			description: agent.description,
 			image_url: agent.imageUrl,
-			status: agent.status.toLowerCase(),
-			mode: agent.mode.toLowerCase(),
+			status: agent.status.toLowerCase() as AgentChatConfigStatus,
+			mode: agent.mode.toLowerCase() as AgentChatConfigMode,
 			models: agent.models,
 			provider,
-			cloud_strategy: agent.cloudStrategy?.toLowerCase() ?? null,
+			cloud_strategy:
+				(agent.cloudStrategy?.toLowerCase() as AgentChatConfigCloudStrategy | undefined) ?? null,
 			required_user_provider: agent.requiredUserProvider,
 			welcome_message: agent.welcomeMessage,
 			suggested_prompts: agent.suggestedPrompts,

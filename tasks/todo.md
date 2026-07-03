@@ -1,52 +1,37 @@
-# Feature — AgentChatConfig
+# Feature — ChatShell refactor
 
 ## Branche
 
-- `feature/agent-chat-config`
+- `feature/chat-shell-refactor`
+
+## Contexte
+
+Roadmap `docs/roadmap-claake-agents-chat.md`, point technique 6 :
+extraire le chat autour d'un `ChatShell` dans `frontendWeb/features/chat/`
+au lieu de garder toute la logique dans `app/(chat)/chat/[agentId]/page.tsx` (293 lignes).
 
 ## Plan
 
-- [x] Créer une branche feature/agent-chat-config depuis resolve-agent
-- [x] Ajouter le type partagé AgentChatConfig et client API
-- [x] Ajouter GetAgentChatConfigUseCase + DTO backend + provider module
-- [x] Exposer GET /agents/:id/chat-config avec auth optionnelle
-- [x] Brancher le chat web sur AgentChatConfig pour access/welcome/suggestions
-- [x] Lancer tests/builds et documenter
+- [x] Créer la branche `feature/chat-shell-refactor` depuis `main`
+- [x] Créer `frontendWeb/features/chat/hooks/use-agent-chat.ts` (auth, AgentChatConfig, sessions, useChat)
+- [x] Créer `frontendWeb/features/chat/components/chat-header.tsx`
+- [x] Créer `frontendWeb/features/chat/components/missing-api-key-card.tsx`
+- [x] Créer `frontendWeb/features/chat/components/access-notice.tsx`
+- [x] Créer `frontendWeb/features/chat/components/login-required.tsx`
+- [x] Créer `frontendWeb/features/chat/chat-shell.tsx` (orchestration présentation)
+- [x] Créer `frontendWeb/features/chat/chat-page.tsx` (Suspense + lecture params)
+- [x] Créer `frontendWeb/features/chat/index.ts`
+- [x] Alléger `app/(chat)/chat/[agentId]/page.tsx` pour qu'il importe `ChatPage`
+- [x] Lancer build web + lint + vérifier le comportement (login required, api key required, chat normal)
+- [x] Documenter dans la review ci-dessous
 
 ## Review
 
-### Changements réalisés
-
-- Ajout du type partagé `AgentChatConfig` dans `shared/types/index.ts`.
-- Ajout de `apiClient.agents.chatConfig(id, token?)` dans `shared/api/client.ts`.
-- Ajout du DTO backend `AgentChatConfigResponseDto`.
-- Ajout du use case backend `GetAgentChatConfigUseCase`.
-- Ajout de tests unitaires pour :
-  - `login_required` sans utilisateur ;
-  - `api_key_required` si clé utilisateur manquante ;
-  - accès autorisé si clé présente ;
-  - masquage des agents non publiés aux non propriétaires.
-- Enregistrement du use case dans `AgentModule`.
-- Ajout de l'endpoint : `GET /agents/:id/chat-config` avec `OptionalSupabaseAuthGuard`.
-- Branchement de `/chat/[agentId]` sur `AgentChatConfig` pour :
-  - charger le contrat backend dédié ;
-  - afficher welcome/suggestions depuis ce contrat ;
-  - afficher une action si une clé API est requise ;
-  - désactiver l'input si l'accès chat est bloqué.
-
-### Vérifications exécutées
-
-- `npx prisma generate --schema backend/prisma/schema.prisma` : OK.
-- Test ciblé `get-agent-chat-config.usecase.spec.ts` : OK, 4 tests passed.
-- `npm -w @claake/backend run build` : OK.
-- `npm -w @claake/backend run test -- --runInBand` : OK, 29 suites / 159 tests passed.
-- Build web avec env factice HTTPS : OK.
-  - `NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy`
-  - `NEXT_PUBLIC_API_URL=https://api.example.com/v1`
-- `npx biome format --write ...` : OK.
-
-### Notes
-
-- Les fichiers locaux non liés (`skills`, docs non suivies, tasks, etc.) restent hors scope de la feature.
-- Le prochain gros chantier sera de refactoriser proprement le chat en `features/chat/ChatShell` et de rendre l'état clé API manquante plus intégré à l'UX.
+- Refactor `app/(chat)/chat/[agentId]/page.tsx` terminé : route réduite à un import de `ChatPage`.
+- Logique extraite dans `frontendWeb/features/chat/` : `ChatShell`, `useAgentChat`, composants d'accès/header.
+- `useAgentChat` charge auth, `AgentChatConfig`, agents sidebar, sessions/messages via `useChat`.
+- États UI séparés : login requis, clé API requise, achat requis, agent non publié.
+- Vérifications :
+  - `npx biome check frontendWeb/app/'(chat)'/chat/'[agentId]'/page.tsx frontendWeb/features/chat tasks/todo.md` OK.
+  - `NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy NEXT_PUBLIC_API_URL=https://api.example.com npm run web-build` OK.
+- Note : `npm run lint` global échoue hors scope sur `ClaakePresentation/` non lié et non inclus dans ce commit.

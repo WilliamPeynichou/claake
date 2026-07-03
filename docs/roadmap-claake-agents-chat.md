@@ -1,5 +1,105 @@
 # Roadmap produit et développement Claake
 
+## État du chantier — mise à jour 2026-07-03
+
+### Derniers commits structurants
+
+```txt
+b805835 refactor web chat shell
+b5efdac merge: feature/agent-chat-config → main
+9867376 feat: agent chat config — endpoint, usecase, types et page chat
+881f08d merge: feature agent chat fields
+7547792 feat: add agent chat fields
+dabd98d fix backend security audit findings
+```
+
+### Avancement global
+
+Le chantier a passé un cap important : le socle `AgentChatConfig` existe maintenant côté
+backend/shared/web, et la route web `/chat/[agentId]` a été extraite autour d'un
+`ChatShell` dans `frontendWeb/features/chat/`.
+
+Le cœur technique suivant est en place :
+
+```txt
+AgentDefinition partiel
+→ AgentValidation existant
+→ AgentChatConfig créé
+→ ChatSession existant
+→ ProviderExecution existant
+```
+
+### Milestones — état réel
+
+| Milestone | État | Commentaire |
+|---|---:|---|
+| Milestone 0 — Socle technique agent-chat | 100% | Champs agent chat, migration, types shared, endpoint `chat-config`, use case, DTO strict et tests complets (login/api-key/purchase/draft owner/pending admin/capabilities/provider). |
+| Milestone 1 — Chat agent utilisable | ~75% | ChatShell fait, welcome/suggestions branchés, clé API manquante affichée. Reste polish UX, retry, capabilities fichiers. |
+| Milestone 2 — Création agent V1 | ~60% | Création/édition existent avec champs chat. Reste Agent Builder commun et mode test draft. |
+| Milestone 3 — Admin review | ~60% | File review + approve/reject existent. Reste test admin dans le chat et infos complètes. |
+| Milestone 4 — Desktop chat | ~10% | Non priorisé tant que chat web/test draft non stabilisés. |
+| Milestone 5 — Qualité agent | ~30% | Welcome/suggestions/limitations faits. Variables, few-shot, format sortie, checklist à faire. |
+| Milestone 6 — Fichiers et connaissance | ~35% | Upload existant partiel, capabilities présentes. Reste enforcement par agent et knowledge base. |
+| Milestone 7 — Beta publique contrôlée | ~45% | Sécurité backend nettement renforcée. Reste quotas, CI, e2e, observabilité. |
+
+### Ce qui est maintenant considéré fait
+
+- Champs agent pour chat : `welcomeMessage`, `suggestedPrompts`, `limitations`,
+  `modelSettings`, `capabilities`.
+- Migration Prisma `0007_add_agent_chat_fields`.
+- DTO/create/update/entity/mapper/transformer backend alignés sur ces champs.
+- Type partagé `AgentChatConfig`.
+- Client partagé `apiClient.agents.chatConfig()`.
+- Endpoint backend `GET /agents/:id/chat-config`.
+- Use case `GetAgentChatConfigUseCase` avec premières règles d'accès.
+- Tests backend du contrat `AgentChatConfig`.
+- Refactor web chat dans `frontendWeb/features/chat/` :
+  - `chat-page.tsx` ;
+  - `chat-shell.tsx` ;
+  - `hooks/use-agent-chat.ts` ;
+  - composants `ChatHeader`, `MissingApiKeyCard`, `AccessNotice`, `LoginRequired`.
+- Route `frontendWeb/app/(chat)/chat/[agentId]/page.tsx` redevenue fine.
+- Durcissement sécurité backend :
+  - accès agent revérifié à chaque message ;
+  - `download-info` protégé par statut/ownership ;
+  - webhook Stripe non marqué traité avant effet métier ;
+  - Stripe Connect relié au checkout ;
+  - logs redigés ;
+  - chiffrement clés API versionné.
+
+### Blocage produit principal
+
+Le chat public est maintenant plus sûr, mais le mode test n'existe pas encore.
+Actuellement, l'exécution chat bloque les agents non `APPROVED`. C'est correct pour le
+public, mais cela empêche encore :
+
+```txt
+créateur teste DRAFT/REJECTED
+admin teste PENDING
+```
+
+La prochaine priorité produit est donc :
+
+```txt
+Créer un mode test agent contrôlé
+→ propriétaire peut tester DRAFT/REJECTED
+→ admin peut tester PENDING
+→ public reste limité à APPROVED
+```
+
+### Prochain ordre recommandé
+
+1. Ajouter mode test agent draft/admin côté backend.
+2. Brancher bouton **Tester dans le chat** dans dashboard créateur.
+3. Brancher bouton **Tester dans le chat** dans review admin.
+4. Refactoriser création/édition dans `frontendWeb/features/agents/builder/`.
+5. Utiliser `AgentChatConfig.capabilities` pour activer/masquer uploads.
+6. Ajouter retour automatique après ajout de clé API.
+7. Ajouter quotas chat simples.
+8. Ajouter tests e2e du parcours MVP.
+
+---
+
 ## Pré-requis technique obligatoire
 
 Avant de développer une feature de cette roadmap, lire et respecter le document technique suivant :
@@ -1141,16 +1241,29 @@ Livrable :
 
 # Les 10 prochaines features à développer
 
-1. Lire et appliquer `docs/analyse-technique-architecture-claake.md` comme référence d'architecture.
-2. Ajouter les champs agent nécessaires au chat : `welcomeMessage`, `suggestedPrompts`, `limitations`, `modelSettings`, `capabilities`.
-3. Créer le contrat partagé `AgentChatConfig`.
-4. Créer le use case backend `GetAgentChatConfigUseCase` et l'endpoint `GET /agents/:id/chat-config`.
-5. Refactoriser le chat web autour de `AgentChatConfig` et d'un `ChatShell`.
-6. Ouvrir un agent directement dans le chat avec message d'accueil et suggestions.
-7. Gérer la clé API manquante depuis le chat avec un état actionnable.
-8. Refactoriser la création/édition agent dans un `Agent Builder` réutilisable.
-9. Ajouter le mode test agent draft dans le chat.
-10. Améliorer la review admin avec test dans le chat et informations complètes.
+1. Ajouter le mode test agent draft/admin côté backend sans affaiblir le chat public.
+2. Ajouter le bouton **Tester dans le chat** côté dashboard créateur.
+3. Ajouter le bouton **Tester dans le chat** côté admin review pour agents `PENDING`.
+4. Refactoriser la création/édition agent dans un `Agent Builder` réutilisable.
+5. Utiliser `AgentChatConfig.capabilities` pour afficher/masquer l'upload dans le chat.
+6. Ajouter retour automatique au chat après ajout d'une clé API utilisateur.
+7. Renforcer `ValidateAgentUseCase` sur les nouveaux champs chat et désactiver l'endpoint vendeur en V1 publique.
+8. Améliorer la page détail agent avec provider, modèle, stratégie, limitations et CTA access-aware.
+9. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique.
+10. Ajouter tests e2e MVP : page agent → chat, clé API manquante, ajout clé, test draft, review admin.
+
+## Features roadmap déjà réalisées ou très avancées
+
+1. Lire et appliquer `docs/analyse-technique-architecture-claake.md` comme référence d'architecture — fait.
+2. Ajouter les champs agent nécessaires au chat : `welcomeMessage`, `suggestedPrompts`, `limitations`, `modelSettings`, `capabilities` — fait.
+3. Créer le contrat partagé `AgentChatConfig` — fait.
+4. Créer le use case backend `GetAgentChatConfigUseCase` et l'endpoint `GET /agents/:id/chat-config` — fait.
+5. Refactoriser le chat web autour de `AgentChatConfig` et d'un `ChatShell` — fait.
+6. Ouvrir un agent directement dans le chat avec message d'accueil et suggestions — très avancé.
+7. Gérer la clé API manquante depuis le chat avec un état actionnable — partiel avancé.
+8. Afficher message d'accueil et prompts suggérés dans le chat — fait.
+9. Sécuriser l'exécution chat contre agents suspendus/dépubliés — fait.
+10. Durcir logs, chiffrement et paiements critiques — fait.
 
 ## Ancienne liste produit à garder comme repère
 
@@ -1175,11 +1288,15 @@ Le MVP est atteint quand :
 Un développeur peut créer un agent Claude/GPT
 → le tester dans le chat Claake
 → le soumettre
-→ un admin peut le valider
+→ un admin peut le tester et le valider
 → un utilisateur peut le trouver
 → l'utiliser dans le chat web
 → puis dans le chat desktop
 ```
+
+État actuel : le parcours utilisateur public web est bien avancé, mais le MVP n'est pas
+encore atteint car il manque le test contrôlé des agents draft/pending et le builder agent
+unifié.
 
 Tout ce qui ne sert pas directement ce parcours doit être repoussé.
 
