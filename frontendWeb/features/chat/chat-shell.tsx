@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/chat/app-sidebar";
 import { Messages } from "@/components/chat/messages";
 import { MultimodalInput } from "@/components/chat/multimodal-input";
 import { AccessNotice } from "./components/access-notice";
+import { ChatError } from "./components/chat-error";
 import { ChatHeader } from "./components/chat-header";
 import { LoginRequired } from "./components/login-required";
 import { MissingApiKeyCard } from "./components/missing-api-key-card";
@@ -54,6 +55,8 @@ export function ChatShell({ agentId }: ChatShellProps) {
 		addPendingFile,
 		removePendingFile,
 		sendMessage,
+		retry,
+		canRetry,
 	} = useAgentChat(agentId);
 
 	if (loading) return <ChatLoading />;
@@ -90,10 +93,12 @@ export function ChatShell({ agentId }: ChatShellProps) {
 					<AccessNotice reason={accessNotice.reason} />
 				)}
 
+				{error && <ChatError message={error} canRetry={canRetry} onRetry={retry} />}
+
 				<Messages
 					messages={messages}
 					streaming={streaming}
-					error={error}
+					error={null}
 					agentName={displayAgent?.name}
 					agentInitial={displayAgent?.name?.[0]?.toUpperCase()}
 					welcomeMessage={chatConfig?.welcome_message ?? currentAgent?.welcome_message}
@@ -111,6 +116,7 @@ export function ChatShell({ agentId }: ChatShellProps) {
 					token={token ?? undefined}
 					sessionId={sessionId}
 					currentAgent={currentAgent}
+					capabilities={chatConfig?.capabilities}
 					onFileUploaded={addPendingFile}
 					onFileRemoved={removePendingFile}
 				/>

@@ -77,7 +77,13 @@ export function useAgentChat(agentId: string) {
 	);
 
 	const goToLogin = useCallback(() => router.push("/login"), [router]);
-	const goToApiKeys = useCallback(() => router.push("/dashboard/api-keys"), [router]);
+	const goToApiKeys = useCallback(() => {
+		const provider =
+			chatConfig?.access.required_provider ?? chatConfig?.required_user_provider ?? "";
+		const params = new URLSearchParams({ returnTo: `/chat/${agentId}` });
+		if (provider) params.set("provider", provider);
+		router.push(`/dashboard/api-keys?${params.toString()}`);
+	}, [router, agentId, chatConfig]);
 
 	const displayAgent = chatConfig ?? currentAgent;
 	const accessNotice = chatConfig?.access.can_chat === false ? chatConfig.access : null;

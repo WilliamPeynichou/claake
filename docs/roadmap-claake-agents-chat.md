@@ -34,7 +34,7 @@ AgentDefinition partiel
 | Milestone | État | Commentaire |
 |---|---:|---|
 | Milestone 0 — Socle technique agent-chat | 100% | Champs agent chat, migration, types shared, endpoint `chat-config`, use case, DTO strict et tests complets (login/api-key/purchase/draft owner/pending admin/capabilities/provider). |
-| Milestone 1 — Chat agent utilisable | ~75% | ChatShell fait, welcome/suggestions branchés, clé API manquante affichée. Reste polish UX, retry, capabilities fichiers. |
+| Milestone 1 — Chat agent utilisable | 100% | ChatShell + welcome/suggestions, retry après erreur, upload conditionné par `capabilities`, retour auto au chat après ajout clé API, page détail agent orientée usage (provider/stratégie/limitations/CTA). |
 | Milestone 2 — Création agent V1 | ~60% | Création/édition existent avec champs chat. Reste Agent Builder commun et mode test draft. |
 | Milestone 3 — Admin review | ~60% | File review + approve/reject existent. Reste test admin dans le chat et infos complètes. |
 | Milestone 4 — Desktop chat | ~10% | Non priorisé tant que chat web/test draft non stabilisés. |

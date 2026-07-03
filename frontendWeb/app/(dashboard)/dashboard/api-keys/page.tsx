@@ -3,7 +3,8 @@
 import { AI_PROVIDERS } from "@claake/shared";
 import { useApiKeys } from "@claake/shared/hooks";
 import { Key, Plus, Shield, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,12 +13,31 @@ import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function ApiKeysPage() {
+	return (
+		<Suspense fallback={null}>
+			<ApiKeysInner />
+		</Suspense>
+	);
+}
+
+function ApiKeysInner() {
 	const { token } = useAuth();
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const returnTo = searchParams.get("returnTo");
+	const presetProvider = searchParams.get("provider");
 	const { keys, addKey, removeKey } = useApiKeys(apiClient, token);
 	const [showForm, setShowForm] = useState(false);
 	const [provider, setProvider] = useState("anthropic");
 	const [label, setLabel] = useState("");
 	const [keyValue, setKeyValue] = useState("");
+
+	useEffect(() => {
+		if (presetProvider) {
+			setProvider(presetProvider);
+			setShowForm(true);
+		}
+	}, [presetProvider]);
 
 	async function handleAddKey() {
 		if (!keyValue.trim()) return;
@@ -26,6 +46,9 @@ export default function ApiKeysPage() {
 		setLabel("");
 		setKeyValue("");
 		setShowForm(false);
+		if (returnTo?.startsWith("/")) {
+			router.push(returnTo);
+		}
 	}
 
 	return (

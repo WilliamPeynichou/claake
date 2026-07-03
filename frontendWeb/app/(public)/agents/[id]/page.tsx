@@ -14,6 +14,28 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 if (!API_URL) throw new Error("NEXT_PUBLIC_API_URL is not set");
 const serverApiClient = createApiClient(API_URL);
 
+function inferProviderLabel(agent: Agent): string | null {
+	const raw = agent.required_user_provider ?? agent.models[0]?.toLowerCase() ?? "";
+	if (raw.includes("claude") || raw.includes("anthropic")) return "Claude (Anthropic)";
+	if (raw.includes("gpt") || raw.includes("openai")) return "GPT (OpenAI)";
+	if (raw.includes("mistral")) return "Mistral";
+	if (raw.includes("gemini") || raw.includes("google")) return "Gemini (Google)";
+	return agent.required_user_provider ?? null;
+}
+
+function executionStrategyLabel(agent: Agent): string {
+	switch (agent.cloud_strategy) {
+		case "user_api_key":
+			return "Votre clé API";
+		case "seller_api_key":
+			return "Clé du créateur";
+		case "seller_endpoint":
+			return "Endpoint du créateur";
+		default:
+			return agent.mode === "local" ? "Exécution locale" : "Géré par Claake";
+	}
+}
+
 export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
@@ -29,6 +51,9 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 
 	const modeIcon =
 		agent.mode === "cloud" ? <Cloud className="h-4 w-4" /> : <HardDrive className="h-4 w-4" />;
+	const providerLabel = inferProviderLabel(agent);
+	const strategyLabel = executionStrategyLabel(agent);
+	const needsUserKey = agent.cloud_strategy === "user_api_key";
 
 	return (
 		<div className="container mx-auto px-4 py-8">
@@ -146,6 +171,20 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 								<span className="text-muted-foreground">Modèle</span>
 								<span className="font-mono text-xs">{agent.models.join(", ")}</span>
 							</div>
+							{providerLabel && (
+								<>
+									<Separator />
+									<div className="flex items-center justify-between text-sm">
+										<span className="text-muted-foreground">Fournisseur</span>
+										<span>{providerLabel}</span>
+									</div>
+								</>
+							)}
+							<Separator />
+							<div className="flex items-center justify-between text-sm">
+								<span className="text-muted-foreground">Exécution</span>
+								<span>{strategyLabel}</span>
+							</div>
 							<Separator />
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-muted-foreground">Mode</span>
@@ -173,6 +212,11 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 							Utiliser dans le chat
 						</Link>
 					</Button>
+					{needsUserKey && (
+						<p className="text-center text-xs text-muted-foreground">
+							Nécessite une clé API{providerLabel ? ` ${providerLabel}` : ""} pour être utilisé.
+						</p>
+					)}
 				</div>
 			</div>
 		</div>

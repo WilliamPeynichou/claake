@@ -22,6 +22,7 @@ interface MultimodalInputProps {
 	token?: string;
 	sessionId?: string | null;
 	currentAgent: Agent | null;
+	capabilities?: { files: boolean; images: boolean };
 	onFileUploaded?: (fileId: string) => void;
 	onFileRemoved?: (fileId: string) => void;
 }
@@ -38,6 +39,7 @@ export function MultimodalInput({
 	token,
 	sessionId,
 	currentAgent,
+	capabilities,
 	onFileUploaded,
 	onFileRemoved,
 }: MultimodalInputProps) {
@@ -46,6 +48,16 @@ export function MultimodalInput({
 	const [files, setFiles] = useState<PendingFile[]>([]);
 	const [uploading, setUploading] = useState(false);
 	const [uploadErr, setUploadErr] = useState<string | null>(null);
+
+	// Upload gating dérivé du contrat backend (AgentChatConfig.capabilities).
+	// Par défaut (capabilities absent), on garde le comportement historique images + PDF.
+	const allowImages = capabilities ? capabilities.images : true;
+	const allowFiles = capabilities ? capabilities.files : true;
+	const uploadEnabled = allowImages || allowFiles;
+	const acceptTypes = [
+		...(allowImages ? ["image/jpeg", "image/png", "image/webp"] : []),
+		...(allowFiles ? ["application/pdf"] : []),
+	].join(",");
 
 	const handleInput = useCallback(
 		(e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -226,13 +238,13 @@ export function MultimodalInput({
 									{currentAgent.name}
 								</span>
 							)}
-							{token && (
+							{token && uploadEnabled && (
 								<>
 									<input
 										ref={fileRef}
 										type="file"
 										className="sr-only"
-										accept="image/jpeg,image/png,image/webp,application/pdf"
+										accept={acceptTypes}
 										multiple
 										onChange={(e) => onFile(e.target.files)}
 									/>
