@@ -22,6 +22,8 @@ export interface UseChatReturn {
 	addPendingFile: (fileId: string) => void;
 	removePendingFile: (fileId: string) => void;
 	sendMessage: () => Promise<void>;
+	retry: () => Promise<void>;
+	canRetry: boolean;
 	loadSession: (sessionId: string) => Promise<void>;
 	createSession: (agentId: string) => Promise<string>;
 	deleteSession: (sessionId: string) => Promise<void>;
@@ -44,6 +46,8 @@ export function useChat({
 	const [pendingFileIds, setPendingFileIds] = useState<string[]>([]);
 	const sessionIdRef = useRef(sessionId);
 	sessionIdRef.current = sessionId;
+	const lastPayloadRef = useRef<{ content: string; fileIds: string[] } | null>(null);
+	const [canRetry, setCanRetry] = useState(false);
 
 	const addPendingFile = useCallback((fileId: string) => {
 		setPendingFileIds((prev) => [...prev, fileId]);
@@ -106,6 +110,130 @@ export function useChat({
 		[apiClient, token, refreshSessions],
 	);
 
+	const runStream = useCallback(
+		async (currentSessionId: string, content: string, fileIds: string[]) => {
+			lastPayloadRef.current = { content, fileIds };
+			setStreaming(true);
+			setError(null);
+			setCanRetry(false);
+
+			// Create a placeholder assistant message for streaming
+			const assistantId = crypto.randomUUID();
+			const assistantMessage: ChatMessage = {
+				id: assistantId,
+				role: "assistant",
+				content: "",
+				created_at: new Date().toISOString(),
+			};
+			setMessages((prev) => [...prev, assistantMessage]);
+
+			try {
+				const res = await apiClient.chat.sendMessageSSE(
+					currentSessionId,
+					content,
+					token,
+					fileIds.length ? fileIds : undefined,
+				);
+
+				if (!res.ok) {
+					const errBody = await res.json().catch(() => ({}));
+					throw new Error(errBody.error?.message ?? errBody.message ?? `Erreur ${res.status}`);
+				}
+
+				if (!res.body) {
+					throw new Error("Réponse vide du serveur.");
+				}
+
+				const reader = res.body.getReader();
+				const decoder = new TextDecoder();
+				let buffer = "";
+				let receivedDone = false;
+
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					buffer += decoder.decode(value, { stream: true });
+					const lines = buffer.split("\n");
+					buffer = lines.pop() ?? "";
+
+					for (const line of lines) {
+						try {
+							if (line.startsWith("0:")) {
+								const chunk = JSON.parse(line.slice(2));
+								setMessages((prev) =>
+									prev.map((m) =>
+										m.id === assistantId ? { ...m, content: m.content + chunk } : m,
+									),
+								);
+								continue;
+							}
+
+							if (line.startsWith("d:")) {
+								receivedDone = true;
+								continue;
+							}
+
+							if (line.startsWith("3:")) {
+								setError(JSON.parse(line.slice(2)));
+								continue;
+							}
+
+							if (line.startsWith("data: ")) {
+								const data = line.slice(6).trim();
+								if (!data) continue;
+								const parsed = JSON.parse(data);
+								if (parsed.chunk) {
+									setMessages((prev) =>
+										prev.map((m) =>
+											m.id === assistantId ? { ...m, content: m.content + parsed.chunk } : m,
+										),
+									);
+								}
+								if (parsed.done) {
+									receivedDone = true;
+									if (parsed.message) {
+										setMessages((prev) =>
+											prev.map((m) =>
+												m.id === assistantId ? { ...parsed.message, id: parsed.message.id } : m,
+											),
+										);
+									}
+								}
+								if (parsed.error) {
+									setError(parsed.error);
+								}
+							}
+						} catch {
+							// Skip unparseable
+						}
+					}
+				}
+
+				// Stream ended without a done event — connection was cut mid-response
+				if (!receivedDone) {
+					setMessages((prev) =>
+						prev.map((m) =>
+							m.id === assistantId && m.content
+								? { ...m, content: `${m.content}\n\n*(réponse interrompue)*` }
+								: m,
+						),
+					);
+				}
+
+				await refreshSessions();
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Erreur de connexion.");
+				setCanRetry(true);
+				// Remove empty assistant message on error
+				setMessages((prev) => prev.filter((m) => m.id !== assistantId || m.content));
+			} finally {
+				setStreaming(false);
+			}
+		},
+		[apiClient, token, refreshSessions],
+	);
+
 	const sendMessage = useCallback(async () => {
 		const trimmed = input.trim();
 		if (!trimmed && pendingFileIds.length === 0) return;
@@ -138,120 +266,16 @@ export function useChat({
 		setMessages((prev) => [...prev, userMessage]);
 		setInput("");
 		setPendingFileIds([]);
-		setStreaming(true);
-		setError(null);
 
-		// Create a placeholder assistant message for streaming
-		const assistantId = crypto.randomUUID();
-		const assistantMessage: ChatMessage = {
-			id: assistantId,
-			role: "assistant",
-			content: "",
-			created_at: new Date().toISOString(),
-		};
-		setMessages((prev) => [...prev, assistantMessage]);
+		await runStream(currentSessionId, trimmed, fileIdsToSend);
+	}, [input, pendingFileIds, agentId, createSession, runStream]);
 
-		try {
-			const res = await apiClient.chat.sendMessageSSE(
-				currentSessionId,
-				trimmed,
-				token,
-				fileIdsToSend.length ? fileIdsToSend : undefined,
-			);
-
-			if (!res.ok) {
-				const errBody = await res.json().catch(() => ({}));
-				throw new Error(errBody.error?.message ?? errBody.message ?? `Erreur ${res.status}`);
-			}
-
-			if (!res.body) {
-				throw new Error("Réponse vide du serveur.");
-			}
-
-			const reader = res.body.getReader();
-			const decoder = new TextDecoder();
-			let buffer = "";
-			let receivedDone = false;
-
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
-
-				buffer += decoder.decode(value, { stream: true });
-				const lines = buffer.split("\n");
-				buffer = lines.pop() ?? "";
-
-				for (const line of lines) {
-					try {
-						if (line.startsWith("0:")) {
-							const chunk = JSON.parse(line.slice(2));
-							setMessages((prev) =>
-								prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + chunk } : m)),
-							);
-							continue;
-						}
-
-						if (line.startsWith("d:")) {
-							receivedDone = true;
-							continue;
-						}
-
-						if (line.startsWith("3:")) {
-							setError(JSON.parse(line.slice(2)));
-							continue;
-						}
-
-						if (line.startsWith("data: ")) {
-							const data = line.slice(6).trim();
-							if (!data) continue;
-							const parsed = JSON.parse(data);
-							if (parsed.chunk) {
-								setMessages((prev) =>
-									prev.map((m) =>
-										m.id === assistantId ? { ...m, content: m.content + parsed.chunk } : m,
-									),
-								);
-							}
-							if (parsed.done) {
-								receivedDone = true;
-								if (parsed.message) {
-									setMessages((prev) =>
-										prev.map((m) =>
-											m.id === assistantId ? { ...parsed.message, id: parsed.message.id } : m,
-										),
-									);
-								}
-							}
-							if (parsed.error) {
-								setError(parsed.error);
-							}
-						}
-					} catch {
-						// Skip unparseable
-					}
-				}
-			}
-
-			// Stream ended without a done event — connection was cut mid-response
-			if (!receivedDone) {
-				setMessages((prev) =>
-					prev.map((m) =>
-						m.id === assistantId && m.content
-							? { ...m, content: `${m.content}\n\n*(réponse interrompue)*` }
-							: m,
-					),
-				);
-			}
-
-			await refreshSessions();
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Erreur de connexion.");
-			// Remove empty assistant message on error
-			setMessages((prev) => prev.filter((m) => m.id !== assistantId || m.content));
-		} finally {
-			setStreaming(false);
-		}
-	}, [input, pendingFileIds, agentId, apiClient, token, createSession, refreshSessions]);
+	const retry = useCallback(async () => {
+		const last = lastPayloadRef.current;
+		const currentSessionId = sessionIdRef.current;
+		if (!last || !currentSessionId) return;
+		await runStream(currentSessionId, last.content, last.fileIds);
+	}, [runStream]);
 
 	return {
 		messages,
@@ -266,6 +290,8 @@ export function useChat({
 		addPendingFile,
 		removePendingFile,
 		sendMessage,
+		retry,
+		canRetry,
 		loadSession,
 		createSession,
 		deleteSession,
