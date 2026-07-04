@@ -24,5 +24,5 @@
 
 ## Historique
 
-- [`sessions/`](./sessions/) — notes de sessions de travail (mars 2026).
+- [`sessions/`](./sessions/) — notes de sessions de travail.
 - [`archive/`](./archive/) — documents obsolètes conservés pour référence (ex. `toDo.md` du plan v0.03).
