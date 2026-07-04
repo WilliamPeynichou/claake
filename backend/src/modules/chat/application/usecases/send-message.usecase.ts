@@ -37,6 +37,7 @@ export class SendMessageUseCase {
 		contentType = "TEXT",
 		attachments: FileAttachment[] = [],
 		attachmentIds: string[] = [],
+		actorRole?: string,
 	): Promise<{
 		stream: AsyncIterable<string>;
 		onComplete: (fullText: string) => Promise<ChatMessageEntity>;
@@ -53,7 +54,10 @@ export class SendMessageUseCase {
 		if (!agent) {
 			throw new NotFoundException("Agent not found");
 		}
-		if (!agent.isPublished()) {
+		const canTest =
+			(agent.isOwnedBy(userId) && (agent.status === "DRAFT" || agent.status === "REJECTED")) ||
+			((actorRole === "ADMIN" || actorRole === "SUPER_ADMIN") && agent.status === "PENDING");
+		if (!agent.isPublished() && !canTest) {
 			throw new BadRequestException("This agent is not available");
 		}
 		if (!agent.isFree() && !agent.isOwnedBy(userId)) {

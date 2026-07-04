@@ -61,6 +61,7 @@ export default function NewAgentPage() {
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [submitWarnings, setSubmitWarnings] = useState<string[]>([]);
 	const [validation, setValidation] = useState<ValidationResult | null>(null);
+	const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
 	const [backendError, setBackendError] = useState<string | null>(null);
 	const [formData, setFormData] = useState(INITIAL_FORM);
 	const [submitted, setSubmitted] = useState(false);
@@ -279,7 +280,8 @@ export default function NewAgentPage() {
 
 			const result = await apiClient.agents.create(payload, token);
 
-			setValidation(result.validation);
+			setCreatedAgentId(result.id);
+			setValidation(null);
 			setSubmitWarnings(warnings);
 			setSubmitted(true);
 		} catch (err) {
@@ -295,10 +297,10 @@ export default function NewAgentPage() {
 				<div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
 					<Check className="h-8 w-8 text-green-600 dark:text-green-400" />
 				</div>
-				<h2 className="mt-6 text-2xl font-bold">Agent soumis avec succès</h2>
+				<h2 className="mt-6 text-2xl font-bold">Brouillon créé avec succès</h2>
 				<p className="mt-2 max-w-md text-muted-foreground">
-					Votre agent <strong>{formData.name}</strong> a été soumis pour validation. Vous recevrez
-					une notification une fois la revue terminée.
+					Votre agent <strong>{formData.name}</strong> est enregistré en brouillon. Vous pouvez
+					maintenant le tester dans le chat, le modifier, puis le soumettre à validation.
 				</p>
 
 				{submitWarnings.length > 0 && (
@@ -357,10 +359,21 @@ export default function NewAgentPage() {
 					<Button variant="outline" onClick={() => router.push("/dashboard/agents")}>
 						Voir mes agents
 					</Button>
+					{createdAgentId && (
+						<Button variant="outline" onClick={() => router.push(`/chat/${createdAgentId}?test=1`)}>
+							Tester dans le chat
+						</Button>
+					)}
+					{createdAgentId && (
+						<Button onClick={() => router.push(`/dashboard/agents/${createdAgentId}/edit`)}>
+							Modifier le brouillon
+						</Button>
+					)}
 					<Button
 						onClick={() => {
 							setSubmitted(false);
 							setValidation(null);
+							setCreatedAgentId(null);
 							setSubmitWarnings([]);
 							setCurrentStep(0);
 							setFormData(INITIAL_FORM);
@@ -368,7 +381,7 @@ export default function NewAgentPage() {
 							removeImage();
 						}}
 					>
-						Publier un autre agent
+						Créer un autre agent
 					</Button>
 				</div>
 			</div>
@@ -930,9 +943,8 @@ export default function NewAgentPage() {
 							)}
 
 							<p className="text-xs text-muted-foreground">
-								Votre agent sera soumis à une validation automatique (schéma, sécurité, permissions)
-								puis publié si tout est conforme. En cas d&apos;alerte, une revue manuelle sera
-								effectuée.
+								Votre agent sera enregistré en brouillon. Vous pourrez le tester dans le chat avant
+								de le soumettre à validation.
 							</p>
 						</div>
 					)}
@@ -955,7 +967,7 @@ export default function NewAgentPage() {
 						) : (
 							<Button onClick={handleSubmit} disabled={submitting}>
 								<Upload className="mr-2 h-4 w-4" />
-								{submitting ? "Soumission..." : "Soumettre l'agent"}
+								{submitting ? "Création..." : "Créer le brouillon"}
 							</Button>
 						)}
 					</div>

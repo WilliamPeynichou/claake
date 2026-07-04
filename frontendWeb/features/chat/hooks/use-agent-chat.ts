@@ -18,7 +18,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
  * Le composant qui consomme ce hook ne doit pas recalculer de règle métier :
  * il affiche uniquement les états renvoyés ici.
  */
-export function useAgentChat(agentId: string) {
+export function useAgentChat(agentId: string, options: { testMode?: boolean } = {}) {
 	const router = useRouter();
 	const { token, loading: authLoading } = useAuth();
 
@@ -28,7 +28,12 @@ export function useAgentChat(agentId: string) {
 	const [chatConfigLoading, setChatConfigLoading] = useState(true);
 	const [chatConfigError, setChatConfigError] = useState<string | null>(null);
 
-	const chat = useChat({ apiClient, token: token ?? "", agentId });
+	const chat = useChat({
+		apiClient,
+		token: token ?? "",
+		agentId,
+		testMode: options.testMode === true,
+	});
 	const { loadSession, createSession, deleteSession, refreshSessions } = chat;
 
 	useEffect(() => {

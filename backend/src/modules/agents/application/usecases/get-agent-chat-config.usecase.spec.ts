@@ -157,11 +157,11 @@ describe("GetAgentChatConfigUseCase", () => {
 		repo.hasPurchased.mockResolvedValue(false);
 		repo.hasActiveSubscription.mockResolvedValue(false);
 
-		await expect(
-			useCase.execute("agent-1", { id: "user-1", role: "USER" }),
-		).resolves.toMatchObject({
-			access: { can_chat: false, reason: "purchase_required" },
-		});
+		await expect(useCase.execute("agent-1", { id: "user-1", role: "USER" })).resolves.toMatchObject(
+			{
+				access: { can_chat: false, reason: "purchase_required" },
+			},
+		);
 	});
 
 	it("autorise le chat pour un agent payant déjà acheté", async () => {
@@ -171,11 +171,11 @@ describe("GetAgentChatConfigUseCase", () => {
 		repo.hasPurchased.mockResolvedValue(true);
 		repo.hasActiveSubscription.mockResolvedValue(false);
 
-		await expect(
-			useCase.execute("agent-1", { id: "user-1", role: "USER" }),
-		).resolves.toMatchObject({
-			access: { can_chat: true },
-		});
+		await expect(useCase.execute("agent-1", { id: "user-1", role: "USER" })).resolves.toMatchObject(
+			{
+				access: { can_chat: true },
+			},
+		);
 	});
 
 	it("normalise capabilities null en files/images false", async () => {

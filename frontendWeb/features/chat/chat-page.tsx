@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { ChatShell } from "./chat-shell";
 
@@ -16,8 +16,10 @@ function ChatPageLoading() {
 
 function ChatPageInner() {
 	const params = useParams();
+	const searchParams = useSearchParams();
 	const agentId = params.agentId as string;
-	return <ChatShell agentId={agentId} />;
+	const testMode = searchParams.get("test") === "1";
+	return <ChatShell agentId={agentId} testMode={testMode} />;
 }
 
 /** Point d'entrée de la route `/chat/[agentId]`. Reste volontairement fin. */

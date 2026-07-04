@@ -1,16 +1,8 @@
-export type AgentChatConfigStatus =
-	| "approved"
-	| "draft"
-	| "pending"
-	| "rejected"
-	| "suspended";
+export type AgentChatConfigStatus = "approved" | "draft" | "pending" | "rejected" | "suspended";
 
 export type AgentChatConfigMode = "cloud" | "local" | "hybrid";
 
-export type AgentChatConfigCloudStrategy =
-	| "seller_endpoint"
-	| "seller_api_key"
-	| "user_api_key";
+export type AgentChatConfigCloudStrategy = "seller_endpoint" | "seller_api_key" | "user_api_key";
 
 export type AgentChatConfigAccessReason =
 	| "login_required"

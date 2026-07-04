@@ -7,6 +7,7 @@ export interface UseChatOptions {
 	token: string;
 	sessionId?: string | null;
 	agentId?: string;
+	testMode?: boolean;
 }
 
 export interface UseChatReturn {
@@ -35,6 +36,7 @@ export function useChat({
 	token,
 	sessionId: initialSessionId,
 	agentId,
+	testMode = false,
 }: UseChatOptions): UseChatReturn {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
@@ -89,13 +91,13 @@ export function useChat({
 
 	const createSession = useCallback(
 		async (aid: string): Promise<string> => {
-			const result = await apiClient.chat.createSession(aid, token);
+			const result = await apiClient.chat.createSession(aid, token, { test_mode: testMode });
 			setSessionId(result.id);
 			setMessages([]);
 			await refreshSessions();
 			return result.id;
 		},
-		[apiClient, token, refreshSessions],
+		[apiClient, token, refreshSessions, testMode],
 	);
 
 	const deleteSession = useCallback(
