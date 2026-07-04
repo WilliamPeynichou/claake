@@ -330,7 +330,7 @@ Plan to implement                                                               
 │ ---                                                                                                                     │
 │ F9 — Architecture Desktop (documentation)                                                                               │
 │                                                                                                                         │
-│ Fichier : docs/desktop-architecture.md                                                                                  │
+│ Fichier : docs/architecture/desktop-architecture.md                                                                                  │
 │                                                                                                                         │
 │ Contenu documenté :                                                                                                     │
 │                                                                                                                         │

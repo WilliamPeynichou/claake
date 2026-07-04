@@ -61,7 +61,7 @@ Première version fonctionnelle de la plateforme Claake. Mise en place de l'infr
 
 ### Documentation
 
-- [x] `docs/admin-setup.md` — Guide création comptes admin/super admin
+- [x] `docs/guides/admin-setup.md` — Guide création comptes admin/super admin
 - [x] `CLAUDE.md` — Conventions du projet
 
 ---
