@@ -32,6 +32,7 @@ interface ChatShellProps {
  */
 export function ChatShell({ agentId, testMode = false }: ChatShellProps) {
 	const {
+		testMode: effectiveTestMode,
 		token,
 		loading,
 		loginRequired,
@@ -78,7 +79,7 @@ export function ChatShell({ agentId, testMode = false }: ChatShellProps) {
 			<div className="flex flex-1 flex-col min-w-0" style={{ background: "#faf9f5" }}>
 				<ChatHeader agent={displayAgent} />
 
-				{testMode && (
+				{effectiveTestMode && (
 					<div className="mx-4 mt-4 border px-4 py-3 text-sm text-amber-700">
 						Mode test : cette conversation n'est pas publique.
 					</div>

@@ -28,11 +28,18 @@ export function useAgentChat(agentId: string, options: { testMode?: boolean } = 
 	const [chatConfigLoading, setChatConfigLoading] = useState(true);
 	const [chatConfigError, setChatConfigError] = useState<string | null>(null);
 
+	// Test mode : demandé via `?test=1`, ou forcé quand l'agent n'est pas publié
+	// mais que le backend autorise le chat (owner draft/rejected, admin pending).
+	// Le backend re-vérifie les droits ; ce flag évite juste une création de session refusée.
+	const testMode =
+		options.testMode === true ||
+		(chatConfig !== null && chatConfig.status !== "approved" && chatConfig.access.can_chat);
+
 	const chat = useChat({
 		apiClient,
 		token: token ?? "",
 		agentId,
-		testMode: options.testMode === true,
+		testMode,
 	});
 	const { loadSession, createSession, deleteSession, refreshSessions } = chat;
 
@@ -97,6 +104,7 @@ export function useAgentChat(agentId: string, options: { testMode?: boolean } = 
 
 	return {
 		...chat,
+		testMode,
 		token,
 		loading,
 		loginRequired,
