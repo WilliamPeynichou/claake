@@ -18,6 +18,8 @@ interface Props {
 	stop: () => void;
 	token?: string;
 	sessionId?: string | null;
+	agentId?: string;
+	capabilities?: { files: boolean; images: boolean };
 	onFileUploaded?: (fileId: string) => void;
 	onFileRemoved?: (fileId: string) => void;
 }
@@ -33,6 +35,8 @@ export function ChatInputDA({
 	stop,
 	token,
 	sessionId,
+	agentId,
+	capabilities,
 	onFileUploaded,
 	onFileRemoved,
 }: Props) {
@@ -40,6 +44,14 @@ export function ChatInputDA({
 	const [files, setFiles] = useState<PendingFile[]>([]);
 	const [uploading, setUploading] = useState(false);
 	const [uploadErr, setUploadErr] = useState<string | null>(null);
+
+	const canUploadFiles = capabilities ? capabilities.files || capabilities.images : true;
+	const accept = capabilities
+		? [
+				...(capabilities.images ? ["image/jpeg", "image/png", "image/webp"] : []),
+				...(capabilities.files ? ["application/pdf", "text/plain"] : []),
+			].join(",")
+		: "image/jpeg,image/png,image/webp,application/pdf";
 
 	const onFile = useCallback(
 		async (fl: FileList | null) => {
@@ -56,6 +68,7 @@ export function ChatInputDA({
 					fd.append("file", file);
 					const p = new URLSearchParams();
 					if (sessionId) p.set("sessionId", sessionId);
+					if (agentId) p.set("agentId", agentId);
 					const res = await fetch(`${API_BASE}/uploads?${p}`, {
 						method: "POST",
 						headers: { Authorization: `Bearer ${token}` },
@@ -81,7 +94,7 @@ export function ChatInputDA({
 			}
 			setUploading(false);
 		},
-		[token, sessionId, onFileUploaded],
+		[token, sessionId, agentId, onFileUploaded],
 	);
 
 	function removeFile(id: string) {
@@ -140,13 +153,13 @@ export function ChatInputDA({
 				</p>
 			)}
 			<form onSubmit={handleSubmit} className="flex items-end gap-2 max-w-3xl mx-auto">
-				{token && (
+				{token && canUploadFiles && (
 					<>
 						<input
 							ref={fileRef}
 							type="file"
 							className="sr-only"
-							accept="image/jpeg,image/png,image/webp,application/pdf"
+							accept={accept}
 							multiple
 							onChange={(e) => onFile(e.target.files)}
 						/>

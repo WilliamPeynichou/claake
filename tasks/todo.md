@@ -1,76 +1,97 @@
-# Plan — Milestone 3 Admin review
+# Plan — Milestone 4 Desktop chat
 
 Date : 2026-07-06
-Réf : `docs/roadmap-claake-agents-chat.md` — Milestone 3
-Réf session précédente : `docs/suivi_roadmap/plans/2026-07-04-finir-milestone-2.md`
+Branche : `feature/milestone-4-desktop-chat`
+Réf : `docs/roadmap-claake-agents-chat.md` — Milestone 4
+Réf architecture : `docs/architecture/desktop-architecture.md`
 
 ## Objectif
 
-Permettre à un admin de revoir les agents soumis, inspecter leur configuration complète,
-les tester dans le chat Claake en mode validation, puis approuver, rejeter, suspendre ou
-remettre en brouillon selon le statut.
+Livrer une première expérience desktop chat-only permettant à un utilisateur connecté de :
+
+```txt
+connexion
+→ liste agents disponibles
+→ ouverture agent dans le chat
+→ historique conversations
+→ paramètres clés API
+→ streaming chat
+→ déconnexion
+```
 
 ## Contraintes d'architecture
 
-- Le backend décide des droits de review, de test chat et de transition de statut.
-- Le frontend affiche les états/actions renvoyés ou autorisés par l'API sans recalculer la
-  règle métier critique.
-- Le chat admin doit utiliser le mode test existant (`test_mode`) pour les agents `PENDING`.
-- Les pages Next.js admin doivent rester fines et déléguer à `frontendWeb/features/admin/review/`.
-- `shared` doit exposer les méthodes client nécessaires.
+- Desktop = client d'usage quotidien centré chat, pas outil admin/création/paiement.
+- Réutiliser `@claake/shared` pour types, client API et hooks quand possible.
+- Le backend reste source de vérité pour l'accès chat via `AgentChatConfig` et les endpoints
+  chat existants.
+- Pas de logique métier desktop qui devine les droits agent : afficher les états renvoyés
+  par l'API.
+- Pas d'extension backend sauf nécessité constatée.
+- Pour V1, composants UI desktop légers dans `frontendApp/src/`, pas extraction prématurée
+  de composants partagés.
 
 ## Plan
 
-- [x] Explorer l'existant backend admin/review/agents/chat et le frontend admin review.
-- [x] Compléter le backend review si nécessaire : données de revue complètes, transitions
-      approve/reject/suspend/back-to-draft et garde admin.
-- [x] Ajouter/aligner le client partagé `shared/api/client.ts` pour les actions admin review.
-- [x] Créer ou compléter `frontendWeb/features/admin/review/` : liste pending, page détail,
-      actions, rejet avec raison, lien **Tester dans le chat** en `?test=1`.
-- [x] Garder les routes `frontendWeb/app/(admin)/admin/review/**` fines.
-- [x] Ajouter/adapter les tests backend pertinents pour pending admin test et transitions review.
-- [x] Lancer les vérifications ciblées puis documenter la review.
+- [x] Explorer l'état actuel de `frontendApp/`, ses dépendances et son build.
+- [x] Vérifier que `shared/api/client.ts` et `shared/hooks/use-chat.ts` couvrent les besoins
+      desktop.
+- [x] Implémenter l'auth desktop minimale par token utilisateur/API manuel si le flow
+      Supabase complet n'est pas encore présent.
+- [x] Afficher les agents disponibles via endpoints existants (`agents.list` approuvés).
+- [x] Charger `AgentChatConfig` pour l'agent sélectionné et afficher les états d'accès
+      (`login_required`, `api_key_required`, `purchase_required`, `not_published`).
+- [x] Brancher les sessions et messages avec `useChat` : création session, historique,
+      streaming SSE, retry si disponible.
+- [x] Ajouter une vue paramètres clés API : lister, ajouter, supprimer.
+- [x] Ajouter déconnexion et navigation simple desktop.
+- [x] Vérifier `npm -w @claake/frontend-app run build` et Biome ciblé.
 
 ## Critère terminé
 
 ```txt
-agent submitted/PENDING
-→ admin opens review queue
-→ admin sees complete agent configuration
-→ admin tests in chat with ?test=1
-→ admin approves or rejects with reason
-→ approved agent becomes public-chat eligible
+user token configured
+→ desktop lists approved agents
+→ user selects an agent
+→ chat session is created or opened
+→ messages stream through existing backend chat endpoint
+→ user can manage API keys
+→ user can logout
 ```
 
 ## Hors périmètre acceptable
 
-- Checklist qualité persistée en base si le modèle n'existe pas encore.
-- Refactor complet Agent Builder commun.
-- Quotas chat et e2e complets.
+- OAuth/deep-link Supabase complet si le socle desktop n'est pas encore présent.
+- Store Tauri sécurisé si les plugins ne sont pas installés.
+- Paiement/marketplace/admin/création agent.
+- Offline, tray, auto-update, raccourcis globaux.
 
 ## Review
 
-- Backend review étendu via `ReviewAgentUseCase` et `ReviewAgentDto` : décisions
-  `approve`, `reject`, `suspend`, `back_to_draft` avec transitions de statut strictes côté
-  backend.
-- `approve` reste limité aux agents `PENDING` et marque le scan de la dernière version en
-  `PASSED` comme avant.
-- `reject` reste limité aux agents `PENDING` et accepte une raison.
-- `suspend` est disponible pour les agents `APPROVED` côté API admin.
-- `back_to_draft` est disponible pour `PENDING`, `REJECTED` et `SUSPENDED`.
-- Client partagé `shared/api/client.ts` aligné sur les nouvelles décisions admin.
-- Page admin review déplacée dans `frontendWeb/features/admin/review/` ; la route
-  `frontendWeb/app/(admin)/admin/review/page.tsx` est redevenue fine.
-- La file de revue affiche les informations complètes nécessaires : description longue,
-  prompt système, provider, modèle, stratégie, welcome, suggestions, limitations,
-  capacités et dates.
-- Bouton **Tester dans le chat** branché vers `/chat/{agentId}?test=1`, qui utilise le mode
-  test chat existant autorisant les admins sur les agents `PENDING`.
-- Actions UI : approuver, rejeter avec raison, remettre en brouillon avec raison.
+- Branche de travail créée : `feature/milestone-4-desktop-chat`.
+- État constaté : `frontendApp` avait déjà un socle utile (Supabase email/password,
+  routes login/register, liste agents, sessions chat, streaming via `useChat`).
+- `frontendApp/src/pages/chat.tsx` complète maintenant l'expérience desktop avec :
+  - chargement de `AgentChatConfig` pour l'agent sélectionné ;
+  - affichage provider/modèle dans l'en-tête ;
+  - blocage UI basé sur `access.can_chat` et `access.reason` ;
+  - CTA vers les clés API si `api_key_required` ;
+  - welcome message et suggestions de prompts ;
+  - retry depuis le hook partagé `useChat`.
+- `frontendApp/src/components/api-keys-panel.tsx` ajouté : liste, ajout et suppression de
+  clés API via `useApiKeys` et `apiClient.auth.apiKeys`.
+- `frontendApp/src/components/chat-sidebar.tsx` ajoute une entrée **Clés API** et conserve
+  la déconnexion.
+- `frontendApp/src/components/chat-input-da.tsx` respecte `AgentChatConfig.capabilities`
+  pour masquer l'upload si l'agent ne supporte ni fichiers ni images, et transmet
+  `sessionId` + `agentId` à l'upload.
+- `frontendApp/src/components/chat-thread.tsx` affiche welcome/suggestions et l'action
+  **Réessayer** en cas d'erreur retryable.
 
 ## Vérifications
 
-- `npx biome check backend/src/modules/agents/application/dtos/review-agent.dto.ts backend/src/modules/agents/application/usecases/review-agent.usecase.ts backend/src/modules/agents/application/usecases/review-agent.usecase.spec.ts shared/api/client.ts frontendWeb/app/'(admin)'/admin/review/page.tsx frontendWeb/features/admin/review tasks/todo.md` OK.
-- `npm --workspace backend test -- review-agent.usecase.spec.ts create-session.usecase.spec.ts send-message.usecase.spec.ts` OK : 3 suites, 26 tests.
-- `npm run web-build` sans variables publiques échoue hors changement sur `NEXT_PUBLIC_SUPABASE_URL is not set` pendant `/auth/callback`.
-- `NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy NEXT_PUBLIC_API_URL=https://api.example.com npm run web-build` OK.
+- `npm -w @claake/frontend-app run build` OK.
+  - TypeScript OK.
+  - Vite build OK.
+  - Warning non bloquant : chunk JS > 500 kB.
+- `npx biome check frontendApp/src/pages/chat.tsx frontendApp/src/components/chat-sidebar.tsx frontendApp/src/components/chat-thread.tsx frontendApp/src/components/chat-input-da.tsx frontendApp/src/components/api-keys-panel.tsx tasks/todo.md` OK sur les fichiers traités par Biome.

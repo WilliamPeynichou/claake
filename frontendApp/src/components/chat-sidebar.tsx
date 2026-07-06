@@ -7,6 +7,7 @@ import {
 	MessageSquare,
 	PenSquare,
 	Search,
+	Settings,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -19,6 +20,7 @@ interface ChatSidebarProps {
 	onSelectSession: (session: { id: string; agent_id: string; agent_name: string }) => void;
 	onDeleteSession: (sessionId: string) => void;
 	onNewChat: (agent: Agent) => void;
+	onOpenSettings: () => void;
 	onSignOut: () => void;
 	userName: string | null;
 }
@@ -30,6 +32,7 @@ export function ChatSidebar({
 	onSelectSession,
 	onDeleteSession,
 	onNewChat,
+	onOpenSettings,
 	onSignOut,
 	userName,
 }: ChatSidebarProps) {
@@ -121,6 +124,17 @@ export function ChatSidebar({
 							<MessageSquare className="h-4 w-4" />
 						</button>
 					))}
+				</div>
+				<div className="flex justify-center border-t px-3 py-3" style={{ borderColor: "#e8e4d8" }}>
+					<button
+						type="button"
+						onClick={onOpenSettings}
+						className="flex h-9 w-9 items-center justify-center"
+						style={{ color: "#766f62" }}
+						aria-label="Settings"
+					>
+						<Settings className="h-4 w-4" />
+					</button>
 				</div>
 				<div className="flex justify-center border-t px-3 py-4" style={{ borderColor: "#e8e4d8" }}>
 					<button
@@ -307,6 +321,23 @@ export function ChatSidebar({
 
 			{/* Footer */}
 			<div className="border-t px-3 py-3" style={{ borderColor: "#e8e4d8" }}>
+				<div className="mb-2 px-3">
+					<button
+						type="button"
+						onClick={onOpenSettings}
+						className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium transition-colors"
+						style={{ color: "#1e1c18", background: "transparent" }}
+						onMouseEnter={(e) => {
+							(e.currentTarget as HTMLButtonElement).style.background = "#e8e4d8";
+						}}
+						onMouseLeave={(e) => {
+							(e.currentTarget as HTMLButtonElement).style.background = "transparent";
+						}}
+					>
+						<Settings className="h-4 w-4 shrink-0" style={{ color: "#766f62" }} />
+						Clés API
+					</button>
+				</div>
 				<div className="flex items-center gap-3 px-2 py-2">
 					<div
 						className="flex h-8 w-8 shrink-0 items-center justify-center text-xs font-medium"
