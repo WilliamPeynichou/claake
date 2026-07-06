@@ -36,7 +36,7 @@ AgentDefinition partiel
 | Milestone 0 — Socle technique agent-chat | 100% | Champs agent chat, migration, types shared, endpoint `chat-config`, use case, DTO strict et tests complets (login/api-key/purchase/draft owner/pending admin/capabilities/provider). |
 | Milestone 1 — Chat agent utilisable | 100% | ChatShell + welcome/suggestions, retry après erreur, upload conditionné par `capabilities`, retour auto au chat après ajout clé API, page détail agent orientée usage (provider/stratégie/limitations/CTA). |
 | Milestone 2 — Création agent V1 | 100% fonctionnel | Création en brouillon, édition DRAFT/REJECTED, test chat contrôlé via `?test=1`, soumission dédiée `PATCH /agents/:id/submit`, validation backend et dashboard créateur branchés. Dette restante : refactor Agent Builder commun. |
-| Milestone 3 — Admin review | ~60% | File review + approve/reject existent. Reste test admin dans le chat et infos complètes. |
+| Milestone 3 — Admin review | 100% fonctionnel MVP | File review enrichie, test admin dans le chat via `?test=1`, approve/reject, remise en brouillon et suspension côté API. Dette restante : checklist qualité persistée et e2e. |
 | Milestone 4 — Desktop chat | ~10% | Non priorisé tant que chat web/test draft non stabilisés. |
 | Milestone 5 — Qualité agent | ~30% | Welcome/suggestions/limitations faits. Variables, few-shot, format sortie, checklist à faire. |
 | Milestone 6 — Fichiers et connaissance | ~35% | Upload existant partiel, capabilities présentes. Reste enforcement par agent et knowledge base. |
@@ -59,6 +59,10 @@ AgentDefinition partiel
   - `hooks/use-agent-chat.ts` ;
   - composants `ChatHeader`, `MissingApiKeyCard`, `AccessNotice`, `LoginRequired`.
 - Route `frontendWeb/app/(chat)/chat/[agentId]/page.tsx` redevenue fine.
+- Création agent V1 : création en brouillon, édition `DRAFT`/`REJECTED`, test créateur
+  via `?test=1`, soumission dédiée `PATCH /agents/:id/submit`.
+- Review admin enrichie : données complètes de validation, test chat admin, approve/reject,
+  remise en brouillon et suspension côté API.
 - Durcissement sécurité backend :
   - accès agent revérifié à chaque message ;
   - `download-info` protégé par statut/ownership ;
@@ -69,34 +73,35 @@ AgentDefinition partiel
 
 ### Blocage produit principal
 
-Le chat public est maintenant plus sûr, mais le mode test n'existe pas encore.
-Actuellement, l'exécution chat bloque les agents non `APPROVED`. C'est correct pour le
-public, mais cela empêche encore :
+Le parcours MVP web principal est maintenant fonctionnel jusqu'à la validation admin :
 
 ```txt
-créateur teste DRAFT/REJECTED
-admin teste PENDING
+create draft
+→ update draft
+→ test in chat
+→ submit for review
+→ admin test
+→ approve/reject
+→ public chat
 ```
 
-La prochaine priorité produit est donc :
+Le prochain blocage produit n'est plus le mode test, mais la consolidation avant élargissement :
 
 ```txt
-Créer un mode test agent contrôlé
-→ propriétaire peut tester DRAFT/REJECTED
-→ admin peut tester PENDING
-→ public reste limité à APPROVED
+refactor Agent Builder commun
+→ quotas chat simples
+→ e2e MVP
+→ desktop chat
 ```
 
 ### Prochain ordre recommandé
 
-1. Ajouter mode test agent draft/admin côté backend.
-2. Brancher bouton **Tester dans le chat** dans dashboard créateur.
-3. Brancher bouton **Tester dans le chat** dans review admin.
-4. Refactoriser création/édition dans `frontendWeb/features/agents/builder/`.
-5. Utiliser `AgentChatConfig.capabilities` pour activer/masquer uploads.
-6. Ajouter retour automatique après ajout de clé API.
-7. Ajouter quotas chat simples.
-8. Ajouter tests e2e du parcours MVP.
+1. Refactoriser création/édition dans `frontendWeb/features/agents/builder/`.
+2. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique.
+3. Ajouter tests e2e MVP : création, test draft, soumission, review admin, chat public.
+4. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
+5. Démarrer Milestone 4 — Desktop chat.
+6. Préparer Milestone 5 — Qualité agent : variables, few-shot, format sortie, checklist.
 
 ---
 

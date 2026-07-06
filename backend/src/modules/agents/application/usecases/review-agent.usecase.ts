@@ -4,6 +4,7 @@ import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
 } from "../../domain/ports/agent.repository.port.js";
+import type { ReviewAgentDecision } from "../dtos/review-agent.dto.js";
 
 @Injectable()
 export class ReviewAgentUseCase {
@@ -14,7 +15,7 @@ export class ReviewAgentUseCase {
 
 	async execute(
 		agentId: string,
-		decision: "approve" | "reject",
+		decision: ReviewAgentDecision,
 		reason?: string,
 		actor?: { id: string; email: string },
 	): Promise<{ status: string; reason?: string }> {
@@ -23,35 +24,64 @@ export class ReviewAgentUseCase {
 			throw new NotFoundException("Agent not found");
 		}
 
-		if (agent.status !== "PENDING") {
-			throw new BadRequestException("Only pending agents can be reviewed");
-		}
+		const nextStatus = this.resolveNextStatus(agent.status, decision);
+		const scanStatus = decision === "approve" ? "PASSED" : undefined;
+		await this.repo.updateStatus(agentId, nextStatus, scanStatus);
 
-		if (decision === "approve") {
-			await this.repo.updateStatus(agentId, "APPROVED", "PASSED");
-			if (actor) {
-				await this.activityLog.log({
-					actorId: actor.id,
-					actorEmail: actor.email,
-					action: "agent.approved",
-					targetType: "agent",
-					targetId: agentId,
-				});
-			}
-			return { status: "approved" };
-		}
-
-		await this.repo.updateStatus(agentId, "REJECTED");
 		if (actor) {
 			await this.activityLog.log({
 				actorId: actor.id,
 				actorEmail: actor.email,
-				action: "agent.rejected",
+				action: `agent.${this.actionName(decision)}`,
 				targetType: "agent",
 				targetId: agentId,
 				metadata: reason ? { reason } : undefined,
 			});
 		}
-		return { status: "rejected", reason };
+
+		return {
+			status: nextStatus.toLowerCase(),
+			...(reason ? { reason } : {}),
+		};
+	}
+
+	private resolveNextStatus(currentStatus: string, decision: ReviewAgentDecision): string {
+		switch (decision) {
+			case "approve":
+				if (currentStatus !== "PENDING") {
+					throw new BadRequestException("Only pending agents can be approved");
+				}
+				return "APPROVED";
+			case "reject":
+				if (currentStatus !== "PENDING") {
+					throw new BadRequestException("Only pending agents can be rejected");
+				}
+				return "REJECTED";
+			case "suspend":
+				if (currentStatus !== "APPROVED") {
+					throw new BadRequestException("Only approved agents can be suspended");
+				}
+				return "SUSPENDED";
+			case "back_to_draft":
+				if (!["PENDING", "REJECTED", "SUSPENDED"].includes(currentStatus)) {
+					throw new BadRequestException(
+						"Only pending, rejected or suspended agents can be moved back to draft",
+					);
+				}
+				return "DRAFT";
+		}
+	}
+
+	private actionName(decision: ReviewAgentDecision): string {
+		switch (decision) {
+			case "approve":
+				return "approved";
+			case "reject":
+				return "rejected";
+			case "suspend":
+				return "suspended";
+			case "back_to_draft":
+				return "moved_to_draft";
+		}
 	}
 }
