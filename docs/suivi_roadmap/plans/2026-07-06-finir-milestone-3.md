@@ -1,5 +1,10 @@
 # Plan — Finir le Milestone 3 (Admin review)
 
+> **Statut : ✅ Réalisé et livré.** Voir le compte rendu
+> `docs/suivi_roadmap/comptes-rendus/2026-07-06-finition-milestone-3.md`.
+> Mergé dans `main` via `merge: feature/milestone-3-admin-review → main (milestone 3)`
+> (`9ea47b8`) et poussé sur `origin/main`.
+
 Date : 2026-07-06
 Réf : `docs/roadmap-claake-agents-chat.md` — Milestone 3
 Réf session précédente : `docs/suivi_roadmap/plans/2026-07-04-finir-milestone-2.md`
@@ -98,6 +103,13 @@ agent submitted/PENDING
 → admin approves or rejects with reason
 → approved agent becomes public-chat eligible
 ```
+
+## Suivi des lots
+
+- [x] Lot 1 — Backend review complet (approve/reject/suspend/back_to_draft + transitions + logs).
+- [x] Lot 2 — Shared client aligné sur les décisions admin.
+- [x] Lot 3 — Frontend admin review extrait dans `frontendWeb/features/admin/review/`.
+- [x] Lot 4 — Tests et vérifications (Biome + tests backend + build web).
 
 ## Hors périmètre restant acceptable
 

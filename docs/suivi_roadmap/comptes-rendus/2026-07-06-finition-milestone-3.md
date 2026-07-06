@@ -209,6 +209,21 @@ Résultat : OK.
 
 ### Tests backend ciblés
 
+Relance de vérification au moment de la livraison :
+
+```txt
+npm --workspace @claake/backend run test -- review-agent
+```
+
+Résultat : OK.
+
+```txt
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+```
+
+Suite complète review + mode test chat (session de dev) :
+
 ```txt
 npm --workspace backend test -- review-agent.usecase.spec.ts create-session.usecase.spec.ts send-message.usecase.spec.ts
 ```
@@ -235,7 +250,27 @@ Résultat : OK.
 
 ---
 
-## 7. État roadmap après cette session
+## 7. Livraison Git
+
+Scope M3 isolé sur une branche dédiée, puis intégré dans `main` en `--no-ff` et poussé.
+
+```txt
+git checkout -b feature/milestone-3-admin-review   # depuis main
+git commit                                          # 23ff64a — feat(admin): finish milestone 3 admin review
+git merge --no-ff feature/milestone-3-admin-review  # 9ea47b8 — merge: ... → main (milestone 3)
+git push origin main                                # 17051ec..9ea47b8
+git branch -d feature/milestone-3-admin-review      # branche supprimée
+```
+
+- Commit de feature : `23ff64a` (12 fichiers, +879 / −253).
+- Merge dans `main` : `9ea47b8`.
+- `main` et `origin/main` synchronisés.
+- Hors scope volontairement non commité : submodule `skills`, `.claakecode/`, `.codex/`,
+  `AGENTS.md`, `ClaakePresentation/`.
+
+---
+
+## 8. État roadmap après cette session
 
 | Milestone | État |
 |---|---:|
@@ -250,7 +285,7 @@ Résultat : OK.
 
 ---
 
-## 8. Dette / suite recommandée
+## 9. Dette / suite recommandée
 
 - Brancher l'action **Suspendre** dans la page de gestion globale des agents approuvés
   (`/admin/agents`) plutôt que dans la file `PENDING`.
