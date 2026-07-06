@@ -1,4 +1,5 @@
 import type { ChatMessage as ChatMessageType } from "@claake/shared";
+import { RefreshCcw } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { ChatMessage } from "./chat-message";
 
@@ -7,9 +8,24 @@ interface Props {
 	streaming: boolean;
 	error?: string | null;
 	agentName?: string | null;
+	welcomeMessage?: string | null;
+	suggestedPrompts?: string[];
+	onUsePrompt?: (prompt: string) => void;
+	onRetry?: () => void;
+	canRetry?: boolean;
 }
 
-export function ChatThread({ messages, streaming, error, agentName }: Props) {
+export function ChatThread({
+	messages,
+	streaming,
+	error,
+	agentName,
+	welcomeMessage,
+	suggestedPrompts = [],
+	onUsePrompt,
+	onRetry,
+	canRetry = false,
+}: Props) {
 	const bottomRef = useRef<HTMLDivElement>(null);
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -18,11 +34,11 @@ export function ChatThread({ messages, streaming, error, agentName }: Props) {
 	if (messages.length === 0 && !streaming) {
 		return (
 			<div
-				className="flex flex-1 flex-col items-center justify-center gap-3"
+				className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center"
 				style={{ background: "#faf9f5" }}
 			>
 				<div
-					className="h-12 w-12 flex items-center justify-center"
+					className="flex h-12 w-12 items-center justify-center"
 					style={{ background: "#e8ede0", border: "1px solid #d0dac4" }}
 				>
 					<span
@@ -40,9 +56,24 @@ export function ChatThread({ messages, streaming, error, agentName }: Props) {
 				>
 					{agentName ?? "Sélectionnez un agent"}
 				</p>
-				<p className="text-xs" style={{ color: "#a09a8a" }}>
-					Démarrez la conversation
+				<p className="max-w-xl text-sm" style={{ color: "#766f62" }}>
+					{welcomeMessage ?? "Démarrez la conversation"}
 				</p>
+				{suggestedPrompts.length > 0 && (
+					<div className="mt-4 flex max-w-2xl flex-wrap justify-center gap-2">
+						{suggestedPrompts.map((prompt) => (
+							<button
+								key={prompt}
+								type="button"
+								onClick={() => onUsePrompt?.(prompt)}
+								className="border px-3 py-2 text-xs transition-colors"
+								style={{ borderColor: "#d0dac4", color: "#6b7c5c", background: "#f3f0e8" }}
+							>
+								{prompt}
+							</button>
+						))}
+					</div>
+				)}
 			</div>
 		);
 	}
@@ -60,7 +91,7 @@ export function ChatThread({ messages, streaming, error, agentName }: Props) {
 			{streaming && messages[messages.length - 1]?.role !== "assistant" && (
 				<div className="flex gap-3 px-6 py-3">
 					<div
-						className="h-7 w-7 shrink-0 flex items-center justify-center text-xs"
+						className="flex h-7 w-7 shrink-0 items-center justify-center text-xs"
 						style={{ background: "#e8e4d8", color: "#6b6558" }}
 					>
 						{agentName?.[0]?.toUpperCase() ?? "A"}
@@ -70,7 +101,7 @@ export function ChatThread({ messages, streaming, error, agentName }: Props) {
 							{[0, 1, 2].map((j) => (
 								<span
 									key={j}
-									className="h-1.5 w-1.5 rounded-full animate-bounce"
+									className="h-1.5 w-1.5 animate-bounce rounded-full"
 									style={{ background: "#a09a8a", animationDelay: `${j * 150}ms` }}
 								/>
 							))}
@@ -80,10 +111,19 @@ export function ChatThread({ messages, streaming, error, agentName }: Props) {
 			)}
 			{error && (
 				<div
-					className="mx-6 my-2 px-4 py-3 text-sm"
+					className="mx-6 my-2 flex items-center justify-between gap-3 px-4 py-3 text-sm"
 					style={{ background: "#fdf5f5", border: "1px solid #e8c4c4", color: "#c44" }}
 				>
-					{error}
+					<span>{error}</span>
+					{canRetry && onRetry && (
+						<button
+							type="button"
+							onClick={onRetry}
+							className="inline-flex items-center gap-1 text-xs"
+						>
+							<RefreshCcw className="h-3.5 w-3.5" /> Réessayer
+						</button>
+					)}
 				</div>
 			)}
 			<div ref={bottomRef} />
