@@ -132,7 +132,12 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(agent),
 					}),
 				),
-			review: (agentId: string, decision: "approve" | "reject", token: string, reason?: string) =>
+			review: (
+				agentId: string,
+				decision: "approve" | "reject" | "suspend" | "back_to_draft",
+				token: string,
+				reason?: string,
+			) =>
 				fetchJson<{ status: string; reason?: string }>(
 					`/agents/${agentId}/review`,
 					withAuth(token, {

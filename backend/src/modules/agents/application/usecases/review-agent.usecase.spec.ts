@@ -68,7 +68,7 @@ describe("ReviewAgentUseCase", () => {
 		await expect(useCase.execute("x", "approve")).rejects.toThrow(NotFoundException);
 	});
 
-	it("throws BadRequestException for non-PENDING agent", async () => {
+	it("throws BadRequestException when approving a non-PENDING agent", async () => {
 		mockRepo.findById.mockResolvedValue(makeAgent("APPROVED"));
 
 		await expect(useCase.execute("agent-1", "approve")).rejects.toThrow(BadRequestException);
@@ -90,6 +90,32 @@ describe("ReviewAgentUseCase", () => {
 
 		expect(result.status).toBe("rejected");
 		expect(result.reason).toBe("Inappropriate content");
-		expect(mockRepo.updateStatus).toHaveBeenCalledWith("agent-1", "REJECTED");
+		expect(mockRepo.updateStatus).toHaveBeenCalledWith("agent-1", "REJECTED", undefined);
+	});
+
+	it("suspends an approved agent", async () => {
+		mockRepo.findById.mockResolvedValue(makeAgent("APPROVED"));
+
+		const result = await useCase.execute("agent-1", "suspend", "Policy issue");
+
+		expect(result.status).toBe("suspended");
+		expect(result.reason).toBe("Policy issue");
+		expect(mockRepo.updateStatus).toHaveBeenCalledWith("agent-1", "SUSPENDED", undefined);
+	});
+
+	it("moves a pending agent back to draft", async () => {
+		mockRepo.findById.mockResolvedValue(makeAgent("PENDING"));
+
+		const result = await useCase.execute("agent-1", "back_to_draft", "Needs changes");
+
+		expect(result.status).toBe("draft");
+		expect(result.reason).toBe("Needs changes");
+		expect(mockRepo.updateStatus).toHaveBeenCalledWith("agent-1", "DRAFT", undefined);
+	});
+
+	it("rejects suspension for a pending agent", async () => {
+		mockRepo.findById.mockResolvedValue(makeAgent("PENDING"));
+
+		await expect(useCase.execute("agent-1", "suspend")).rejects.toThrow(BadRequestException);
 	});
 });
