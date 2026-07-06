@@ -21,13 +21,18 @@ export class CreateSessionUseCase {
 		@Inject(AGENT_REPOSITORY) private readonly agentRepo: AgentRepositoryPort,
 	) {}
 
-	async execute(agentId: string, userId: string) {
+	async execute(agentId: string, userId: string, testMode = false, actorRole?: string) {
 		const agent = await this.agentRepo.findById(agentId);
 		if (!agent) {
 			throw new NotFoundException("Agent not found");
 		}
 
-		if (agent.status !== "APPROVED") {
+		const canTest =
+			testMode &&
+			((agent.isOwnedBy(userId) && (agent.status === "DRAFT" || agent.status === "REJECTED")) ||
+				((actorRole === "ADMIN" || actorRole === "SUPER_ADMIN") && agent.status === "PENDING"));
+
+		if (agent.status !== "APPROVED" && !canTest) {
 			throw new BadRequestException("This agent is not available");
 		}
 

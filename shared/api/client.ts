@@ -117,7 +117,7 @@ export function createApiClient(baseUrl: string) {
 				),
 			mine: (token: string) => fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
 			create: (agent: CreateAgentInput, token: string) =>
-				fetchJson<Agent & { validation: ValidationResult }>(
+				fetchJson<Agent>(
 					"/agents",
 					withAuth(token, {
 						method: "POST",
@@ -139,6 +139,11 @@ export function createApiClient(baseUrl: string) {
 						method: "PATCH",
 						body: JSON.stringify({ decision, reason }),
 					}),
+				),
+			submit: (agentId: string, token: string) =>
+				fetchJson<ValidationResult>(
+					`/agents/${agentId}/submit`,
+					withAuth(token, { method: "PATCH" }),
 				),
 			downloadInfo: (agentId: string, token: string) =>
 				fetchJson<{
@@ -191,12 +196,12 @@ export function createApiClient(baseUrl: string) {
 				),
 		},
 		chat: {
-			createSession: (agentId: string, token: string) =>
+			createSession: (agentId: string, token: string, options?: { test_mode?: boolean }) =>
 				fetchJson<{ id: string; agent_id: string; created_at: string }>(
 					"/chat/sessions",
 					withAuth(token, {
 						method: "POST",
-						body: JSON.stringify({ agent_id: agentId }),
+						body: JSON.stringify({ agent_id: agentId, ...(options ?? {}) }),
 					}),
 				),
 			listSessions: (token: string, limit = 20, offset = 0) =>

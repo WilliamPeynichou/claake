@@ -1,7 +1,7 @@
 "use client";
 
 import type { Agent } from "@claake/shared";
-import { Bot, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { Bot, Eye, Pencil, Play, Plus, Send, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +55,20 @@ export default function MyAgentsPage() {
 			setAgents((prev) => prev.map((a) => (a.id === agent.id ? { ...a, status: "draft" } : a)));
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Erreur lors de la dépublication.");
+		} finally {
+			setActionLoading(null);
+		}
+	}
+
+	async function handleSubmit(agent: Agent) {
+		if (!token) return;
+		setActionLoading(agent.id);
+		setError(null);
+		try {
+			await apiClient.agents.submit(agent.id, token);
+			setAgents((prev) => prev.map((a) => (a.id === agent.id ? { ...a, status: "pending" } : a)));
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Erreur lors de la soumission.");
 		} finally {
 			setActionLoading(null);
 		}
@@ -153,6 +167,26 @@ export default function MyAgentsPage() {
 													<Pencil className="mr-1 h-3.5 w-3.5" />
 													Modifier
 												</Link>
+											</Button>
+										)}
+										{(agent.status === "draft" || agent.status === "rejected") && (
+											<Button variant="outline" size="sm" asChild className="flex-1">
+												<Link href={`/chat/${agent.id}?test=1`}>
+													<Play className="mr-1 h-3.5 w-3.5" />
+													Tester
+												</Link>
+											</Button>
+										)}
+										{(agent.status === "draft" || agent.status === "rejected") && (
+											<Button
+												variant="outline"
+												size="sm"
+												className="flex-1"
+												disabled={isLoading}
+												onClick={() => handleSubmit(agent)}
+											>
+												<Send className="mr-1 h-3.5 w-3.5" />
+												{isLoading ? "..." : "Soumettre"}
 											</Button>
 										)}
 										{agent.status === "approved" && (

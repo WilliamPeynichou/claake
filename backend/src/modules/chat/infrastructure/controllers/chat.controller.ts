@@ -53,7 +53,12 @@ export class ChatController {
 	@Post("sessions")
 	@Throttle({ default: { ttl: 60_000, limit: 20 } })
 	async create(@Body() dto: CreateSessionDto, @Req() req: AuthenticatedRequest) {
-		const session = await this.createSession.execute(dto.agent_id, req.user.id);
+		const session = await this.createSession.execute(
+			dto.agent_id,
+			req.user.id,
+			dto.test_mode === true,
+			req.user.role,
+		);
 		return {
 			id: session.id,
 			agent_id: session.agentId,
@@ -131,6 +136,7 @@ export class ChatController {
 			dto.content_type ?? "TEXT",
 			attachments,
 			attachmentIds,
+			req.user.role,
 		);
 
 		// Vercel AI SDK data stream protocol
@@ -169,7 +175,12 @@ export class ChatController {
 		return { deleted: true };
 	}
 
-	private parseBoundedInt(value: string | undefined, fallback: number, min: number, max: number): number {
+	private parseBoundedInt(
+		value: string | undefined,
+		fallback: number,
+		min: number,
+		max: number,
+	): number {
 		if (value === undefined) return fallback;
 		const parsed = Number.parseInt(value, 10);
 		if (!Number.isFinite(parsed) || parsed < min) return fallback;

@@ -22,6 +22,7 @@ function ChatLoading() {
 
 interface ChatShellProps {
 	agentId: string;
+	testMode?: boolean;
 }
 
 /**
@@ -29,8 +30,9 @@ interface ChatShellProps {
  * messages et input. Toute la logique métier vient de `useAgentChat`, qui
  * lui-même s'appuie sur le contrat backend `AgentChatConfig`.
  */
-export function ChatShell({ agentId }: ChatShellProps) {
+export function ChatShell({ agentId, testMode = false }: ChatShellProps) {
 	const {
+		testMode: effectiveTestMode,
 		token,
 		loading,
 		loginRequired,
@@ -57,7 +59,7 @@ export function ChatShell({ agentId }: ChatShellProps) {
 		sendMessage,
 		retry,
 		canRetry,
-	} = useAgentChat(agentId);
+	} = useAgentChat(agentId, { testMode });
 
 	if (loading) return <ChatLoading />;
 	if (loginRequired) return <LoginRequired onLogin={goToLogin} />;
@@ -76,6 +78,12 @@ export function ChatShell({ agentId }: ChatShellProps) {
 
 			<div className="flex flex-1 flex-col min-w-0" style={{ background: "#faf9f5" }}>
 				<ChatHeader agent={displayAgent} />
+
+				{effectiveTestMode && (
+					<div className="mx-4 mt-4 border px-4 py-3 text-sm text-amber-700">
+						Mode test : cette conversation n'est pas publique.
+					</div>
+				)}
 
 				{chatConfigError && (
 					<div className="mx-4 mt-4 border px-4 py-3 text-sm text-red-700">{chatConfigError}</div>

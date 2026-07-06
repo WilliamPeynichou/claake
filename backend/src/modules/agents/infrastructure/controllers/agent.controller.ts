@@ -26,14 +26,14 @@ import { ReviewAgentDto } from "../../application/dtos/review-agent.dto.js";
 import { UpdateAgentDto } from "../../application/dtos/update-agent.dto.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
-import { GetAgentChatConfigUseCase } from "../../application/usecases/get-agent-chat-config.usecase.js";
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
+import { GetAgentChatConfigUseCase } from "../../application/usecases/get-agent-chat-config.usecase.js";
 import { GetAgentDownloadInfoUseCase } from "../../application/usecases/get-agent-download-info.usecase.js";
 import { ListAgentsUseCase } from "../../application/usecases/list-agents.usecase.js";
 import { ReviewAgentUseCase } from "../../application/usecases/review-agent.usecase.js";
+import { SubmitAgentForReviewUseCase } from "../../application/usecases/submit-agent-for-review.usecase.js";
 import { UnpublishAgentUseCase } from "../../application/usecases/unpublish-agent.usecase.js";
 import { UpdateAgentUseCase } from "../../application/usecases/update-agent.usecase.js";
-import { ValidateAgentUseCase } from "../../application/usecases/validate-agent.usecase.js";
 
 type RequestUser = { id: string; email: string; role: string };
 
@@ -45,7 +45,7 @@ export class AgentController {
 		private readonly getAgentChatConfig: GetAgentChatConfigUseCase,
 		private readonly createAgent: CreateAgentUseCase,
 		private readonly updateAgent: UpdateAgentUseCase,
-		private readonly validateAgent: ValidateAgentUseCase,
+		private readonly submitAgent: SubmitAgentForReviewUseCase,
 		private readonly reviewAgent: ReviewAgentUseCase,
 		private readonly getDownloadInfo: GetAgentDownloadInfoUseCase,
 		private readonly deleteAgent: DeleteAgentUseCase,
@@ -120,12 +120,7 @@ export class AgentController {
 	@UseGuards(SupabaseAuthGuard)
 	@Throttle({ default: { ttl: 60_000, limit: 10 } })
 	async create(@Body() dto: CreateAgentDto, @Req() req: { user: RequestUser }) {
-		const agent = await this.createAgent.execute(dto, req.user.id);
-
-		// Run validation pipeline
-		const validation = await this.validateAgent.execute(agent.id);
-
-		return { ...agent, validation };
+		return this.createAgent.execute(dto, req.user.id);
 	}
 
 	@Patch(":id")
@@ -137,6 +132,13 @@ export class AgentController {
 		@Req() req: { user: RequestUser },
 	) {
 		return this.updateAgent.execute(id, dto, req.user.id);
+	}
+
+	@Patch(":id/submit")
+	@UseGuards(SupabaseAuthGuard)
+	@Throttle({ default: { ttl: 60_000, limit: 10 } })
+	async submit(@Param("id") id: string, @Req() req: { user: RequestUser }) {
+		return this.submitAgent.execute(id, req.user.id);
 	}
 
 	@Get(":id/download-info")

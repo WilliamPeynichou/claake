@@ -18,7 +18,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
  * Le composant qui consomme ce hook ne doit pas recalculer de règle métier :
  * il affiche uniquement les états renvoyés ici.
  */
-export function useAgentChat(agentId: string) {
+export function useAgentChat(agentId: string, options: { testMode?: boolean } = {}) {
 	const router = useRouter();
 	const { token, loading: authLoading } = useAuth();
 
@@ -28,7 +28,19 @@ export function useAgentChat(agentId: string) {
 	const [chatConfigLoading, setChatConfigLoading] = useState(true);
 	const [chatConfigError, setChatConfigError] = useState<string | null>(null);
 
-	const chat = useChat({ apiClient, token: token ?? "", agentId });
+	// Test mode : demandé via `?test=1`, ou forcé quand l'agent n'est pas publié
+	// mais que le backend autorise le chat (owner draft/rejected, admin pending).
+	// Le backend re-vérifie les droits ; ce flag évite juste une création de session refusée.
+	const testMode =
+		options.testMode === true ||
+		(chatConfig !== null && chatConfig.status !== "approved" && chatConfig.access.can_chat);
+
+	const chat = useChat({
+		apiClient,
+		token: token ?? "",
+		agentId,
+		testMode,
+	});
 	const { loadSession, createSession, deleteSession, refreshSessions } = chat;
 
 	useEffect(() => {
@@ -92,6 +104,7 @@ export function useAgentChat(agentId: string) {
 
 	return {
 		...chat,
+		testMode,
 		token,
 		loading,
 		loginRequired,

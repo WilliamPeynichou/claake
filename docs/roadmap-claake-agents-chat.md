@@ -35,7 +35,7 @@ AgentDefinition partiel
 |---|---:|---|
 | Milestone 0 — Socle technique agent-chat | 100% | Champs agent chat, migration, types shared, endpoint `chat-config`, use case, DTO strict et tests complets (login/api-key/purchase/draft owner/pending admin/capabilities/provider). |
 | Milestone 1 — Chat agent utilisable | 100% | ChatShell + welcome/suggestions, retry après erreur, upload conditionné par `capabilities`, retour auto au chat après ajout clé API, page détail agent orientée usage (provider/stratégie/limitations/CTA). |
-| Milestone 2 — Création agent V1 | ~60% | Création/édition existent avec champs chat. Reste Agent Builder commun et mode test draft. |
+| Milestone 2 — Création agent V1 | 100% fonctionnel | Création en brouillon, édition DRAFT/REJECTED, test chat contrôlé via `?test=1`, soumission dédiée `PATCH /agents/:id/submit`, validation backend et dashboard créateur branchés. Dette restante : refactor Agent Builder commun. |
 | Milestone 3 — Admin review | ~60% | File review + approve/reject existent. Reste test admin dans le chat et infos complètes. |
 | Milestone 4 — Desktop chat | ~10% | Non priorisé tant que chat web/test draft non stabilisés. |
 | Milestone 5 — Qualité agent | ~30% | Welcome/suggestions/limitations faits. Variables, few-shot, format sortie, checklist à faire. |
@@ -105,7 +105,7 @@ Créer un mode test agent contrôlé
 Avant de développer une feature de cette roadmap, lire et respecter le document technique suivant :
 
 ```txt
-docs/analyse-technique-architecture-claake.md
+docs/architecture/analyse-technique-architecture-claake.md
 ```
 
 Ce document est la référence d'architecture pour les prochains développements. Il définit le noyau à stabiliser :
@@ -203,7 +203,7 @@ Ces instructions complètent la roadmap produit. Elles doivent être appliquées
 Toujours commencer par relire :
 
 ```txt
-docs/analyse-technique-architecture-claake.md
+docs/architecture/analyse-technique-architecture-claake.md
 ```
 
 Puis vérifier que la feature respecte le noyau :
@@ -1150,7 +1150,7 @@ Plus tard.
 
 Livrable :
 
-- lecture obligatoire de `docs/analyse-technique-architecture-claake.md` avant implémentation ;
+- lecture obligatoire de `docs/architecture/analyse-technique-architecture-claake.md` avant implémentation ;
 - ajout des champs `welcomeMessage`, `suggestedPrompts`, `limitations`, `modelSettings`, `capabilities` côté Prisma/backend/shared ;
 - création du type partagé `AgentChatConfig` ;
 - création du use case backend `GetAgentChatConfigUseCase` ;
@@ -1254,7 +1254,7 @@ Livrable :
 
 ## Features roadmap déjà réalisées ou très avancées
 
-1. Lire et appliquer `docs/analyse-technique-architecture-claake.md` comme référence d'architecture — fait.
+1. Lire et appliquer `docs/architecture/analyse-technique-architecture-claake.md` comme référence d'architecture — fait.
 2. Ajouter les champs agent nécessaires au chat : `welcomeMessage`, `suggestedPrompts`, `limitations`, `modelSettings`, `capabilities` — fait.
 3. Créer le contrat partagé `AgentChatConfig` — fait.
 4. Créer le use case backend `GetAgentChatConfigUseCase` et l'endpoint `GET /agents/:id/chat-config` — fait.
