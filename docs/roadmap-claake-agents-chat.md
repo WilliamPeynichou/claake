@@ -1,16 +1,17 @@
 # Roadmap produit et développement Claake
 
-## État du chantier — mise à jour 2026-07-03
+## État du chantier — mise à jour 2026-07-06
 
 ### Derniers commits structurants
 
 ```txt
-b805835 refactor web chat shell
-b5efdac merge: feature/agent-chat-config → main
-9867376 feat: agent chat config — endpoint, usecase, types et page chat
-881f08d merge: feature agent chat fields
-7547792 feat: add agent chat fields
-dabd98d fix backend security audit findings
+9989015 docs(sessions): add milestone 5 to session 2026-07-06
+f75e247 merge: feature/milestone-5-agent-quality → main (milestone 5)
+c884bd7 merge: feature/milestone-4-desktop-chat → main (milestone 4)
+9ea47b8 merge: feature/milestone-3-admin-review → main (milestone 3)
+17051ec merge: feature/milestone-2-agent-creation → main (milestone 2)
+277b2ab merge: feature/milestone-1-finish → main (milestone 1)
+973a111 merge: feature/chat-shell-refactor → main (milestone 0)
 ```
 
 ### Avancement global
@@ -1301,9 +1302,11 @@ Un développeur peut créer un agent Claude/GPT
 → puis dans le chat desktop
 ```
 
-État actuel : le parcours utilisateur public web est bien avancé, mais le MVP n'est pas
-encore atteint car il manque le test contrôlé des agents draft/pending et le builder agent
-unifié.
+État actuel : le parcours MVP fonctionnel est atteint de bout en bout (create draft → test
+chat → submit → admin test → approve → chat public web + desktop). Le test contrôlé des
+agents draft/pending existe (`?test=1`). Reste de la **consolidation** avant élargissement :
+builder agent unifié (dette M2), quotas chat, tests e2e MVP, puis fichiers/connaissance (M6)
+et durcissement beta (M7). Le live n'a pas encore été validé (credentials Supabase absents).
 
 Tout ce qui ne sert pas directement ce parcours doit être repoussé.
 
