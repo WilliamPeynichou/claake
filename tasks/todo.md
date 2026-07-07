@@ -1,78 +1,42 @@
-# Plan — Milestone 5 Qualité agent
+# Plan — Refactor Agent Builder commun
 
 Date : 2026-07-06
-Branche : `feature/milestone-5-agent-quality`
-Réf : `docs/roadmap-claake-agents-chat.md` — Milestone 5
+Branche : `feature/agent-builder-refactor`
+Réf : `docs/suivi_roadmap/plans/2026-07-06-refactor-agent-builder.md`
 
-## Objectif
+## Réalisé
 
-Améliorer qualité réelle des agents sans casser le noyau agent → chat :
+- Constantes builder extraites vers `shared/lib/constants.ts` : `CLOUD_STRATEGIES`,
+  `ENDPOINT_FORMATS`, `BUILDER_PROVIDER_OPTIONS`.
+- Feature `frontendWeb/features/agents/builder/` :
+  - `agent-builder.types.ts` — `AgentBuilderForm`, `INITIAL_AGENT_FORM`, `SetField`, `BuilderMode`.
+  - `agent-builder.reducer.ts` — `useAgentBuilderForm` (setField/hydrate/reset).
+  - `lib/parse-agent-json.ts`, `lib/agent-to-form.ts`, `lib/build-agent-payload.ts`
+    (create + update), `lib/validate-agent-builder.ts`.
+  - `steps/` — `metadata`, `model`, `behavior`, `quality`, `execution` (field-groups partagés).
+  - `create-agent-flow.tsx` (wizard 5 étapes) et `edit-agent-flow.tsx` (single-page,
+    `isEditable`, FileUploader), tous deux consommant steps + lib.
+  - `agent-builder-page.tsx` — dispatch `mode="create"|"edit"`, `index.ts`.
+- Routes réduites à un import :
+  - `dashboard/agents/new/page.tsx` : 1079 → 5 lignes.
+  - `dashboard/agents/[id]/edit/page.tsx` : 691 → 5 lignes.
 
-```txt
-variables
-→ few-shot examples
-→ output format
-→ quality checklist
-→ prompt final mieux cadré
-```
-
-## Contraintes architecture
-
-- Backend source de vérité pour stockage, validation et injection prompt.
-- API publique reste `snake_case`, valeurs lowercase quand enum.
-- Prisma/backend interne garde camelCase + enums existants.
-- Propagation obligatoire : Prisma, entity, mapper, DTO, transformer, shared types,
-  create/update web, review admin, chat-config si utile.
-- Pas de refactor Agent Builder complet ici ; modification minimale des formulaires existants.
-
-## Plan
-
-- [x] Ajouter champs Prisma `variables`, `fewShotExamples`, `outputFormat`, `qualityChecklist`.
-- [x] Ajouter migration SQL.
-- [x] Propager backend DTO/create/update/entity/mapper/repository/transformer.
-- [x] Exposer champs dans `AgentResponseDto` et `AgentChatConfig`.
-- [x] Injecter variables/few-shot/output format dans le system prompt au moment du chat.
-- [x] Ajouter types shared.
-- [x] Ajouter champs create/edit web.
-- [x] Afficher infos dans page détail et admin review.
-- [x] Ajouter tests ciblés backend + build/lint.
-- [x] Documenter dans `docs/suivi_roadmap/` et mettre roadmap à jour.
-
-## Critère terminé
-
-```txt
-creator configures quality fields
-→ backend stores them
-→ chat uses them in provider system prompt
-→ admin sees them during review
-→ public detail/chat-config can display them
-```
-
-## Hors périmètre acceptable
-
-- Builder agent commun.
-- Checklist persistée comme workflow de validation admin.
-- UI sophistiquée type repeatable nested editor ; textarea JSON/lignes OK pour V1.
-
-## Review
-
-- Migration `0008_add_agent_quality_fields` créée.
-- Champs qualité ajoutés à Prisma/DTO/entity/mapper/repository/transformer/shared :
-  `variables`, `few_shot_examples`, `output_format`, `quality_checklist`.
-- `AgentChatConfig` expose ces champs pour clients web/desktop.
-- `SendMessageUseCase` enrichit côté backend le `systemPrompt` provider avec variables,
-  few-shot et format de sortie. Front ne compose pas prompt final.
-- Création/édition web ajoutent champs V1 via textareas JSON/lignes.
-- Review admin et page détail public affichent format/checklist/variables/few-shot.
-- `shared/api/client.ts` aligne `agents.update()` sur `Partial<CreateAgentInput>`.
-- Docs ajoutées :
-  - `docs/suivi_roadmap/plans/2026-07-06-finir-milestone-5.md` ;
-  - `docs/suivi_roadmap/comptes-rendus/2026-07-06-finition-milestone-5.md`.
+Un champ agent ne s'ajoute désormais qu'à un seul endroit (types + step + payload lib).
 
 ## Vérifications
 
-- `npm -w @claake/backend exec prisma generate` OK.
-- `npm --workspace backend test -- send-message.usecase.spec.ts get-agent-chat-config.usecase.spec.ts create-agent.usecase.spec.ts update-agent.usecase.spec.ts` OK : 4 suites, 43 tests.
-- `npm run api-build` OK.
-- `NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy NEXT_PUBLIC_API_URL=https://api.example.com npm run web-build` OK.
-- Biome ciblé OK.
+- `npm -w @claake/frontend-web run build` : compilation + types OK.
+- Build web complet (env factices) OK — `/dashboard/agents/new` et `/edit` = 142 B.
+- `npx biome check` sur builder + shared + routes : OK.
+
+## Parité conservée
+
+- Wizard création (import .agentjson, image, pricing free, review, success + CTA test/edit).
+- Édition brouillon/rejeté, gating `isEditable`, remplacement config, FileUploader médias.
+- Payloads create/update identiques à l'existant (mêmes champs, mêmes conditions).
+
+## Écart assumé
+
+- Constantes builder placées dans `shared` (plan) ; strategy `desc` affichée aussi en édition
+  (léger + UX, non régressif).
+- Test live non exécuté (backend `.env` vide) — parité vérifiée par build + revue de payload.
