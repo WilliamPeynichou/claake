@@ -29,6 +29,10 @@ export class AgentResponseDto {
 	limitations!: string[];
 	model_settings!: Record<string, unknown> | null;
 	capabilities!: Record<string, unknown> | null;
+	variables!: Record<string, unknown> | null;
+	few_shot_examples!: Record<string, unknown>[];
+	output_format!: string | null;
+	quality_checklist!: string[];
 	cloud_strategy!: string | null;
 	endpoint_format!: string | null;
 	required_user_provider!: string | null;

@@ -124,7 +124,7 @@ export function createApiClient(baseUrl: string) {
 						body: JSON.stringify(agent),
 					}),
 				),
-			update: (agentId: string, agent: Partial<Agent>, token: string) =>
+			update: (agentId: string, agent: Partial<CreateAgentInput>, token: string) =>
 				fetchJson<Agent>(
 					`/agents/${agentId}`,
 					withAuth(token, {

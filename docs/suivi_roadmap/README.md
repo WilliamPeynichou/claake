@@ -20,6 +20,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `comptes-rendus/2026-07-04-finition-milestone-1.md` — Milestone 1 finalisé (retry, capabilities upload, retour clé API, page détail).
 - `comptes-rendus/2026-07-06-finition-milestone-3.md` — Milestone 3 finalisé MVP (review admin enrichie, test chat admin, transitions review). **Mergé dans `main` (`9ea47b8`) et poussé.**
 - `comptes-rendus/2026-07-06-finition-milestone-4.md` — Milestone 4 desktop chat V1 (auth→agents→chat-config→sessions→streaming→clés API→logout). **Mergé dans `main` et poussé.**
+- `comptes-rendus/2026-07-06-finition-milestone-5.md` — Milestone 5 qualité agent V1 (variables, few-shot, format sortie, checklist, prompt enrichi).
 
 ## Index plans
 
@@ -28,6 +29,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-06-finir-milestone-3.md` — Plan de finition Milestone 3 (admin review). **✅ Réalisé et livré.**
 - `plans/2026-07-06-correction-milestone-4.md` — Plan de correction process/doc Milestone 4. **✅ Appliqué.**
 - `plans/2026-07-06-finir-milestone-4.md` — Plan de finition Milestone 4 (desktop chat). **✅ Réalisé et livré.**
+- `plans/2026-07-06-finir-milestone-5.md` — Plan de finition Milestone 5 (qualité agent). **✅ Réalisé.**
 
 ## État des milestones
 
@@ -38,8 +40,8 @@ plans/AAAA-MM-JJ-sujet.md
 | 2 — Création agent V1 | ✅ 100% fonctionnel | mergé (`17051ec`) |
 | 3 — Admin review | ✅ 100% MVP | mergé (`9ea47b8`) |
 | 4 — Desktop chat | ✅ 100% fonctionnel V1 | mergé |
-| 5 — Qualité agent | 🟡 ~30% | — |
+| 5 — Qualité agent | ✅ 100% fonctionnel V1 | branche `feature/milestone-5-agent-quality` |
 | 6 — Fichiers et connaissance | 🟡 ~35% | — |
 | 7 — Beta publique contrôlée | 🟡 ~45% | — |
 
-Prochain verrou recommandé : **Milestone 5 — Qualité agent** (variables, few-shot, format sortie, checklist) ou dette **Agent Builder commun** selon priorité produit.
+Prochain verrou recommandé : **Milestone 6 — Fichiers et connaissance** ou dette **Agent Builder commun** avant d'ajouter plus de champs.

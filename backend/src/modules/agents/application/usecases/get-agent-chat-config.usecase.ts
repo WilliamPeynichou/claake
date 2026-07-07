@@ -76,6 +76,10 @@ export class GetAgentChatConfigUseCase {
 			welcome_message: agent.welcomeMessage,
 			suggested_prompts: agent.suggestedPrompts,
 			limitations: agent.limitations,
+			variables: agent.variables,
+			few_shot_examples: agent.fewShotExamples,
+			output_format: agent.outputFormat,
+			quality_checklist: agent.qualityChecklist,
 			capabilities: normalizeCapabilities(agent.capabilities),
 			access,
 		};

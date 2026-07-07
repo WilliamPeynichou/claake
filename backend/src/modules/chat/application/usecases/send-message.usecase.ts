@@ -21,6 +21,24 @@ import {
 	type ExecutionStrategyResolver,
 } from "../services/execution-strategy.resolver.js";
 
+function buildQualitySystemPrompt(
+	agent: NonNullable<Awaited<ReturnType<AgentRepositoryPort["findById"]>>>,
+): string | null {
+	const sections: string[] = [];
+	const basePrompt = agent.systemPrompt ?? agent.longDescription;
+	if (basePrompt) sections.push(basePrompt);
+	if (agent.variables && Object.keys(agent.variables).length > 0) {
+		sections.push(`Variables agent:\n${JSON.stringify(agent.variables, null, 2)}`);
+	}
+	if (agent.fewShotExamples.length > 0) {
+		sections.push(`Exemples few-shot:\n${JSON.stringify(agent.fewShotExamples, null, 2)}`);
+	}
+	if (agent.outputFormat) {
+		sections.push(`Format de sortie attendu:\n${agent.outputFormat}`);
+	}
+	return sections.length ? sections.join("\n\n") : null;
+}
+
 @Injectable()
 export class SendMessageUseCase {
 	constructor(
@@ -100,7 +118,7 @@ export class SendMessageUseCase {
 		const model = agent.models[0] ?? "claude-sonnet-4-20250514";
 		const stream = provider.streamText({
 			model,
-			systemPrompt: agent.systemPrompt ?? agent.longDescription ?? null,
+			systemPrompt: buildQualitySystemPrompt(agent),
 			messages: formattedHistory,
 			maxTokens: 4096,
 			attachments: attachments.length > 0 ? attachments : undefined,

@@ -38,6 +38,10 @@ export class AgentEntity {
 		public readonly limitations: string[] = [],
 		public readonly modelSettings: Record<string, unknown> | null = null,
 		public readonly capabilities: Record<string, unknown> | null = null,
+		public readonly variables: Record<string, unknown> | null = null,
+		public readonly fewShotExamples: Record<string, unknown>[] = [],
+		public readonly outputFormat: string | null = null,
+		public readonly qualityChecklist: string[] = [],
 	) {}
 
 	isOwnedBy(userId: string): boolean {

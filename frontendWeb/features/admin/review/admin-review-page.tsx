@@ -296,6 +296,26 @@ function AgentReviewDetails({ agent }: { agent: Agent }) {
 				value={agent.limitations.length ? agent.limitations.join("\n") : "Aucune"}
 				pre
 			/>
+			<DetailBlock label="Format de sortie" value={agent.output_format || "Non renseigné"} pre />
+			<DetailBlock
+				label="Checklist qualité"
+				value={agent.quality_checklist.length ? agent.quality_checklist.join("\n") : "Aucune"}
+				pre
+			/>
+			<DetailBlock
+				label="Variables"
+				value={agent.variables ? JSON.stringify(agent.variables, null, 2) : "Aucune"}
+				pre
+			/>
+			<DetailBlock
+				label="Few-shot"
+				value={
+					agent.few_shot_examples.length
+						? JSON.stringify(agent.few_shot_examples, null, 2)
+						: "Aucun"
+				}
+				pre
+			/>
 			<DetailBlock
 				label="Capacités"
 				value={`Fichiers : ${capabilities?.files ? "oui" : "non"} · Images : ${

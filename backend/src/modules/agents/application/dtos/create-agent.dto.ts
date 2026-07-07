@@ -81,6 +81,23 @@ export class CreateAgentDto {
 	capabilities?: Record<string, unknown>;
 
 	@IsOptional()
+	variables?: Record<string, unknown>;
+
+	@IsOptional()
+	few_shot_examples?: Record<string, unknown>[];
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(2000)
+	output_format?: string;
+
+	@IsOptional()
+	@IsArray()
+	@ArrayMaxSize(12)
+	@MaxLength(200, { each: true })
+	quality_checklist?: string[];
+
+	@IsOptional()
 	@IsEnum(["FREE", "ONE_TIME", "SUBSCRIPTION", "PAY_PER_USE"])
 	pricing_model?: string;
 

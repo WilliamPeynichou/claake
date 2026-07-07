@@ -1,6 +1,6 @@
 "use client";
 
-import type { Agent, AgentCategory } from "@claake/shared";
+import type { Agent, AgentCategory, CreateAgentInput, CreateEndpointFormat } from "@claake/shared";
 import { AI_MODELS, EXECUTION_MODES } from "@claake/shared";
 import { AlertCircle, ArrowLeft, Check, FileJson, ImagePlus, Loader2, Save, X } from "lucide-react";
 import Image from "next/image";
@@ -60,6 +60,10 @@ export default function EditAgentPage() {
 		welcomeMessage: "",
 		suggestedPrompts: "",
 		limitations: "",
+		variables: "",
+		fewShotExamples: "",
+		outputFormat: "",
+		qualityChecklist: "",
 		endpoint: "",
 		endpointFormat: "OPENAI" as
 			| "OPENAI"
@@ -96,8 +100,15 @@ export default function EditAgentPage() {
 					welcomeMessage: agentData.welcome_message ?? "",
 					suggestedPrompts: agentData.suggested_prompts.join("\n"),
 					limitations: agentData.limitations.join("\n"),
+					variables: agentData.variables ? JSON.stringify(agentData.variables, null, 2) : "",
+					fewShotExamples: agentData.few_shot_examples.length
+						? JSON.stringify(agentData.few_shot_examples, null, 2)
+						: "",
+					outputFormat: agentData.output_format ?? "",
+					qualityChecklist: agentData.quality_checklist.join("\n"),
 					endpoint: "",
-					endpointFormat: (agentData.endpoint_format?.toUpperCase() ?? "OPENAI") as any,
+					endpointFormat: (agentData.endpoint_format?.toUpperCase() ??
+						"OPENAI") as CreateEndpointFormat,
 					sellerApiProvider: "anthropic",
 					dockerImage: agentData.docker_image ?? "",
 					downloadUrl: agentData.download_url ?? "",
@@ -165,6 +176,17 @@ export default function EditAgentPage() {
 				.map((limitation) => limitation.trim())
 				.filter(Boolean);
 
+			const qualityChecklist = formData.qualityChecklist
+				.split("\n")
+				.map((item) => item.trim())
+				.filter(Boolean);
+			const variables = formData.variables.trim()
+				? (JSON.parse(formData.variables) as Record<string, unknown>)
+				: undefined;
+			const fewShotExamples = formData.fewShotExamples.trim()
+				? (JSON.parse(formData.fewShotExamples) as Record<string, unknown>[])
+				: undefined;
+
 			let imageUrl: string | undefined;
 			if (imageFile) {
 				imageUrl = await uploadAgentImage(imageFile, agent.slug, user.id);
@@ -175,45 +197,53 @@ export default function EditAgentPage() {
 				configUrl = await uploadAgentConfigFile(configFile, agent.slug, user.id);
 			}
 
-			await apiClient.agents.update(
-				agent.id,
-				{
-					name: formData.name,
-					description: formData.description,
-					long_description: formData.longDescription || undefined,
-					category: formData.category,
-					tags: formData.tags
-						.split(",")
-						.map((t) => t.trim())
-						.filter(Boolean),
-					models: [formData.model],
-					mode: formData.mode,
-					image_url: imageUrl ?? undefined,
-					config_url: configUrl ?? undefined,
-					system_prompt: formData.systemPrompt || undefined,
-					welcome_message: formData.welcomeMessage || undefined,
-					suggested_prompts: suggestedPrompts,
-					limitations,
-					cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
-					required_user_provider:
-						formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
-					endpoint_format:
-						formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpointFormat : undefined,
-					docker_image:
-						formData.mode === "LOCAL" || formData.mode === "HYBRID"
-							? formData.dockerImage || undefined
-							: undefined,
-					download_url:
-						formData.mode === "LOCAL" || formData.mode === "HYBRID"
-							? formData.downloadUrl || undefined
-							: undefined,
-				} as any,
-				token,
-			);
+			const payload: Partial<CreateAgentInput> = {
+				name: formData.name,
+				description: formData.description,
+				long_description: formData.longDescription || undefined,
+				category: formData.category,
+				tags: formData.tags
+					.split(",")
+					.map((t) => t.trim())
+					.filter(Boolean),
+				models: [formData.model],
+				mode: formData.mode,
+				image_url: imageUrl ?? undefined,
+				config_url: configUrl ?? undefined,
+				system_prompt: formData.systemPrompt || undefined,
+				welcome_message: formData.welcomeMessage || undefined,
+				suggested_prompts: suggestedPrompts,
+				limitations,
+				variables,
+				few_shot_examples: fewShotExamples,
+				output_format: formData.outputFormat || undefined,
+				quality_checklist: qualityChecklist,
+				cloud_strategy: formData.mode !== "LOCAL" ? formData.cloudStrategy : undefined,
+				required_user_provider:
+					formData.cloudStrategy === "USER_API_KEY" ? formData.requiredUserProvider : undefined,
+				endpoint_format:
+					formData.cloudStrategy === "SELLER_ENDPOINT" ? formData.endpointFormat : undefined,
+				docker_image:
+					formData.mode === "LOCAL" || formData.mode === "HYBRID"
+						? formData.dockerImage || undefined
+						: undefined,
+				download_url:
+					formData.mode === "LOCAL" || formData.mode === "HYBRID"
+						? formData.downloadUrl || undefined
+						: undefined,
+			};
+
+			await apiClient.agents.update(agent.id, payload, token);
 
 			setSuccess(true);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde.");
+			setError(
+				err instanceof SyntaxError
+					? "Variables ou exemples few-shot invalides : JSON attendu."
+					: err instanceof Error
+						? err.message
+						: "Erreur lors de la sauvegarde.",
+			);
 		} finally {
 			setSaving(false);
 		}
@@ -520,6 +550,53 @@ export default function EditAgentPage() {
 									disabled={!isEditable}
 								/>
 								<p className="text-xs text-muted-foreground">Une limite par ligne.</p>
+							</div>
+						</div>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div className="space-y-2">
+								<Label htmlFor="outputFormat">Format de sortie</Label>
+								<Textarea
+									id="outputFormat"
+									value={formData.outputFormat}
+									onChange={(e) => updateField("outputFormat", e.target.value)}
+									rows={4}
+									disabled={!isEditable}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="qualityChecklist">Checklist qualité</Label>
+								<Textarea
+									id="qualityChecklist"
+									value={formData.qualityChecklist}
+									onChange={(e) => updateField("qualityChecklist", e.target.value)}
+									rows={4}
+									disabled={!isEditable}
+								/>
+								<p className="text-xs text-muted-foreground">Une règle qualité par ligne.</p>
+							</div>
+						</div>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div className="space-y-2">
+								<Label htmlFor="variables">Variables agent (JSON)</Label>
+								<Textarea
+									id="variables"
+									value={formData.variables}
+									onChange={(e) => updateField("variables", e.target.value)}
+									rows={5}
+									disabled={!isEditable}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="fewShotExamples">Exemples few-shot (JSON)</Label>
+								<Textarea
+									id="fewShotExamples"
+									value={formData.fewShotExamples}
+									onChange={(e) => updateField("fewShotExamples", e.target.value)}
+									rows={5}
+									disabled={!isEditable}
+								/>
 							</div>
 						</div>
 

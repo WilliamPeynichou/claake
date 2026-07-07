@@ -1,97 +1,78 @@
-# Plan — Milestone 4 Desktop chat
+# Plan — Milestone 5 Qualité agent
 
 Date : 2026-07-06
-Branche : `feature/milestone-4-desktop-chat`
-Réf : `docs/roadmap-claake-agents-chat.md` — Milestone 4
-Réf architecture : `docs/architecture/desktop-architecture.md`
+Branche : `feature/milestone-5-agent-quality`
+Réf : `docs/roadmap-claake-agents-chat.md` — Milestone 5
 
 ## Objectif
 
-Livrer une première expérience desktop chat-only permettant à un utilisateur connecté de :
+Améliorer qualité réelle des agents sans casser le noyau agent → chat :
 
 ```txt
-connexion
-→ liste agents disponibles
-→ ouverture agent dans le chat
-→ historique conversations
-→ paramètres clés API
-→ streaming chat
-→ déconnexion
+variables
+→ few-shot examples
+→ output format
+→ quality checklist
+→ prompt final mieux cadré
 ```
 
-## Contraintes d'architecture
+## Contraintes architecture
 
-- Desktop = client d'usage quotidien centré chat, pas outil admin/création/paiement.
-- Réutiliser `@claake/shared` pour types, client API et hooks quand possible.
-- Le backend reste source de vérité pour l'accès chat via `AgentChatConfig` et les endpoints
-  chat existants.
-- Pas de logique métier desktop qui devine les droits agent : afficher les états renvoyés
-  par l'API.
-- Pas d'extension backend sauf nécessité constatée.
-- Pour V1, composants UI desktop légers dans `frontendApp/src/`, pas extraction prématurée
-  de composants partagés.
+- Backend source de vérité pour stockage, validation et injection prompt.
+- API publique reste `snake_case`, valeurs lowercase quand enum.
+- Prisma/backend interne garde camelCase + enums existants.
+- Propagation obligatoire : Prisma, entity, mapper, DTO, transformer, shared types,
+  create/update web, review admin, chat-config si utile.
+- Pas de refactor Agent Builder complet ici ; modification minimale des formulaires existants.
 
 ## Plan
 
-- [x] Explorer l'état actuel de `frontendApp/`, ses dépendances et son build.
-- [x] Vérifier que `shared/api/client.ts` et `shared/hooks/use-chat.ts` couvrent les besoins
-      desktop.
-- [x] Implémenter l'auth desktop minimale par token utilisateur/API manuel si le flow
-      Supabase complet n'est pas encore présent.
-- [x] Afficher les agents disponibles via endpoints existants (`agents.list` approuvés).
-- [x] Charger `AgentChatConfig` pour l'agent sélectionné et afficher les états d'accès
-      (`login_required`, `api_key_required`, `purchase_required`, `not_published`).
-- [x] Brancher les sessions et messages avec `useChat` : création session, historique,
-      streaming SSE, retry si disponible.
-- [x] Ajouter une vue paramètres clés API : lister, ajouter, supprimer.
-- [x] Ajouter déconnexion et navigation simple desktop.
-- [x] Vérifier `npm -w @claake/frontend-app run build` et Biome ciblé.
+- [x] Ajouter champs Prisma `variables`, `fewShotExamples`, `outputFormat`, `qualityChecklist`.
+- [x] Ajouter migration SQL.
+- [x] Propager backend DTO/create/update/entity/mapper/repository/transformer.
+- [x] Exposer champs dans `AgentResponseDto` et `AgentChatConfig`.
+- [x] Injecter variables/few-shot/output format dans le system prompt au moment du chat.
+- [x] Ajouter types shared.
+- [x] Ajouter champs create/edit web.
+- [x] Afficher infos dans page détail et admin review.
+- [x] Ajouter tests ciblés backend + build/lint.
+- [x] Documenter dans `docs/suivi_roadmap/` et mettre roadmap à jour.
 
 ## Critère terminé
 
 ```txt
-user token configured
-→ desktop lists approved agents
-→ user selects an agent
-→ chat session is created or opened
-→ messages stream through existing backend chat endpoint
-→ user can manage API keys
-→ user can logout
+creator configures quality fields
+→ backend stores them
+→ chat uses them in provider system prompt
+→ admin sees them during review
+→ public detail/chat-config can display them
 ```
 
 ## Hors périmètre acceptable
 
-- OAuth/deep-link Supabase complet si le socle desktop n'est pas encore présent.
-- Store Tauri sécurisé si les plugins ne sont pas installés.
-- Paiement/marketplace/admin/création agent.
-- Offline, tray, auto-update, raccourcis globaux.
+- Builder agent commun.
+- Checklist persistée comme workflow de validation admin.
+- UI sophistiquée type repeatable nested editor ; textarea JSON/lignes OK pour V1.
 
 ## Review
 
-- Branche de travail créée : `feature/milestone-4-desktop-chat`.
-- État constaté : `frontendApp` avait déjà un socle utile (Supabase email/password,
-  routes login/register, liste agents, sessions chat, streaming via `useChat`).
-- `frontendApp/src/pages/chat.tsx` complète maintenant l'expérience desktop avec :
-  - chargement de `AgentChatConfig` pour l'agent sélectionné ;
-  - affichage provider/modèle dans l'en-tête ;
-  - blocage UI basé sur `access.can_chat` et `access.reason` ;
-  - CTA vers les clés API si `api_key_required` ;
-  - welcome message et suggestions de prompts ;
-  - retry depuis le hook partagé `useChat`.
-- `frontendApp/src/components/api-keys-panel.tsx` ajouté : liste, ajout et suppression de
-  clés API via `useApiKeys` et `apiClient.auth.apiKeys`.
-- `frontendApp/src/components/chat-sidebar.tsx` ajoute une entrée **Clés API** et conserve
-  la déconnexion.
-- `frontendApp/src/components/chat-input-da.tsx` respecte `AgentChatConfig.capabilities`
-  pour masquer l'upload si l'agent ne supporte ni fichiers ni images, et transmet
-  `sessionId` + `agentId` à l'upload.
-- `frontendApp/src/components/chat-thread.tsx` affiche welcome/suggestions et l'action
-  **Réessayer** en cas d'erreur retryable.
+- Migration `0008_add_agent_quality_fields` créée.
+- Champs qualité ajoutés à Prisma/DTO/entity/mapper/repository/transformer/shared :
+  `variables`, `few_shot_examples`, `output_format`, `quality_checklist`.
+- `AgentChatConfig` expose ces champs pour clients web/desktop.
+- `SendMessageUseCase` enrichit côté backend le `systemPrompt` provider avec variables,
+  few-shot et format de sortie. Front ne compose pas prompt final.
+- Création/édition web ajoutent champs V1 via textareas JSON/lignes.
+- Review admin et page détail public affichent format/checklist/variables/few-shot.
+- `shared/api/client.ts` aligne `agents.update()` sur `Partial<CreateAgentInput>`.
+- Docs ajoutées :
+  - `docs/suivi_roadmap/plans/2026-07-06-finir-milestone-5.md` ;
+  - `docs/suivi_roadmap/comptes-rendus/2026-07-06-finition-milestone-5.md`.
 
 ## Vérifications
 
-- `npm -w @claake/frontend-app run build` OK.
-  - TypeScript OK.
-  - Vite build OK.
-  - Warning non bloquant : chunk JS > 500 kB.
-- `npx biome check frontendApp/src/pages/chat.tsx frontendApp/src/components/chat-sidebar.tsx frontendApp/src/components/chat-thread.tsx frontendApp/src/components/chat-input-da.tsx frontendApp/src/components/api-keys-panel.tsx tasks/todo.md` OK sur les fichiers traités par Biome.
+- `npm -w @claake/backend exec prisma generate` OK.
+- `npm --workspace backend test -- send-message.usecase.spec.ts get-agent-chat-config.usecase.spec.ts create-agent.usecase.spec.ts update-agent.usecase.spec.ts` OK : 4 suites, 43 tests.
+- `npm run api-build` OK.
+- `NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy NEXT_PUBLIC_API_URL=https://api.example.com npm run web-build` OK.
+- Biome ciblé OK.

@@ -44,6 +44,10 @@ export class AgentMapper {
 			raw.limitations,
 			raw.modelSettings as Record<string, unknown> | null,
 			raw.capabilities as Record<string, unknown> | null,
+			raw.variables as Record<string, unknown> | null,
+			Array.isArray(raw.fewShotExamples) ? (raw.fewShotExamples as Record<string, unknown>[]) : [],
+			raw.outputFormat,
+			raw.qualityChecklist,
 		);
 	}
 }

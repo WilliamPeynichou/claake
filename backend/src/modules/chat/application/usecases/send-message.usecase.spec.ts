@@ -56,6 +56,9 @@ function makeAgent(
 	overrides: {
 		models?: string[];
 		systemPrompt?: string | null;
+		variables?: Record<string, unknown> | null;
+		fewShotExamples?: Record<string, unknown>[];
+		outputFormat?: string | null;
 		status?: string;
 		pricingModel?: string;
 		creatorId?: string;
@@ -87,6 +90,22 @@ function makeAgent(
 		new Date(),
 		new Date(),
 		overrides.systemPrompt ?? "You are a helpful assistant",
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		[],
+		[],
+		null,
+		null,
+		overrides.variables ?? null,
+		overrides.fewShotExamples ?? [],
+		overrides.outputFormat ?? null,
 	);
 }
 
@@ -242,6 +261,36 @@ describe("SendMessageUseCase", () => {
 
 		expect(mockProvider.streamText).toHaveBeenCalledWith(
 			expect.objectContaining({ systemPrompt: "Tu es un expert en droit." }),
+		);
+	});
+
+	it("passe le systemPrompt enrichi qualité au provider", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(
+			makeAgent({
+				systemPrompt: "Tu es un expert en droit.",
+				variables: { pays: "France", niveau: "expert" },
+				fewShotExamples: [{ user: "Analyse cette clause", assistant: "Résumé / Risques" }],
+				outputFormat: "Réponds en sections.",
+			}),
+		);
+
+		await useCase.execute("session-1", "user-1", "Question juridique");
+
+		expect(mockProvider.streamText).toHaveBeenCalledWith(
+			expect.objectContaining({
+				systemPrompt: expect.stringContaining("Variables agent"),
+			}),
+		);
+		expect(mockProvider.streamText).toHaveBeenCalledWith(
+			expect.objectContaining({
+				systemPrompt: expect.stringContaining("Exemples few-shot"),
+			}),
+		);
+		expect(mockProvider.streamText).toHaveBeenCalledWith(
+			expect.objectContaining({
+				systemPrompt: expect.stringContaining("Format de sortie attendu"),
+			}),
 		);
 	});
 

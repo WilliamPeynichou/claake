@@ -60,6 +60,17 @@ export interface CreateAgentInput {
 	seller_api_provider?: string;
 	docker_image?: string;
 	download_url?: string;
+	variables?: Record<string, unknown>;
+	few_shot_examples?: Record<string, unknown>[];
+	output_format?: string;
+	quality_checklist?: string[];
+}
+
+export interface AgentQualityFields {
+	variables: Record<string, unknown> | null;
+	few_shot_examples: Record<string, unknown>[];
+	output_format: string | null;
+	quality_checklist: string[];
 }
 
 export interface Agent {
@@ -93,6 +104,10 @@ export interface Agent {
 	limitations: string[];
 	model_settings: Record<string, unknown> | null;
 	capabilities: Record<string, unknown> | null;
+	variables: Record<string, unknown> | null;
+	few_shot_examples: Record<string, unknown>[];
+	output_format: string | null;
+	quality_checklist: string[];
 	cloud_strategy: CloudStrategy | null;
 	endpoint_format: EndpointFormat | null;
 	required_user_provider: string | null;
@@ -205,6 +220,10 @@ export interface AgentChatConfig {
 	welcome_message: string | null;
 	suggested_prompts: string[];
 	limitations: string[];
+	variables: Record<string, unknown> | null;
+	few_shot_examples: Record<string, unknown>[];
+	output_format: string | null;
+	quality_checklist: string[];
 	capabilities: {
 		files: boolean;
 		images: boolean;
