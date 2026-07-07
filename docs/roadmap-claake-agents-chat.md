@@ -5,6 +5,7 @@
 ### Derniers commits structurants
 
 ```txt
+b49f83c merge: feature/agent-builder-refactor → main (agent builder commun)
 9989015 docs(sessions): add milestone 5 to session 2026-07-06
 f75e247 merge: feature/milestone-5-agent-quality → main (milestone 5)
 c884bd7 merge: feature/milestone-4-desktop-chat → main (milestone 4)
@@ -36,10 +37,10 @@ AgentDefinition partiel
 |---|---:|---|
 | Milestone 0 — Socle technique agent-chat | 100% | Champs agent chat, migration, types shared, endpoint `chat-config`, use case, DTO strict et tests complets (login/api-key/purchase/draft owner/pending admin/capabilities/provider). |
 | Milestone 1 — Chat agent utilisable | 100% | ChatShell + welcome/suggestions, retry après erreur, upload conditionné par `capabilities`, retour auto au chat après ajout clé API, page détail agent orientée usage (provider/stratégie/limitations/CTA). |
-| Milestone 2 — Création agent V1 | 100% fonctionnel | Création en brouillon, édition DRAFT/REJECTED, test chat contrôlé via `?test=1`, soumission dédiée `PATCH /agents/:id/submit`, validation backend et dashboard créateur branchés. Dette restante : refactor Agent Builder commun. |
+| Milestone 2 — Création agent V1 | 100% fonctionnel | Création en brouillon, édition DRAFT/REJECTED, test chat contrôlé via `?test=1`, soumission dédiée `PATCH /agents/:id/submit`, validation backend et dashboard créateur branchés. Agent Builder commun livré (`frontendWeb/features/agents/builder/`) : création/édition partagent steps + payloads, routes amincies. |
 | Milestone 3 — Admin review | 100% fonctionnel MVP | File review enrichie, test admin dans le chat via `?test=1`, approve/reject, remise en brouillon et suspension côté API. Dette restante : checklist qualité persistée et e2e. |
 | Milestone 4 — Desktop chat | 100% fonctionnel V1 chat-only | Desktop `frontendApp` branché sur `@claake/shared` (`useChat`, `apiClient`, `AgentChatConfig`) : auth → liste agents → chat-config → sessions → streaming → retry → panneau clés API → déconnexion. Dette : test live Tauri non effectué (`backend/.env` vide), chunk vite >500 kB à code-splitter, auth desktop à durcir si flow Supabase complet requis. |
-| Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Dette restante : UX Agent Builder commun + UI nested dédiée. |
+| Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Champs intégrés dans l'Agent Builder commun. Dette restante : éditeur UI nested dédié pour variables/few-shot JSON. |
 | Milestone 6 — Fichiers et connaissance | ~35% | Upload existant partiel, capabilities présentes. Reste enforcement par agent et knowledge base. |
 | Milestone 7 — Beta publique contrôlée | ~45% | Sécurité backend nettement renforcée. Reste quotas, CI, e2e, observabilité. |
 
@@ -88,21 +89,19 @@ create draft
 → public chat
 ```
 
-Le prochain blocage produit n'est plus le mode test, mais la consolidation avant élargissement :
+Le prochain blocage produit n'est plus le mode test ni le builder, mais la consolidation avant élargissement :
 
 ```txt
-refactor Agent Builder commun
-→ quotas chat simples
+quotas chat simples
 → e2e MVP
-→ desktop chat
+→ durcissement beta (M7)
 ```
 
 ### Prochain ordre recommandé
 
-1. Refactoriser création/édition dans `frontendWeb/features/agents/builder/`.
-2. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique.
-3. Ajouter tests e2e MVP : création, test draft, soumission, review admin, chat public.
-4. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
+1. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique.
+2. Ajouter tests e2e MVP : création, test draft, soumission, review admin, chat public.
+3. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
 5. Démarrer Milestone 6 — Fichiers et connaissance.
 6. Préparer Milestone 7 — Beta publique contrôlée : quotas, CI/e2e, observabilité.
 
@@ -1252,7 +1251,7 @@ Livrable :
 1. Ajouter le mode test agent draft/admin côté backend sans affaiblir le chat public.
 2. Ajouter le bouton **Tester dans le chat** côté dashboard créateur.
 3. Ajouter le bouton **Tester dans le chat** côté admin review pour agents `PENDING`.
-4. Refactoriser la création/édition agent dans un `Agent Builder` réutilisable.
+4. Refactoriser la création/édition agent dans un `Agent Builder` réutilisable — fait (`frontendWeb/features/agents/builder/`).
 5. Utiliser `AgentChatConfig.capabilities` pour afficher/masquer l'upload dans le chat.
 6. Ajouter retour automatique au chat après ajout d'une clé API utilisateur.
 7. Renforcer `ValidateAgentUseCase` sur les nouveaux champs chat et désactiver l'endpoint vendeur en V1 publique.
