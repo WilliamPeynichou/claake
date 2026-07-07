@@ -24,6 +24,10 @@ export class AgentChatConfigResponseDto {
 	welcome_message!: string | null;
 	suggested_prompts!: string[];
 	limitations!: string[];
+	variables!: Record<string, unknown> | null;
+	few_shot_examples!: Record<string, unknown>[];
+	output_format!: string | null;
+	quality_checklist!: string[];
 	capabilities!: {
 		files: boolean;
 		images: boolean;

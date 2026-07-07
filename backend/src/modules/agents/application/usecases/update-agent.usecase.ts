@@ -9,6 +9,7 @@ import {
 	ENCRYPTION_SERVICE,
 	type EncryptionServicePort,
 } from "../../../../common/ports/encryption.port.js";
+import type { AgentEntity } from "../../domain/entities/agent.entity.js";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
@@ -16,6 +17,10 @@ import {
 import type { AgentResponseDto } from "../dtos/agent-response.dto.js";
 import type { CreateAgentDto } from "../dtos/create-agent.dto.js";
 import { AgentTransformer } from "../transformers/agent.transformer.js";
+
+type AgentUpdateData = {
+	-readonly [Key in keyof AgentEntity]?: AgentEntity[Key];
+};
 
 @Injectable()
 export class UpdateAgentUseCase {
@@ -51,7 +56,7 @@ export class UpdateAgentUseCase {
 				: null;
 		}
 
-		const updateData: any = {};
+		const updateData: AgentUpdateData = {};
 		if (dto.name !== undefined) updateData.name = dto.name;
 		if (dto.description !== undefined) updateData.description = dto.description;
 		if (dto.long_description !== undefined) updateData.longDescription = dto.long_description;
@@ -67,6 +72,10 @@ export class UpdateAgentUseCase {
 		if (dto.limitations !== undefined) updateData.limitations = dto.limitations;
 		if (dto.model_settings !== undefined) updateData.modelSettings = dto.model_settings;
 		if (dto.capabilities !== undefined) updateData.capabilities = dto.capabilities;
+		if (dto.variables !== undefined) updateData.variables = dto.variables;
+		if (dto.few_shot_examples !== undefined) updateData.fewShotExamples = dto.few_shot_examples;
+		if (dto.output_format !== undefined) updateData.outputFormat = dto.output_format;
+		if (dto.quality_checklist !== undefined) updateData.qualityChecklist = dto.quality_checklist;
 		if (dto.cloud_strategy !== undefined) updateData.cloudStrategy = dto.cloud_strategy;
 		if (dto.endpoint_url !== undefined) updateData.endpointUrl = dto.endpoint_url;
 		if (dto.endpoint_format !== undefined) updateData.endpointFormat = dto.endpoint_format;

@@ -149,6 +149,32 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
 						</>
 					)}
 
+					{agent.output_format && (
+						<>
+							<Separator />
+							<section>
+								<h2 className="text-lg font-semibold">Format de réponse</h2>
+								<p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">
+									{agent.output_format}
+								</p>
+							</section>
+						</>
+					)}
+
+					{agent.quality_checklist.length > 0 && (
+						<>
+							<Separator />
+							<section>
+								<h2 className="text-lg font-semibold">Qualité attendue</h2>
+								<ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+									{agent.quality_checklist.map((item) => (
+										<li key={item}>{item}</li>
+									))}
+								</ul>
+							</section>
+						</>
+					)}
+
 					<Separator />
 
 					{/* Reviews */}

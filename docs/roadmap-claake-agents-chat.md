@@ -38,7 +38,7 @@ AgentDefinition partiel
 | Milestone 2 — Création agent V1 | 100% fonctionnel | Création en brouillon, édition DRAFT/REJECTED, test chat contrôlé via `?test=1`, soumission dédiée `PATCH /agents/:id/submit`, validation backend et dashboard créateur branchés. Dette restante : refactor Agent Builder commun. |
 | Milestone 3 — Admin review | 100% fonctionnel MVP | File review enrichie, test admin dans le chat via `?test=1`, approve/reject, remise en brouillon et suspension côté API. Dette restante : checklist qualité persistée et e2e. |
 | Milestone 4 — Desktop chat | 100% fonctionnel V1 chat-only | Desktop `frontendApp` branché sur `@claake/shared` (`useChat`, `apiClient`, `AgentChatConfig`) : auth → liste agents → chat-config → sessions → streaming → retry → panneau clés API → déconnexion. Dette : test live Tauri non effectué (`backend/.env` vide), chunk vite >500 kB à code-splitter, auth desktop à durcir si flow Supabase complet requis. |
-| Milestone 5 — Qualité agent | ~30% | Welcome/suggestions/limitations faits. Variables, few-shot, format sortie, checklist à faire. |
+| Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Dette restante : UX Agent Builder commun + UI nested dédiée. |
 | Milestone 6 — Fichiers et connaissance | ~35% | Upload existant partiel, capabilities présentes. Reste enforcement par agent et knowledge base. |
 | Milestone 7 — Beta publique contrôlée | ~45% | Sécurité backend nettement renforcée. Reste quotas, CI, e2e, observabilité. |
 
@@ -63,6 +63,8 @@ AgentDefinition partiel
   via `?test=1`, soumission dédiée `PATCH /agents/:id/submit`.
 - Review admin enrichie : données complètes de validation, test chat admin, approve/reject,
   remise en brouillon et suspension côté API.
+- Qualité agent V1 : variables, few-shot examples, format de sortie, checklist qualité,
+  exposés backend/shared/web et injectés au prompt provider côté backend.
 - Durcissement sécurité backend :
   - accès agent revérifié à chaque message ;
   - `download-info` protégé par statut/ownership ;
@@ -100,8 +102,8 @@ refactor Agent Builder commun
 2. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique.
 3. Ajouter tests e2e MVP : création, test draft, soumission, review admin, chat public.
 4. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
-5. Préparer Milestone 5 — Qualité agent : variables, few-shot, format sortie, checklist.
-6. Réduire la dette : Agent Builder commun, code-split chunk desktop, e2e MVP.
+5. Démarrer Milestone 6 — Fichiers et connaissance.
+6. Préparer Milestone 7 — Beta publique contrôlée : quotas, CI/e2e, observabilité.
 
 ---
 

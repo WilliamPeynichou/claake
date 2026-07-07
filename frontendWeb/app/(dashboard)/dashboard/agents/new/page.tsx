@@ -33,6 +33,10 @@ const INITIAL_FORM = {
 	welcomeMessage: "",
 	suggestedPrompts: "",
 	limitations: "",
+	variables: "",
+	fewShotExamples: "",
+	outputFormat: "",
+	qualityChecklist: "",
 	endpoint: "",
 	endpointFormat: "OPENAI" as
 		| "OPENAI"
@@ -119,6 +123,18 @@ export default function NewAgentPage() {
 				limitations: Array.isArray(parsed.limitations)
 					? parsed.limitations.join("\n")
 					: prev.limitations,
+				variables: parsed.variables ? JSON.stringify(parsed.variables, null, 2) : prev.variables,
+				fewShotExamples: Array.isArray(parsed.few_shot_examples)
+					? JSON.stringify(parsed.few_shot_examples, null, 2)
+					: Array.isArray(parsed.fewShotExamples)
+						? JSON.stringify(parsed.fewShotExamples, null, 2)
+						: prev.fewShotExamples,
+				outputFormat: parsed.output_format ?? parsed.outputFormat ?? prev.outputFormat,
+				qualityChecklist: Array.isArray(parsed.quality_checklist)
+					? parsed.quality_checklist.join("\n")
+					: Array.isArray(parsed.qualityChecklist)
+						? parsed.qualityChecklist.join("\n")
+						: prev.qualityChecklist,
 				endpoint: parsed.endpoint ?? parsed.config_url ?? prev.endpoint,
 				endpointFormat: parsed.endpoint_format ?? prev.endpointFormat,
 				sellerApiProvider: parsed.seller_api_provider ?? prev.sellerApiProvider,
@@ -234,6 +250,17 @@ export default function NewAgentPage() {
 				.map((limitation) => limitation.trim())
 				.filter(Boolean);
 
+			const qualityChecklist = formData.qualityChecklist
+				.split("\n")
+				.map((item) => item.trim())
+				.filter(Boolean);
+			const variables = formData.variables.trim()
+				? (JSON.parse(formData.variables) as Record<string, unknown>)
+				: undefined;
+			const fewShotExamples = formData.fewShotExamples.trim()
+				? (JSON.parse(formData.fewShotExamples) as Record<string, unknown>[])
+				: undefined;
+
 			const payload: CreateAgentInput = {
 				name: formData.name,
 				slug,
@@ -275,6 +302,10 @@ export default function NewAgentPage() {
 				welcome_message: formData.welcomeMessage || undefined,
 				suggested_prompts: suggestedPrompts.length ? suggestedPrompts : undefined,
 				limitations: limitations.length ? limitations : undefined,
+				variables,
+				few_shot_examples: fewShotExamples,
+				output_format: formData.outputFormat || undefined,
+				quality_checklist: qualityChecklist.length ? qualityChecklist : undefined,
 				pricing_model: "FREE",
 			};
 
@@ -285,7 +316,13 @@ export default function NewAgentPage() {
 			setSubmitWarnings(warnings);
 			setSubmitted(true);
 		} catch (err) {
-			setSubmitError(err instanceof Error ? err.message : "Erreur lors de la soumission.");
+			setSubmitError(
+				err instanceof SyntaxError
+					? "Variables ou exemples few-shot invalides : JSON attendu."
+					: err instanceof Error
+						? err.message
+						: "Erreur lors de la soumission.",
+			);
 		} finally {
 			setSubmitting(false);
 		}
@@ -694,6 +731,56 @@ export default function NewAgentPage() {
 								/>
 								<p className="text-xs text-muted-foreground">Une limite par ligne.</p>
 							</div>
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div className="space-y-2">
+									<Label htmlFor="outputFormat">Format de sortie</Label>
+									<Textarea
+										id="outputFormat"
+										value={formData.outputFormat}
+										onChange={(e) => updateField("outputFormat", e.target.value)}
+										placeholder={"Réponds en sections : Résumé / Analyse / Recommandations"}
+										rows={4}
+									/>
+									<p className="text-xs text-muted-foreground">
+										Consigne de format injectée au prompt.
+									</p>
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="qualityChecklist">Checklist qualité</Label>
+									<Textarea
+										id="qualityChecklist"
+										value={formData.qualityChecklist}
+										onChange={(e) => updateField("qualityChecklist", e.target.value)}
+										placeholder={
+											"Réponse claire\nIncertitudes explicites\nProchaine action concrète"
+										}
+										rows={4}
+									/>
+									<p className="text-xs text-muted-foreground">Une règle qualité par ligne.</p>
+								</div>
+							</div>
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div className="space-y-2">
+									<Label htmlFor="variables">Variables agent (JSON)</Label>
+									<Textarea
+										id="variables"
+										value={formData.variables}
+										onChange={(e) => updateField("variables", e.target.value)}
+										placeholder={'{"pays":"France","niveau":"expert"}'}
+										rows={5}
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label htmlFor="fewShotExamples">Exemples few-shot (JSON)</Label>
+									<Textarea
+										id="fewShotExamples"
+										value={formData.fewShotExamples}
+										onChange={(e) => updateField("fewShotExamples", e.target.value)}
+										placeholder={'[{"user":"Question","assistant":"Réponse attendue"}]'}
+										rows={5}
+									/>
+								</div>
+							</div>
 							{formData.mode !== "LOCAL" && (
 								<div className="space-y-2">
 									<Label>Stratégie d&apos;exécution cloud</Label>
@@ -919,6 +1006,20 @@ export default function NewAgentPage() {
 									<span className="text-muted-foreground">Prompts suggérés</span>
 									<span className="text-xs">
 										{formData.suggestedPrompts.split("\n").filter((p) => p.trim()).length}
+									</span>
+								</div>
+								<Separator />
+								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">Qualité agent</span>
+									<span className="text-xs">
+										{[
+											formData.variables.trim() && "variables",
+											formData.fewShotExamples.trim() && "few-shot",
+											formData.outputFormat.trim() && "format",
+											formData.qualityChecklist.trim() && "checklist",
+										]
+											.filter(Boolean)
+											.join(", ") || "Non renseigné"}
 									</span>
 								</div>
 								<Separator />

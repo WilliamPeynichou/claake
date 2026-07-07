@@ -120,6 +120,10 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 				limitations: data.limitations ?? [],
 				modelSettings: (data.modelSettings as any) ?? undefined,
 				capabilities: (data.capabilities as any) ?? undefined,
+				variables: (data.variables as any) ?? undefined,
+				fewShotExamples: (data.fewShotExamples as any) ?? undefined,
+				outputFormat: data.outputFormat,
+				qualityChecklist: data.qualityChecklist ?? [],
 				pricingModel: (data.pricingModel as any) ?? "FREE",
 				price: data.price ?? 0,
 				creditCost: data.creditCost ?? 1,
@@ -157,6 +161,10 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		if (data.limitations !== undefined) updateData.limitations = data.limitations;
 		if (data.modelSettings !== undefined) updateData.modelSettings = data.modelSettings;
 		if (data.capabilities !== undefined) updateData.capabilities = data.capabilities;
+		if (data.variables !== undefined) updateData.variables = data.variables;
+		if (data.fewShotExamples !== undefined) updateData.fewShotExamples = data.fewShotExamples;
+		if (data.outputFormat !== undefined) updateData.outputFormat = data.outputFormat;
+		if (data.qualityChecklist !== undefined) updateData.qualityChecklist = data.qualityChecklist;
 		if (data.pricingModel !== undefined) updateData.pricingModel = data.pricingModel;
 		if (data.cloudStrategy !== undefined) updateData.cloudStrategy = data.cloudStrategy;
 		if (data.endpointUrl !== undefined) updateData.endpointUrl = data.endpointUrl;
