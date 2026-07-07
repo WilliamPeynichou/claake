@@ -31,7 +31,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-06-finir-milestone-4.md` — Plan de finition Milestone 4 (desktop chat). **✅ Réalisé et livré.**
 - `plans/2026-07-06-finir-milestone-5.md` — Plan de finition Milestone 5 (qualité agent). **✅ Réalisé.**
 - `plans/2026-07-06-correction-milestone-5.md` — Plan de correction process Milestone 5. **✅ Appliqué.**
-- `plans/2026-07-06-refactor-agent-builder.md` — Plan de refactor Agent Builder commun (dette M2). ⏳ À faire.
+- `plans/2026-07-06-refactor-agent-builder.md` — Plan de refactor Agent Builder commun (dette M2). **✅ Réalisé et livré.**
 
 ## État des milestones
 
