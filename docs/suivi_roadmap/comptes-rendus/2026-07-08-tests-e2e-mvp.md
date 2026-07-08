@@ -67,6 +67,18 @@ Test Suites: 1 passed, 1 total
 Tests:       1 passed, 1 total
 ```
 
+Suite complète `test:e2e` (après suppression du boilerplate obsolète) :
+
+```txt
+npm --workspace backend run test:e2e
+```
+
+Résultat : **1 suite, 1 test, tout vert**. Le boilerplate Nest
+`backend/test/app.e2e-spec.ts` (endpoint obsolète `Hello World!`, boot `AppModule`
+nécessitant les credentials Supabase/`ENCRYPTION_KEY`) a été **supprimé** : il faisait
+échouer `test:e2e` en local et allait à l'encontre de l'approche in-memory de `mvp-flow`.
+Un smoke test HTTP réel (boot + supertest) reste en dette (§7).
+
 Biome ciblé :
 
 ```txt
