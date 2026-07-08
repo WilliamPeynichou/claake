@@ -4,6 +4,7 @@ import { AdminPermissionGuard } from "../../common/guards/admin-permission.guard
 import { OptionalSupabaseAuthGuard } from "../../common/guards/optional-supabase-auth.guard.js";
 import { RolesGuard } from "../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../common/guards/supabase-auth.guard.js";
+import { AgentKnowledgeService } from "./application/services/agent-knowledge.service.js";
 import { CreateAgentUseCase } from "./application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "./application/usecases/delete-agent.usecase.js";
 import { GetAgentUseCase } from "./application/usecases/get-agent.usecase.js";
@@ -38,8 +39,9 @@ import { PrismaAgentRepository } from "./infrastructure/repositories/prisma-agen
 		GetAgentDownloadInfoUseCase,
 		DeleteAgentUseCase,
 		UnpublishAgentUseCase,
+		AgentKnowledgeService,
 		{ provide: AGENT_REPOSITORY, useClass: PrismaAgentRepository },
 	],
-	exports: [AGENT_REPOSITORY],
+	exports: [AGENT_REPOSITORY, AgentKnowledgeService],
 })
 export class AgentModule {}

@@ -5,6 +5,7 @@ import {
 	Injectable,
 	NotFoundException,
 } from "@nestjs/common";
+import { AgentKnowledgeService } from "../../../agents/application/services/agent-knowledge.service.js";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
@@ -24,6 +25,7 @@ import {
 
 function buildQualitySystemPrompt(
 	agent: NonNullable<Awaited<ReturnType<AgentRepositoryPort["findById"]>>>,
+	knowledgeContext?: string | null,
 ): string | null {
 	const sections: string[] = [];
 	const basePrompt = agent.systemPrompt ?? agent.longDescription;
@@ -37,6 +39,9 @@ function buildQualitySystemPrompt(
 	if (agent.outputFormat) {
 		sections.push(`Format de sortie attendu:\n${agent.outputFormat}`);
 	}
+	if (knowledgeContext) {
+		sections.push(`Base de connaissances:\n${knowledgeContext}`);
+	}
 	return sections.length ? sections.join("\n\n") : null;
 }
 
@@ -48,6 +53,7 @@ export class SendMessageUseCase {
 		@Inject(EXECUTION_STRATEGY_RESOLVER)
 		private readonly strategyResolver: ExecutionStrategyResolver,
 		private readonly quotaService: ChatQuotaService,
+		private readonly knowledgeService: AgentKnowledgeService,
 	) {}
 
 	async execute(
@@ -123,11 +129,12 @@ export class SendMessageUseCase {
 
 		// Resolve execution strategy for this agent
 		const { provider, extraParams } = await this.strategyResolver.resolve(agent, userId);
+		const knowledgeContext = await this.knowledgeService.buildKnowledgeContext(agent.id);
 
 		const model = agent.models[0] ?? "claude-sonnet-4-20250514";
 		const stream = provider.streamText({
 			model,
-			systemPrompt: buildQualitySystemPrompt(agent),
+			systemPrompt: buildQualitySystemPrompt(agent, knowledgeContext),
 			messages: formattedHistory,
 			maxTokens: 4096,
 			attachments: attachments.length > 0 ? attachments : undefined,

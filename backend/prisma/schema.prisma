@@ -214,6 +214,7 @@ model Agent {
   collectionAgents CollectionAgent[]
   pipelineSteps    PipelineStep[]
   uploadedFiles    UploadedFile[]
+  knowledge        AgentKnowledge[]
 
   @@index([slug])
   @@index([creatorId])
@@ -519,4 +520,16 @@ model UploadedFile {
   @@index([sessionId])
   @@index([messageId])
   @@map("uploaded_files")
+}
+
+model AgentKnowledge {
+  id        String   @id @default(uuid())
+  agentId   String   @map("agent_id")
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  title     String
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([agentId])
+  @@map("agent_knowledge")
 }
