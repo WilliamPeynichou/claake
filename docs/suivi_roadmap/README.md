@@ -22,6 +22,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `comptes-rendus/2026-07-06-finition-milestone-4.md` — Milestone 4 desktop chat V1 (auth→agents→chat-config→sessions→streaming→clés API→logout). **Mergé dans `main` et poussé.**
 - `comptes-rendus/2026-07-06-finition-milestone-5.md` — Milestone 5 qualité agent V1 (variables, few-shot, format sortie, checklist, prompt enrichi).
 - `comptes-rendus/2026-07-06-finition-quotas-chat.md` — Quotas chat simples (F6.2) : messages/minute, /jour, taille prompt, historique. **Mergé dans `main` et poussé.**
+- `comptes-rendus/2026-07-08-tests-e2e-mvp.md` — Tests e2e MVP backend : création → test draft → soumission → review admin → chat public.
 
 ## Index plans
 
@@ -34,6 +35,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-06-correction-milestone-5.md` — Plan de correction process Milestone 5. **✅ Appliqué.**
 - `plans/2026-07-06-refactor-agent-builder.md` — Plan de refactor Agent Builder commun (dette M2). **✅ Réalisé et livré.**
 - `plans/2026-07-06-plan-quotas-chat.md` — Plan quotas chat simples (F6.2, prochaine étape). **✅ Réalisé et livré.**
+- `plans/2026-07-08-tests-e2e-mvp.md` — Plan tests e2e MVP backend. **✅ Réalisé.**
 
 ## État des milestones
 
@@ -46,6 +48,6 @@ plans/AAAA-MM-JJ-sujet.md
 | 4 — Desktop chat | ✅ 100% fonctionnel V1 | mergé |
 | 5 — Qualité agent | ✅ 100% fonctionnel V1 | branche `feature/milestone-5-agent-quality` |
 | 6 — Fichiers et connaissance | 🟡 ~35% | — |
-| 7 — Beta publique contrôlée | 🟡 ~45% | — |
+| 7 — Beta publique contrôlée | 🟡 ~60% | e2e MVP backend ajouté, reste CI/observabilité/e2e UI |
 
-Prochain verrou recommandé : **Milestone 6 — Fichiers et connaissance** ou dette **Agent Builder commun** avant d'ajouter plus de champs.
+Prochain verrou recommandé : **Milestone 6 — Fichiers et connaissance** ou **e2e UI Playwright** quand env test prêt.

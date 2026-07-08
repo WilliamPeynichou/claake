@@ -42,7 +42,7 @@ AgentDefinition partiel
 | Milestone 4 — Desktop chat | 100% fonctionnel V1 chat-only | Desktop `frontendApp` branché sur `@claake/shared` (`useChat`, `apiClient`, `AgentChatConfig`) : auth → liste agents → chat-config → sessions → streaming → retry → panneau clés API → déconnexion. Dette : test live Tauri non effectué (`backend/.env` vide), chunk vite >500 kB à code-splitter, auth desktop à durcir si flow Supabase complet requis. |
 | Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Champs intégrés dans l'Agent Builder commun. Dette restante : éditeur UI nested dédié pour variables/few-shot JSON. |
 | Milestone 6 — Fichiers et connaissance | ~35% | Upload existant partiel, capabilities présentes. Reste enforcement par agent et knowledge base. |
-| Milestone 7 — Beta publique contrôlée | ~55% | Sécurité backend renforcée. Quotas chat par utilisateur livrés (messages/minute, /jour, taille prompt, historique). Reste CI, e2e, observabilité. |
+| Milestone 7 — Beta publique contrôlée | ~60% | Sécurité backend renforcée, quotas chat livrés, e2e MVP backend ajouté. Reste CI, e2e UI Playwright, observabilité. |
 
 ### Ce qui est maintenant considéré fait
 
@@ -67,6 +67,8 @@ AgentDefinition partiel
   remise en brouillon et suspension côté API.
 - Qualité agent V1 : variables, few-shot examples, format de sortie, checklist qualité,
   exposés backend/shared/web et injectés au prompt provider côté backend.
+- Tests e2e MVP backend : création draft, test draft créateur, soumission, test admin
+  pending, approbation, chat public.
 - Durcissement sécurité backend :
   - accès agent revérifié à chaque message ;
   - `download-info` protégé par statut/ownership ;
@@ -89,20 +91,21 @@ create draft
 → public chat
 ```
 
-Le prochain blocage produit n'est plus le mode test ni le builder, mais la consolidation avant élargissement :
+Le prochain blocage produit n'est plus le mode test, le builder ou l'e2e backend MVP, mais la
+consolidation avant élargissement :
 
 ```txt
-e2e MVP
-→ durcissement beta (M7)
+Milestone 6 fichiers/connaissance
+→ e2e UI Playwright
+→ CI + observabilité beta (M7)
 ```
 
 ### Prochain ordre recommandé
 
-1. Ajouter tests e2e MVP : création, test draft, soumission, review admin, chat public.
-2. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
-3. Préparer Milestone 7 — Beta : CI, observabilité (les quotas chat sont faits).
-5. Démarrer Milestone 6 — Fichiers et connaissance.
-6. Préparer Milestone 7 — Beta publique contrôlée : quotas, CI/e2e, observabilité.
+1. Démarrer Milestone 6 — Fichiers et connaissance.
+2. Ajouter e2e UI Playwright quand environnement test/Supabase prêt.
+3. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
+4. Préparer Milestone 7 — Beta : CI, observabilité, premiers développeurs invités.
 
 ---
 
@@ -1256,7 +1259,7 @@ Livrable :
 7. Renforcer `ValidateAgentUseCase` sur les nouveaux champs chat et désactiver l'endpoint vendeur en V1 publique.
 8. Améliorer la page détail agent avec provider, modèle, stratégie, limitations et CTA access-aware.
 9. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique — fait (`ChatQuotaService`).
-10. Ajouter tests e2e MVP : page agent → chat, clé API manquante, ajout clé, test draft, review admin.
+10. Ajouter tests e2e MVP : page agent → chat, clé API manquante, ajout clé, test draft, review admin — backend MVP fait, UI Playwright à faire.
 
 ## Features roadmap déjà réalisées ou très avancées
 
@@ -1302,9 +1305,9 @@ Un développeur peut créer un agent Claude/GPT
 
 État actuel : le parcours MVP fonctionnel est atteint de bout en bout (create draft → test
 chat → submit → admin test → approve → chat public web + desktop). Le test contrôlé des
-agents draft/pending existe (`?test=1`). Reste de la **consolidation** avant élargissement :
-builder agent unifié (dette M2), quotas chat, tests e2e MVP, puis fichiers/connaissance (M6)
-et durcissement beta (M7). Le live n'a pas encore été validé (credentials Supabase absents).
+agents draft/pending existe (`?test=1`) et un e2e backend couvre le flux MVP. Reste de la
+**consolidation** avant élargissement : fichiers/connaissance (M6), e2e UI Playwright,
+CI/observabilité beta (M7). Le live n'a pas encore été validé (credentials Supabase absents).
 
 Tout ce qui ne sert pas directement ce parcours doit être repoussé.
 
