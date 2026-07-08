@@ -41,7 +41,7 @@ AgentDefinition partiel
 | Milestone 3 — Admin review | 100% fonctionnel MVP | File review enrichie, test admin dans le chat via `?test=1`, approve/reject, remise en brouillon et suspension côté API. Dette restante : checklist qualité persistée et e2e. |
 | Milestone 4 — Desktop chat | 100% fonctionnel V1 chat-only | Desktop `frontendApp` branché sur `@claake/shared` (`useChat`, `apiClient`, `AgentChatConfig`) : auth → liste agents → chat-config → sessions → streaming → retry → panneau clés API → déconnexion. Dette : test live Tauri non effectué (`backend/.env` vide), chunk vite >500 kB à code-splitter, auth desktop à durcir si flow Supabase complet requis. |
 | Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Champs intégrés dans l'Agent Builder commun. Dette restante : éditeur UI nested dédié pour variables/few-shot JSON. |
-| Milestone 6 — Fichiers et connaissance | ~65% | Upload sécurisé + capabilities + enforcement par agent (F5.2). Base de connaissances agent V1 (F5.3) : CRUD backend + injection contexte au chat + UI web créateur. Reste recherche vectorielle, ingestion PDF. |
+| Milestone 6 — Fichiers et connaissance | 100% fonctionnel V1 | Upload sécurisé + capabilities + enforcement par agent (F5.2). Base de connaissances agent V1 (F5.3) : CRUD backend, UI web créateur, édition inline, recherche contextuelle simple et injection contexte au chat. Dette : embeddings/pgvector, ingestion PDF automatique, ranking avancé. |
 | Milestone 7 — Beta publique contrôlée | ~60% | Sécurité backend renforcée, quotas chat livrés, e2e MVP backend ajouté. Reste CI, e2e UI Playwright, observabilité. |
 
 ### Ce qui est maintenant considéré fait

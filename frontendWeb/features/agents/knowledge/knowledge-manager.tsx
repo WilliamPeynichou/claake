@@ -1,7 +1,7 @@
 "use client";
 
 import type { AgentKnowledge } from "@claake/shared";
-import { Loader2, Trash2 } from "lucide-react";
+import { Edit2, Loader2, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,9 @@ export function KnowledgeManager({ agentId, token }: KnowledgeManagerProps) {
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
 	const [saving, setSaving] = useState(false);
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [editTitle, setEditTitle] = useState("");
+	const [editContent, setEditContent] = useState("");
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -51,6 +54,31 @@ export function KnowledgeManager({ agentId, token }: KnowledgeManagerProps) {
 			setError(err instanceof Error ? err.message : "Erreur lors de l'ajout.");
 		} finally {
 			setSaving(false);
+		}
+	}
+
+	function startEdit(item: AgentKnowledge) {
+		setEditingId(item.id);
+		setEditTitle(item.title);
+		setEditContent(item.content);
+	}
+
+	async function handleUpdate(knowledgeId: string) {
+		if (!editTitle.trim() || !editContent.trim()) {
+			setError("Titre et contenu requis.");
+			return;
+		}
+		try {
+			const updated = await apiClient.agents.knowledge.update(
+				agentId,
+				knowledgeId,
+				{ title: editTitle.trim(), content: editContent.trim() },
+				token,
+			);
+			setItems((prev) => prev.map((item) => (item.id === knowledgeId ? updated : item)));
+			setEditingId(null);
+		} catch {
+			setError("Modification impossible.");
 		}
 	}
 
@@ -112,22 +140,52 @@ export function KnowledgeManager({ agentId, token }: KnowledgeManagerProps) {
 			) : (
 				<ul className="space-y-2">
 					{items.map((item) => (
-						<li
-							key={item.id}
-							className="flex items-start justify-between gap-3 rounded-md border p-3"
-						>
-							<div className="min-w-0">
-								<p className="text-sm font-medium">{item.title}</p>
-								<p className="line-clamp-2 text-xs text-muted-foreground">{item.content}</p>
-							</div>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => handleDelete(item.id)}
-								aria-label="Supprimer"
-							>
-								<Trash2 className="h-4 w-4 text-destructive" />
-							</Button>
+						<li key={item.id} className="rounded-md border p-3">
+							{editingId === item.id ? (
+								<div className="space-y-2">
+									<Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+									<Textarea
+										value={editContent}
+										onChange={(e) => setEditContent(e.target.value)}
+										rows={4}
+									/>
+									<div className="flex gap-2">
+										<Button size="sm" onClick={() => handleUpdate(item.id)}>
+											<Save className="mr-1 h-3 w-3" />
+											Enregistrer
+										</Button>
+										<Button variant="outline" size="sm" onClick={() => setEditingId(null)}>
+											<X className="mr-1 h-3 w-3" />
+											Annuler
+										</Button>
+									</div>
+								</div>
+							) : (
+								<div className="flex items-start justify-between gap-3">
+									<div className="min-w-0">
+										<p className="text-sm font-medium">{item.title}</p>
+										<p className="line-clamp-2 text-xs text-muted-foreground">{item.content}</p>
+									</div>
+									<div className="flex gap-1">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => startEdit(item)}
+											aria-label="Modifier"
+										>
+											<Edit2 className="h-4 w-4" />
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => handleDelete(item.id)}
+											aria-label="Supprimer"
+										>
+											<Trash2 className="h-4 w-4 text-destructive" />
+										</Button>
+									</div>
+								</div>
+							)}
 						</li>
 					))}
 				</ul>

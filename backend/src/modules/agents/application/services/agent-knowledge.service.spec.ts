@@ -13,6 +13,11 @@ function makePrisma(overrides: Record<string, unknown> = {}) {
 				),
 			findMany: jest.fn().mockResolvedValue([]),
 			findUnique: jest.fn().mockResolvedValue(null),
+			update: jest
+				.fn()
+				.mockImplementation(({ data }) =>
+					Promise.resolve({ id: "k-1", agentId: "agent-1", createdAt: new Date(), ...data }),
+				),
 			delete: jest.fn().mockResolvedValue(undefined),
 		},
 		...overrides,
@@ -42,6 +47,26 @@ describe("AgentKnowledgeService", () => {
 	it("autorise un admin", async () => {
 		const service = new AgentKnowledgeService(makePrisma());
 		await expect(service.list("agent-1", ADMIN)).resolves.toEqual([]);
+	});
+
+	it("modifie un document du bon agent", async () => {
+		const prisma = makePrisma({
+			agentKnowledge: {
+				findUnique: jest
+					.fn()
+					.mockResolvedValue({ id: "k-1", agentId: "agent-1", title: "Old", content: "Old" }),
+				update: jest.fn().mockResolvedValue({
+					id: "k-1",
+					agentId: "agent-1",
+					title: "New",
+					content: "Body",
+					createdAt: new Date(),
+				}),
+			},
+		});
+		const service = new AgentKnowledgeService(prisma);
+		const item = await service.update("agent-1", "k-1", CREATOR, { title: "New", content: "Body" });
+		expect(item.title).toBe("New");
 	});
 
 	it("refuse la suppression d'un document d'un autre agent", async () => {
@@ -74,6 +99,24 @@ describe("AgentKnowledgeService", () => {
 	it("retourne null sans document", async () => {
 		const service = new AgentKnowledgeService(makePrisma());
 		await expect(service.buildKnowledgeContext("agent-1")).resolves.toBeNull();
+	});
+
+	it("classe les documents selon la requête utilisateur", async () => {
+		const prisma = makePrisma({
+			agentKnowledge: {
+				findMany: jest.fn().mockResolvedValue([
+					{ title: "Facturation", content: "Paiement et facture", createdAt: new Date() },
+					{
+						title: "Retour colis",
+						content: "Remboursement et retour produit",
+						createdAt: new Date(),
+					},
+				]),
+			},
+		});
+		const service = new AgentKnowledgeService(prisma);
+		const ctx = await service.buildKnowledgeContext("agent-1", "comment faire un retour produit");
+		expect(ctx?.indexOf("Retour colis")).toBeLessThan(ctx?.indexOf("Facturation") ?? 9999);
 	});
 
 	it("plafonne le contexte de connaissance", async () => {
