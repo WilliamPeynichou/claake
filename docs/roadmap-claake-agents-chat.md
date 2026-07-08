@@ -42,7 +42,7 @@ AgentDefinition partiel
 | Milestone 4 — Desktop chat | 100% fonctionnel V1 chat-only | Desktop `frontendApp` branché sur `@claake/shared` (`useChat`, `apiClient`, `AgentChatConfig`) : auth → liste agents → chat-config → sessions → streaming → retry → panneau clés API → déconnexion. Dette : test live Tauri non effectué (`backend/.env` vide), chunk vite >500 kB à code-splitter, auth desktop à durcir si flow Supabase complet requis. |
 | Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Champs intégrés dans l'Agent Builder commun. Dette restante : éditeur UI nested dédié pour variables/few-shot JSON. |
 | Milestone 6 — Fichiers et connaissance | ~35% | Upload existant partiel, capabilities présentes. Reste enforcement par agent et knowledge base. |
-| Milestone 7 — Beta publique contrôlée | ~45% | Sécurité backend nettement renforcée. Reste quotas, CI, e2e, observabilité. |
+| Milestone 7 — Beta publique contrôlée | ~55% | Sécurité backend renforcée. Quotas chat par utilisateur livrés (messages/minute, /jour, taille prompt, historique). Reste CI, e2e, observabilité. |
 
 ### Ce qui est maintenant considéré fait
 
@@ -92,16 +92,15 @@ create draft
 Le prochain blocage produit n'est plus le mode test ni le builder, mais la consolidation avant élargissement :
 
 ```txt
-quotas chat simples
-→ e2e MVP
+e2e MVP
 → durcissement beta (M7)
 ```
 
 ### Prochain ordre recommandé
 
-1. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique.
-2. Ajouter tests e2e MVP : création, test draft, soumission, review admin, chat public.
-3. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
+1. Ajouter tests e2e MVP : création, test draft, soumission, review admin, chat public.
+2. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
+3. Préparer Milestone 7 — Beta : CI, observabilité (les quotas chat sont faits).
 5. Démarrer Milestone 6 — Fichiers et connaissance.
 6. Préparer Milestone 7 — Beta publique contrôlée : quotas, CI/e2e, observabilité.
 
@@ -1256,7 +1255,7 @@ Livrable :
 6. Ajouter retour automatique au chat après ajout d'une clé API utilisateur.
 7. Renforcer `ValidateAgentUseCase` sur les nouveaux champs chat et désactiver l'endpoint vendeur en V1 publique.
 8. Améliorer la page détail agent avec provider, modèle, stratégie, limitations et CTA access-aware.
-9. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique.
+9. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique — fait (`ChatQuotaService`).
 10. Ajouter tests e2e MVP : page agent → chat, clé API manquante, ajout clé, test draft, review admin.
 
 ## Features roadmap déjà réalisées ou très avancées

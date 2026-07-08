@@ -16,6 +16,7 @@ import {
 	CHAT_SESSION_REPOSITORY,
 	type ChatSessionRepositoryPort,
 } from "../../domain/ports/chat-session.repository.port.js";
+import { ChatQuotaService } from "../services/chat-quota.service.js";
 import {
 	EXECUTION_STRATEGY_RESOLVER,
 	type ExecutionStrategyResolver,
@@ -46,6 +47,7 @@ export class SendMessageUseCase {
 		@Inject(AGENT_REPOSITORY) private readonly agentRepo: AgentRepositoryPort,
 		@Inject(EXECUTION_STRATEGY_RESOLVER)
 		private readonly strategyResolver: ExecutionStrategyResolver,
+		private readonly quotaService: ChatQuotaService,
 	) {}
 
 	async execute(
@@ -88,6 +90,9 @@ export class SendMessageUseCase {
 			}
 		}
 
+		// Enforce per-user chat quotas before persisting anything
+		await this.quotaService.assertWithinQuota(userId, content.length);
+
 		// Save user message
 		await this.chatRepo.addMessage(
 			sessionId,
@@ -106,7 +111,11 @@ export class SendMessageUseCase {
 		}
 
 		// Load history
-		const { messages: history } = await this.chatRepo.getMessages(sessionId, 100, 0);
+		const { messages: history } = await this.chatRepo.getMessages(
+			sessionId,
+			this.quotaService.maxHistoryMessages,
+			0,
+		);
 		const formattedHistory = history.map((m) => ({
 			role: m.role === "USER" ? "user" : m.role === "ASSISTANT" ? "assistant" : "system",
 			content: m.content,

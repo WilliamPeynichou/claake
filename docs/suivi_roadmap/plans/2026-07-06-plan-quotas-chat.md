@@ -1,5 +1,8 @@
 # Plan — Quotas chat simples (F6.2)
 
+> **Statut : ✅ Réalisé et livré.** Voir
+> `docs/suivi_roadmap/comptes-rendus/2026-07-06-finition-quotas-chat.md`.
+
 Date : 2026-07-06
 Branche : `feature/chat-quotas`
 Réf : `docs/roadmap-claake-agents-chat.md` — Phase 6 / Feature 6.2, prochain ordre #1.

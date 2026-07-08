@@ -78,3 +78,11 @@ export const BUILDER_PROVIDER_OPTIONS = [
 	{ id: "mistral", name: "Mistral" },
 	{ id: "groq", name: "Groq" },
 ] as const;
+
+/** Default per-user chat quotas (V1). Backend may override via CHAT_QUOTA_* env vars. */
+export const CHAT_QUOTAS = {
+	MESSAGES_PER_MINUTE: 20,
+	MESSAGES_PER_DAY: 300,
+	MAX_PROMPT_CHARS: 12000,
+	MAX_HISTORY_MESSAGES: 100,
+} as const;

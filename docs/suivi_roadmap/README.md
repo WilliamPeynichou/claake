@@ -21,6 +21,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `comptes-rendus/2026-07-06-finition-milestone-3.md` — Milestone 3 finalisé MVP (review admin enrichie, test chat admin, transitions review). **Mergé dans `main` (`9ea47b8`) et poussé.**
 - `comptes-rendus/2026-07-06-finition-milestone-4.md` — Milestone 4 desktop chat V1 (auth→agents→chat-config→sessions→streaming→clés API→logout). **Mergé dans `main` et poussé.**
 - `comptes-rendus/2026-07-06-finition-milestone-5.md` — Milestone 5 qualité agent V1 (variables, few-shot, format sortie, checklist, prompt enrichi).
+- `comptes-rendus/2026-07-06-finition-quotas-chat.md` — Quotas chat simples (F6.2) : messages/minute, /jour, taille prompt, historique. **Mergé dans `main` et poussé.**
 
 ## Index plans
 
@@ -32,7 +33,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-06-finir-milestone-5.md` — Plan de finition Milestone 5 (qualité agent). **✅ Réalisé.**
 - `plans/2026-07-06-correction-milestone-5.md` — Plan de correction process Milestone 5. **✅ Appliqué.**
 - `plans/2026-07-06-refactor-agent-builder.md` — Plan de refactor Agent Builder commun (dette M2). **✅ Réalisé et livré.**
-- `plans/2026-07-06-plan-quotas-chat.md` — Plan quotas chat simples (F6.2, prochaine étape). ⏳ À faire.
+- `plans/2026-07-06-plan-quotas-chat.md` — Plan quotas chat simples (F6.2, prochaine étape). **✅ Réalisé et livré.**
 
 ## État des milestones
 
