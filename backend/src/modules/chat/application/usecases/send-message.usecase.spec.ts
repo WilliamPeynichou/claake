@@ -4,6 +4,7 @@ import { AgentEntity } from "../../../agents/domain/entities/agent.entity";
 import { AGENT_REPOSITORY } from "../../../agents/domain/ports/agent.repository.port";
 import { ChatSessionEntity } from "../../domain/entities/chat-session.entity";
 import { CHAT_SESSION_REPOSITORY } from "../../domain/ports/chat-session.repository.port";
+import { ChatQuotaService } from "../services/chat-quota.service";
 import { EXECUTION_STRATEGY_RESOLVER } from "../services/execution-strategy.resolver";
 import { SendMessageUseCase } from "./send-message.usecase";
 
@@ -23,6 +24,7 @@ const mockChatRepo = {
 	delete: jest.fn(),
 	addMessage: jest.fn(),
 	getMessages: jest.fn(),
+	countUserMessagesSince: jest.fn(),
 };
 
 const mockAgentRepo = {
@@ -119,6 +121,7 @@ describe("SendMessageUseCase", () => {
 				{ provide: CHAT_SESSION_REPOSITORY, useValue: mockChatRepo },
 				{ provide: AGENT_REPOSITORY, useValue: mockAgentRepo },
 				{ provide: EXECUTION_STRATEGY_RESOLVER, useValue: mockStrategyResolver },
+				ChatQuotaService,
 			],
 		}).compile();
 
@@ -129,6 +132,7 @@ describe("SendMessageUseCase", () => {
 		mockStrategyResolver.resolve.mockResolvedValue({ provider: mockProvider, extraParams: {} });
 		mockChatRepo.addMessage.mockResolvedValue({ id: "msg-1", role: "USER", content: "hello" });
 		mockChatRepo.getMessages.mockResolvedValue({ messages: [], total: 0 });
+		mockChatRepo.countUserMessagesSince.mockResolvedValue(0);
 		mockAgentRepo.hasPurchased.mockResolvedValue(false);
 		mockAgentRepo.hasActiveSubscription.mockResolvedValue(false);
 	});
@@ -198,6 +202,17 @@ describe("SendMessageUseCase", () => {
 		await useCase.execute("session-1", "user-1", "Quelle est la météo ?");
 
 		expect(mockChatRepo.updateTitle).toHaveBeenCalledWith("session-1", "Quelle est la météo ?");
+	});
+
+	it("bloque et n'écrit rien si le quota par minute est dépassé", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(makeAgent());
+		mockChatRepo.countUserMessagesSince.mockResolvedValue(9999);
+
+		await expect(useCase.execute("session-1", "user-1", "Salut")).rejects.toMatchObject({
+			status: 429,
+		});
+		expect(mockChatRepo.addMessage).not.toHaveBeenCalled();
 	});
 
 	it("ne génère pas de titre si la session en a déjà un", async () => {

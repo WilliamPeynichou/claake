@@ -133,4 +133,14 @@ export class PrismaChatRepository implements ChatSessionRepositoryPort {
 			total,
 		};
 	}
+
+	async countUserMessagesSince(userId: string, since: Date): Promise<number> {
+		return this.prisma.chatMessage.count({
+			where: {
+				role: "USER",
+				createdAt: { gte: since },
+				session: { userId },
+			},
+		});
+	}
 }

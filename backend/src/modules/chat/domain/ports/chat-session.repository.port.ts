@@ -35,4 +35,6 @@ export interface ChatSessionRepositoryPort {
 		limit: number,
 		offset: number,
 	): Promise<{ messages: ChatMessageEntity[]; total: number }>;
+	/** Counts USER messages across all of a user's sessions since the given date (quota windows). */
+	countUserMessagesSince(userId: string, since: Date): Promise<number>;
 }

@@ -4,6 +4,7 @@ import { AgentModule } from "../agents/agent.module.js";
 import { UploadsModule } from "../uploads/uploads.module.js";
 import { ManageApiKeysUseCase } from "../users/application/usecases/manage-api-keys.usecase.js";
 import { UserModule } from "../users/user.module.js";
+import { ChatQuotaService } from "./application/services/chat-quota.service.js";
 import {
 	EXECUTION_STRATEGY_RESOLVER,
 	ExecutionStrategyResolver,
@@ -39,6 +40,7 @@ import { PrismaChatRepository } from "./infrastructure/repositories/prisma-chat.
 		MockProvider,
 		AIProviderFactory,
 		ExecutionStrategyResolver,
+		ChatQuotaService,
 		ManageApiKeysUseCase,
 		{ provide: CHAT_SESSION_REPOSITORY, useClass: PrismaChatRepository },
 		{ provide: AI_PROVIDER_FACTORY, useExisting: AIProviderFactory },
