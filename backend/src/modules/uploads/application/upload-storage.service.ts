@@ -16,7 +16,11 @@ export class UploadStorageService {
 		);
 	}
 
-	async uploadPrivateObject(storagePath: string, buffer: Buffer, contentType: string): Promise<void> {
+	async uploadPrivateObject(
+		storagePath: string,
+		buffer: Buffer,
+		contentType: string,
+	): Promise<void> {
 		const { error } = await this.supabase.storage
 			.from(PRIVATE_UPLOADS_BUCKET)
 			.upload(storagePath, buffer, {

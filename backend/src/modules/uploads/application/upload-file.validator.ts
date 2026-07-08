@@ -1,5 +1,5 @@
-import { BadRequestException } from "@nestjs/common";
 import { extname } from "node:path";
+import { BadRequestException } from "@nestjs/common";
 
 export type ValidatedUploadFile = {
 	mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "application/pdf";

@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import type { UserRole } from "@prisma/client";
 import { PrismaService } from "../../../prisma/prisma.service.js";
+import { normalizeAgentCapabilities } from "../../agents/domain/agent-capabilities.js";
 import { validateUploadFile } from "./upload-file.validator.js";
 import { UploadStorageService } from "./upload-storage.service.js";
 
@@ -28,6 +29,9 @@ export class UploadService {
 		await this.assertUploadTargetAccess(userId, opts);
 
 		const validatedFile = validateUploadFile(file);
+		if (opts.sessionId) {
+			await this.assertAgentAcceptsFile(opts.sessionId, validatedFile.type);
+		}
 		const storagePath = `uploads/${userId}/${opts.agentId ?? opts.sessionId ?? "unattached"}/${randomUUID()}${validatedFile.extension}`;
 
 		try {
@@ -165,6 +169,28 @@ export class UploadService {
 			if (agent.creatorId !== userId) {
 				throw new ForbiddenException("Accès refusé.");
 			}
+		}
+	}
+
+	private async assertAgentAcceptsFile(
+		sessionId: string,
+		fileType: "IMAGE" | "DOCUMENT",
+	): Promise<void> {
+		const session = await this.prisma.chatSession.findUnique({
+			where: { id: sessionId },
+			select: { agent: { select: { capabilities: true } } },
+		});
+		const rawCapabilities = (session?.agent?.capabilities ?? null) as Record<
+			string,
+			unknown
+		> | null;
+		const capabilities = normalizeAgentCapabilities(rawCapabilities);
+
+		if (fileType === "IMAGE" && !capabilities.images) {
+			throw new BadRequestException("Cet agent n'accepte pas les images.");
+		}
+		if (fileType === "DOCUMENT" && !capabilities.files) {
+			throw new BadRequestException("Cet agent n'accepte pas les fichiers.");
 		}
 	}
 
