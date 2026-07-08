@@ -25,6 +25,7 @@ import { CreateAgentDto } from "../../application/dtos/create-agent.dto.js";
 import { CreateAgentKnowledgeDto } from "../../application/dtos/create-agent-knowledge.dto.js";
 import { ReviewAgentDto } from "../../application/dtos/review-agent.dto.js";
 import { UpdateAgentDto } from "../../application/dtos/update-agent.dto.js";
+import { UpdateAgentKnowledgeDto } from "../../application/dtos/update-agent-knowledge.dto.js";
 import { AgentKnowledgeService } from "../../application/services/agent-knowledge.service.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
@@ -168,6 +169,22 @@ export class AgentController {
 			id,
 			{ userId: req.user.id, role: req.user.role },
 			{ title: body.title, content: body.content },
+		);
+	}
+
+	@Patch(":id/knowledge/:knowledgeId")
+	@UseGuards(SupabaseAuthGuard)
+	async updateKnowledge(
+		@Param("id") id: string,
+		@Param("knowledgeId") knowledgeId: string,
+		@Body() body: UpdateAgentKnowledgeDto,
+		@Req() req: { user: RequestUser },
+	) {
+		return this.knowledge.update(
+			id,
+			knowledgeId,
+			{ userId: req.user.id, role: req.user.role },
+			body,
 		);
 	}
 

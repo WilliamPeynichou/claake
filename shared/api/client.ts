@@ -124,6 +124,16 @@ export function createApiClient(baseUrl: string) {
 						`/agents/${agentId}/knowledge`,
 						withAuth(token, { method: "POST", body: JSON.stringify(input) }),
 					),
+				update: (
+					agentId: string,
+					knowledgeId: string,
+					input: { title?: string; content?: string },
+					token: string,
+				) =>
+					fetchJson<AgentKnowledge>(
+						`/agents/${agentId}/knowledge/${knowledgeId}`,
+						withAuth(token, { method: "PATCH", body: JSON.stringify(input) }),
+					),
 				delete: (agentId: string, knowledgeId: string, token: string) =>
 					fetchJson<void>(
 						`/agents/${agentId}/knowledge/${knowledgeId}`,

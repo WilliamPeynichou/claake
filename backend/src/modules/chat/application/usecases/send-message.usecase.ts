@@ -129,7 +129,7 @@ export class SendMessageUseCase {
 
 		// Resolve execution strategy for this agent
 		const { provider, extraParams } = await this.strategyResolver.resolve(agent, userId);
-		const knowledgeContext = await this.knowledgeService.buildKnowledgeContext(agent.id);
+		const knowledgeContext = await this.knowledgeService.buildKnowledgeContext(agent.id, content);
 
 		const model = agent.models[0] ?? "claude-sonnet-4-20250514";
 		const stream = provider.streamText({
