@@ -25,6 +25,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `comptes-rendus/2026-07-08-tests-e2e-mvp.md` — Tests e2e MVP backend : création → test draft → soumission → review admin → chat public.
 - `comptes-rendus/2026-07-08-m6-file-enforcement.md` — M6 démarré : enforcement upload par agent (capabilities) côté chat. **Mergé dans `main` et poussé.**
 - `comptes-rendus/2026-07-08-m6-knowledge-base.md` — M6/F5.3 : base de connaissances agent V1 (CRUD backend + injection contexte chat). **Mergé dans `main` et poussé.**
+- `comptes-rendus/2026-07-08-m6-knowledge-ui.md` — M6/F5.3 : UI web créateur de la base de connaissances (éditeur agent). **Mergé dans `main` et poussé.**
 
 ## Index plans
 
@@ -51,7 +52,7 @@ plans/AAAA-MM-JJ-sujet.md
 | 3 — Admin review | ✅ 100% MVP | mergé (`9ea47b8`) |
 | 4 — Desktop chat | ✅ 100% fonctionnel V1 | mergé |
 | 5 — Qualité agent | ✅ 100% fonctionnel V1 | branche `feature/milestone-5-agent-quality` |
-| 6 — Fichiers et connaissance | 🟡 ~60% | F5.2 enforcement + F5.3 knowledge base V1 mergés |
+| 6 — Fichiers et connaissance | 🟡 ~65% | F5.2 enforcement + F5.3 knowledge base V1 (backend + UI web) mergés |
 | 7 — Beta publique contrôlée | 🟡 ~60% | e2e MVP backend ajouté, reste CI/observabilité/e2e UI |
 
 Prochain verrou recommandé : **Milestone 6 — Fichiers et connaissance** ou **e2e UI Playwright** quand env test prêt.
