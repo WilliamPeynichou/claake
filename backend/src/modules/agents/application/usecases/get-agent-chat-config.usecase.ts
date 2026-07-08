@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
+import { normalizeAgentCapabilities } from "../../domain/agent-capabilities.js";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
@@ -32,10 +33,7 @@ function normalizeCapabilities(raw: Record<string, unknown> | null): {
 	files: boolean;
 	images: boolean;
 } {
-	return {
-		files: raw?.files === true,
-		images: raw?.images === true,
-	};
+	return normalizeAgentCapabilities(raw);
 }
 
 @Injectable()

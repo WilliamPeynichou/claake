@@ -134,4 +134,102 @@ describe("UploadService — validation et isolation des fichiers", () => {
 		);
 		expect(record.url).toContain("/object/sign/");
 	});
+
+	const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+	const PDF = Buffer.from("%PDF-1.4\n1 0 obj\n<< >>\nendobj\n");
+
+	function prismaWithSessionAgent(capabilities: Record<string, unknown> | null) {
+		return createPrisma({
+			chatSession: {
+				findUnique: jest
+					.fn()
+					.mockResolvedValue({ userId: "user-1", agentId: "agent-1", agent: { capabilities } }),
+			},
+		});
+	}
+
+	it("refuse une image si l'agent ne supporte pas les images", async () => {
+		const storage = createStorage();
+		const service = new UploadService(
+			prismaWithSessionAgent({ images: false, files: true }) as any,
+			storage as any,
+		);
+
+		await expect(
+			service.upload(
+				createFile({ buffer: PNG, mimetype: "image/png", originalname: "a.png" }),
+				"user-1",
+				{
+					sessionId: "session-1",
+				},
+			),
+		).rejects.toBeInstanceOf(BadRequestException);
+		expect(storage.uploadPrivateObject).not.toHaveBeenCalled();
+	});
+
+	it("refuse un PDF si l'agent ne supporte pas les fichiers", async () => {
+		const storage = createStorage();
+		const service = new UploadService(
+			prismaWithSessionAgent({ images: true, files: false }) as any,
+			storage as any,
+		);
+
+		await expect(
+			service.upload(
+				createFile({ buffer: PDF, mimetype: "application/pdf", originalname: "a.pdf" }),
+				"user-1",
+				{
+					sessionId: "session-1",
+				},
+			),
+		).rejects.toBeInstanceOf(BadRequestException);
+		expect(storage.uploadPrivateObject).not.toHaveBeenCalled();
+	});
+
+	it("accepte une image si l'agent supporte les images", async () => {
+		const storage = createStorage();
+		const service = new UploadService(
+			prismaWithSessionAgent({ images: true, files: false }) as any,
+			storage as any,
+		);
+
+		await service.upload(
+			createFile({ buffer: PNG, mimetype: "image/png", originalname: "a.png" }),
+			"user-1",
+			{ sessionId: "session-1" },
+		);
+		expect(storage.uploadPrivateObject).toHaveBeenCalled();
+	});
+
+	it("refuse tout en chat si capabilities est null", async () => {
+		const storage = createStorage();
+		const service = new UploadService(prismaWithSessionAgent(null) as any, storage as any);
+
+		await expect(
+			service.upload(
+				createFile({ buffer: PNG, mimetype: "image/png", originalname: "a.png" }),
+				"user-1",
+				{
+					sessionId: "session-1",
+				},
+			),
+		).rejects.toBeInstanceOf(BadRequestException);
+	});
+
+	it("ne restreint pas les uploads auteur (agentId seul) par capabilities", async () => {
+		const storage = createStorage();
+		const service = new UploadService(
+			createPrisma({
+				agent: { findUnique: jest.fn().mockResolvedValue({ creatorId: "user-1" }) },
+			}) as any,
+			storage as any,
+		);
+
+		await service.upload(
+			createFile({ buffer: PNG, mimetype: "image/png", originalname: "a.png" }),
+			"user-1",
+			{ agentId: "agent-1" },
+		);
+		expect(storage.uploadPrivateObject).toHaveBeenCalled();
+	});
 });
