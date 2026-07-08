@@ -22,8 +22,10 @@ import { RolesGuard } from "../../../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
 import { CreateAgentDto } from "../../application/dtos/create-agent.dto.js";
+import { CreateAgentKnowledgeDto } from "../../application/dtos/create-agent-knowledge.dto.js";
 import { ReviewAgentDto } from "../../application/dtos/review-agent.dto.js";
 import { UpdateAgentDto } from "../../application/dtos/update-agent.dto.js";
+import { AgentKnowledgeService } from "../../application/services/agent-knowledge.service.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
@@ -50,6 +52,7 @@ export class AgentController {
 		private readonly getDownloadInfo: GetAgentDownloadInfoUseCase,
 		private readonly deleteAgent: DeleteAgentUseCase,
 		private readonly unpublishAgent: UnpublishAgentUseCase,
+		private readonly knowledge: AgentKnowledgeService,
 		private readonly prisma: PrismaService,
 	) {}
 
@@ -145,6 +148,38 @@ export class AgentController {
 	@UseGuards(SupabaseAuthGuard)
 	async downloadInfo(@Param("id") id: string, @Req() req: { user: RequestUser }) {
 		return this.getDownloadInfo.execute(id, req.user.id);
+	}
+
+	@Get(":id/knowledge")
+	@UseGuards(SupabaseAuthGuard)
+	async listKnowledge(@Param("id") id: string, @Req() req: { user: RequestUser }) {
+		return this.knowledge.list(id, { userId: req.user.id, role: req.user.role });
+	}
+
+	@Post(":id/knowledge")
+	@UseGuards(SupabaseAuthGuard)
+	@Throttle({ default: { ttl: 60_000, limit: 20 } })
+	async addKnowledge(
+		@Param("id") id: string,
+		@Body() body: CreateAgentKnowledgeDto,
+		@Req() req: { user: RequestUser },
+	) {
+		return this.knowledge.add(
+			id,
+			{ userId: req.user.id, role: req.user.role },
+			{ title: body.title, content: body.content },
+		);
+	}
+
+	@Delete(":id/knowledge/:knowledgeId")
+	@HttpCode(204)
+	@UseGuards(SupabaseAuthGuard)
+	async removeKnowledge(
+		@Param("id") id: string,
+		@Param("knowledgeId") knowledgeId: string,
+		@Req() req: { user: RequestUser },
+	) {
+		await this.knowledge.remove(id, knowledgeId, { userId: req.user.id, role: req.user.role });
 	}
 
 	@Delete(":id")

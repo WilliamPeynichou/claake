@@ -4,6 +4,7 @@ import type {
 	Agent,
 	AgentCategory,
 	AgentChatConfig,
+	AgentKnowledge,
 	ApiKeyConfig,
 	ChatMessage,
 	ChatSession,
@@ -115,6 +116,20 @@ export function createApiClient(baseUrl: string) {
 					`/agents/${id}/chat-config`,
 					token ? withAuth(token) : undefined,
 				),
+			knowledge: {
+				list: (agentId: string, token: string) =>
+					fetchJson<AgentKnowledge[]>(`/agents/${agentId}/knowledge`, withAuth(token)),
+				create: (agentId: string, input: { title: string; content: string }, token: string) =>
+					fetchJson<AgentKnowledge>(
+						`/agents/${agentId}/knowledge`,
+						withAuth(token, { method: "POST", body: JSON.stringify(input) }),
+					),
+				delete: (agentId: string, knowledgeId: string, token: string) =>
+					fetchJson<void>(
+						`/agents/${agentId}/knowledge/${knowledgeId}`,
+						withAuth(token, { method: "DELETE" }),
+					),
+			},
 			mine: (token: string) => fetchJson<AgentListResponse>("/agents/mine", withAuth(token)),
 			create: (agent: CreateAgentInput, token: string) =>
 				fetchJson<Agent>(

@@ -1,5 +1,6 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { AgentKnowledgeService } from "../../../agents/application/services/agent-knowledge.service";
 import { AgentEntity } from "../../../agents/domain/entities/agent.entity";
 import { AGENT_REPOSITORY } from "../../../agents/domain/ports/agent.repository.port";
 import { ChatSessionEntity } from "../../domain/entities/chat-session.entity";
@@ -122,6 +123,10 @@ describe("SendMessageUseCase", () => {
 				{ provide: AGENT_REPOSITORY, useValue: mockAgentRepo },
 				{ provide: EXECUTION_STRATEGY_RESOLVER, useValue: mockStrategyResolver },
 				ChatQuotaService,
+				{
+					provide: AgentKnowledgeService,
+					useValue: { buildKnowledgeContext: jest.fn().mockResolvedValue(null) },
+				},
 			],
 		}).compile();
 
