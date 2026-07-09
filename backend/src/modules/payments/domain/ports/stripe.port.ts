@@ -17,10 +17,7 @@ export interface StripeServicePort {
 		successUrl: string;
 		cancelUrl: string;
 	}): Promise<{ url: string }>;
-	constructWebhookEvent(
-		rawBody: Buffer,
-		signature: string,
-	): Promise<StripeWebhookEventData>;
+	constructWebhookEvent(rawBody: Buffer, signature: string): Promise<StripeWebhookEventData>;
 	createConnectAccount(email: string): Promise<{ accountId: string }>;
 	createAccountLink(accountId: string, returnUrl: string): Promise<{ url: string }>;
 	getAccountStatus(accountId: string): Promise<{ details_submitted: boolean }>;

@@ -33,7 +33,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 		}
 
 		if (statusCode >= 500) {
-			const errorText = exception instanceof Error ? `${exception.name}: ${exception.message}` : exception;
+			const errorText =
+				exception instanceof Error ? `${exception.name}: ${exception.message}` : exception;
 			this.logger.error(
 				`Unhandled exception method=${request.method ?? "unknown"} url=${request.url ?? "unknown"} error=${redactSensitive(errorText)}`,
 			);

@@ -27,6 +27,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `comptes-rendus/2026-07-08-m6-knowledge-base.md` — M6/F5.3 : base de connaissances agent V1 (CRUD backend + injection contexte chat). **Mergé dans `main` et poussé.**
 - `comptes-rendus/2026-07-08-m6-knowledge-ui.md` — M6/F5.3 : UI web créateur de la base de connaissances (éditeur agent). **Mergé dans `main` et poussé.**
 - `comptes-rendus/2026-07-08-m6-finalisation.md` — M6 final V1 : recherche contextuelle simple + édition inline knowledge. **Mergé dans `main` et poussé.**
+- `comptes-rendus/2026-07-09-finition-milestone-7.md` — M7 final : CI PR, e2e UI Playwright smoke, observabilité chat/provider.
 
 ## Index plans
 
@@ -42,6 +43,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-08-tests-e2e-mvp.md` — Plan tests e2e MVP backend. **✅ Réalisé.**
 - `plans/2026-07-08-m6-file-enforcement.md` — Plan M6 enforcement upload par agent (F5.2). **✅ Réalisé et livré.**
 - `plans/2026-07-08-m6-knowledge-base.md` — Plan M6 base de connaissances agent (F5.3). **✅ V1 réalisée et livrée.**
+- `plans/2026-07-09-finir-milestone-7.md` — Plan M7 beta technique : CI, Playwright, observabilité. **✅ Réalisé.**
 
 ## État des milestones
 
@@ -54,10 +56,10 @@ plans/AAAA-MM-JJ-sujet.md
 | 4 — Desktop chat | ✅ 100% fonctionnel V1 | mergé |
 | 5 — Qualité agent | ✅ 100% fonctionnel V1 | branche `feature/milestone-5-agent-quality` |
 | 6 — Fichiers et connaissance | ✅ 100% fonctionnel V1 | F5.2 enforcement + F5.3 knowledge base + recherche contextuelle simple |
-| 7 — Beta publique contrôlée | 🟡 ~60% | e2e MVP backend ajouté, reste CI/observabilité/e2e UI |
+| 7 — Beta publique contrôlée | ✅ 100% fonctionnel beta technique | CI PR + e2e UI Playwright smoke + observabilité chat/provider livrés |
 | 8 — Tool calling agent | ⚪ 0% | port provider événements tools, ToolRegistry, tools intégrés |
 | 9 — Embeddings et RAG | ⚪ 0% | pgvector, chunking, ingestion PDF, retrieval vectoriel |
 | 10 — MCP | ⚪ 0% | client MCP backend, serveurs par agent, allowlist admin |
 | 11 — Skills | ⚪ 0% | paquets instructions+ressources, injection contextuelle, marketplace |
 
-Prochain verrou recommandé : **Milestone 7 — Beta publique contrôlée** (CI, observabilité, e2e UI Playwright quand env test prêt), puis **Phase 8 — Outillage IA** (M8 tools → M9 embeddings → M10 MCP → M11 skills).
+Prochain verrou recommandé : **Milestone 8 — Tool calling agent** (port provider événements tools, ToolRegistry, tools intégrés), puis **M9 embeddings/RAG → M10 MCP → M11 skills**. Prévoir aussi env staging/Supabase test pour ouverture beta réelle.

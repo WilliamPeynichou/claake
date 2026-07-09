@@ -25,7 +25,9 @@ export class StripeService implements StripeServicePort {
 		successUrl: string;
 		cancelUrl: string;
 	}): Promise<{ url: string }> {
-		const platformFeePercent = Number(this.config.get<string>("STRIPE_PLATFORM_FEE_PERCENT") ?? "10");
+		const platformFeePercent = Number(
+			this.config.get<string>("STRIPE_PLATFORM_FEE_PERCENT") ?? "10",
+		);
 		const applicationFeeAmount = Math.max(
 			0,
 			Math.round(params.priceInCents * (platformFeePercent / 100)),

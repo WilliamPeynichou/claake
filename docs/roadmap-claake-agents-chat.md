@@ -42,7 +42,7 @@ AgentDefinition partiel
 | Milestone 4 — Desktop chat | 100% fonctionnel V1 chat-only | Desktop `frontendApp` branché sur `@claake/shared` (`useChat`, `apiClient`, `AgentChatConfig`) : auth → liste agents → chat-config → sessions → streaming → retry → panneau clés API → déconnexion. Dette : test live Tauri non effectué (`backend/.env` vide), chunk vite >500 kB à code-splitter, auth desktop à durcir si flow Supabase complet requis. |
 | Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Champs intégrés dans l'Agent Builder commun. Dette restante : éditeur UI nested dédié pour variables/few-shot JSON. |
 | Milestone 6 — Fichiers et connaissance | 100% fonctionnel V1 | Upload sécurisé + capabilities + enforcement par agent (F5.2). Base de connaissances agent V1 (F5.3) : CRUD backend, UI web créateur, édition inline, recherche contextuelle simple et injection contexte au chat. Dette : embeddings/pgvector, ingestion PDF automatique, ranking avancé. |
-| Milestone 7 — Beta publique contrôlée | ~60% | Sécurité backend renforcée, quotas chat livrés, e2e MVP backend ajouté. Reste CI, e2e UI Playwright, observabilité. |
+| Milestone 7 — Beta publique contrôlée | 100% fonctionnel beta technique | Sécurité backend renforcée, quotas chat, e2e MVP backend, CI PR, e2e UI Playwright smoke et observabilité chat/provider livrés. Reste hors M7 technique : env staging/Supabase live + premiers développeurs invités. |
 | Milestone 8 — Tool calling agent | 0% | Étendre `AIProviderPort` aux événements tool_use, registre de tools backend, tools intégrés (knowledge_search, fetch borné), config par agent, affichage chat. |
 | Milestone 9 — Embeddings et RAG | 0% | pgvector, ingestion PDF, chunking, embeddings provider, retrieval par similarité remplaçant le ranking par mots-clés. |
 | Milestone 10 — MCP | 0% | Client MCP backend, serveurs MCP par agent (HTTP/SSE), credentials chiffrés, allowlist admin, exposition des tools MCP au tool calling. |
@@ -95,29 +95,28 @@ create draft
 → public chat
 ```
 
-Le prochain blocage produit n'est plus le mode test, le builder ou l'e2e backend MVP, mais la
-consolidation avant élargissement :
+Le prochain blocage produit n'est plus le mode test, le builder, l'e2e backend MVP ou la
+consolidation M7, mais le passage aux agents équipés :
 
 ```txt
-CI + observabilité beta + e2e UI (M7)
-→ tool calling (M8)
+tool calling (M8)
 → embeddings/RAG (M9)
 → MCP (M10)
 → skills (M11)
 ```
 
-Après M7, le différenciateur marketplace devient **l'outillage IA** : un agent Claake ne
+Depuis M7, le différenciateur marketplace devient **l'outillage IA** : un agent Claake ne
 doit plus être un wrapper de prompt, mais un agent équipé (tools, connaissance vectorisée,
 serveurs MCP, skills). C'est l'objet de la Phase 8.
 
 ### Prochain ordre recommandé
 
-1. Finir Milestone 7 — Beta : CI, e2e UI Playwright, observabilité, premiers développeurs invités.
-2. Milestone 8 — Tool calling agent (fondation outillage IA).
-3. Milestone 9 — Embeddings et RAG réel (pgvector, ingestion PDF).
-4. Milestone 10 — MCP : connecter les agents aux serveurs MCP.
-5. Milestone 11 — Skills : bibliothèque de compétences réutilisables.
-6. Brancher l'action **Suspendre** dans la gestion globale des agents publiés (dette M3).
+1. Milestone 8 — Tool calling agent (fondation outillage IA).
+2. Milestone 9 — Embeddings et RAG réel (pgvector, ingestion PDF).
+3. Milestone 10 — MCP : connecter les agents aux serveurs MCP.
+4. Milestone 11 — Skills : bibliothèque de compétences réutilisables.
+5. Brancher l'action **Suspendre** dans la gestion globale des agents publiés (dette M3).
+6. Env staging/Supabase test + premiers développeurs invités (suite ouverture beta).
 
 ---
 
@@ -1434,16 +1433,16 @@ Livrable :
 
 # Les 10 prochaines features à développer
 
-1. CI (lint + tests + builds) sur PR — M7.
-2. e2e UI Playwright du parcours MVP quand env test/Supabase prêt — M7.
-3. Observabilité : erreurs provider, latence, usage par agent — M7.
-4. Étendre `AIProviderPort` aux événements tool_call/tool_result (Anthropic + OpenAI) — M8.
-5. `ToolRegistry` backend + tools intégrés `knowledge_search`, `fetch_url` borné — M8.
-6. Champ `Agent.tools` + étape builder + affichage review admin + chat — M8.
-7. pgvector + chunking + embeddings sur la knowledge base, fallback keyword — M9.
-8. Ingestion PDF automatique dans la knowledge base — M9.
-9. Client MCP backend + `agent_mcp_servers` + allowlist admin — M10.
-10. Modèle skills + injection contextuelle + étape builder — M11.
+1. Étendre `AIProviderPort` aux événements tool_call/tool_result (Anthropic + OpenAI) — M8.
+2. `ToolRegistry` backend + tools intégrés `knowledge_search`, `fetch_url` borné — M8.
+3. Champ `Agent.tools` + étape builder + affichage review admin + chat — M8.
+4. pgvector + chunking + embeddings sur la knowledge base, fallback keyword — M9.
+5. Ingestion PDF automatique dans la knowledge base — M9.
+6. Client MCP backend + `agent_mcp_servers` + allowlist admin — M10.
+7. Modèle skills + injection contextuelle + étape builder — M11.
+8. Env staging/Supabase test + premiers développeurs invités — beta.
+9. Brancher action **Suspendre** dans gestion globale des agents publiés — dette M3.
+10. Code-split desktop pour réduire chunk Vite >500 kB — dette M4.
 
 ## Features roadmap déjà réalisées ou très avancées
 
@@ -1489,9 +1488,9 @@ Un développeur peut créer un agent Claude/GPT
 
 État actuel : le parcours MVP fonctionnel est atteint de bout en bout (create draft → test
 chat → submit → admin test → approve → chat public web + desktop). Le test contrôlé des
-agents draft/pending existe (`?test=1`) et un e2e backend couvre le flux MVP. Reste de la
-**consolidation** avant élargissement : fichiers/connaissance (M6), e2e UI Playwright,
-CI/observabilité beta (M7). Le live n'a pas encore été validé (credentials Supabase absents).
+agents draft/pending existe (`?test=1`) et un e2e backend couvre le flux MVP. La
+consolidation M7 est livrée : CI PR, e2e UI Playwright smoke, observabilité chat/provider.
+Le live n'a pas encore été validé sur staging réel (credentials Supabase absents).
 
 Tout ce qui ne sert pas directement ce parcours doit être repoussé.
 

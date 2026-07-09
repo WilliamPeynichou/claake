@@ -59,7 +59,9 @@ export class HandleWebhookUseCase {
 
 		const expectedAmount = Math.round(agent.price * 100);
 		if (session.amount_total !== expectedAmount || session.currency !== "eur") {
-			this.logger.warn(`Checkout amount/currency mismatch for session=${session.id} agent=${agentId}`);
+			this.logger.warn(
+				`Checkout amount/currency mismatch for session=${session.id} agent=${agentId}`,
+			);
 			throw new BadRequestException("Checkout session mismatch");
 		}
 

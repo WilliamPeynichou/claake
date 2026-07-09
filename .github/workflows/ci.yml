@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Lint, tests, builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm -w @claake/backend run prisma:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Backend unit tests
+        run: npm -w @claake/backend run test -- --runInBand
+
+      - name: Backend e2e tests
+        run: npm -w @claake/backend run test:e2e -- --runInBand
+
+      - name: Backend build
+        run: npm run api-build
+
+      - name: Web build
+        run: npm run web-build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+          NEXT_PUBLIC_API_URL: https://api.example.com
+
+      - name: Install Playwright Chromium
+        run: npm -w @claake/frontend-web exec playwright install --with-deps chromium
+
+      - name: Web e2e smoke tests
+        run: npm -w @claake/frontend-web run test:e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:3999
+
+      - name: Desktop build
+        run: npm run desktop-build
+        env:
+          VITE_SUPABASE_URL: http://localhost:54321
+          VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+          VITE_API_URL: http://localhost:3001
+
+  security:
+    name: Security gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Scan secrets
+        run: npm run secrets:scan
+
+      - name: Block high and critical npm advisories
+        run: npm run audit:high

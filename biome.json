@@ -50,7 +50,8 @@
 			"!!**/.claude",
 			"!!**/dist",
 			"!!Pake",
-			"!!skills"
+			"!!skills",
+			"!!ClaakePresentation"
 		]
 	}
 }

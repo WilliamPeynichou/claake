@@ -3,7 +3,7 @@ import { registerDecorator } from "class-validator";
 import { isSyntacticallyPublicHttpUrl } from "../security/public-url.js";
 
 export function IsPublicUrl(options?: ValidationOptions) {
-	return function (object: object, propertyName: string) {
+	return (object: object, propertyName: string) => {
 		registerDecorator({
 			name: "isPublicUrl",
 			target: object.constructor,
