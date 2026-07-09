@@ -1,3 +1,5 @@
+import type { AgentToolConfig } from "@claake/shared";
+
 export class AgentResponseDto {
 	id!: string;
 	name!: string;
@@ -33,6 +35,7 @@ export class AgentResponseDto {
 	few_shot_examples!: Record<string, unknown>[];
 	output_format!: string | null;
 	quality_checklist!: string[];
+	tools!: AgentToolConfig[];
 	cloud_strategy!: string | null;
 	endpoint_format!: string | null;
 	required_user_provider!: string | null;

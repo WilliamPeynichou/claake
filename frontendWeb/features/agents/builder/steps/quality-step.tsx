@@ -64,6 +64,22 @@ export function QualityStep({ form, setField, disabled = false }: QualityStepPro
 					/>
 				</div>
 			</div>
+			<div className="space-y-2">
+				<Label htmlFor="tools">Tools agent (JSON)</Label>
+				<Textarea
+					id="tools"
+					value={form.tools}
+					onChange={(e) => setField("tools", e.target.value)}
+					placeholder={
+						'[{"name":"current_datetime","enabled":true},{"name":"knowledge_search","enabled":true},{"name":"fetch_url","enabled":true,"config":{"allowed_domains":["example.com"]}}]'
+					}
+					rows={5}
+					disabled={disabled}
+				/>
+				<p className="text-xs text-muted-foreground">
+					Tools exécutés uniquement côté backend. `fetch_url` nécessite `allowed_domains`.
+				</p>
+			</div>
 		</div>
 	);
 }

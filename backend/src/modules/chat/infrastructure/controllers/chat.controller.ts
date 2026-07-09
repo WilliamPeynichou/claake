@@ -149,10 +149,21 @@ export class ChatController {
 		let fullText = "";
 
 		try {
-			for await (const chunk of stream) {
-				fullText += chunk;
-				// 0: text token
-				res.write(`0:${JSON.stringify(chunk)}\n`);
+			for await (const event of stream) {
+				if (event.type === "text") {
+					fullText += event.delta;
+					// 0: text token
+					res.write(`0:${JSON.stringify(event.delta)}\n`);
+					continue;
+				}
+				if (event.type === "tool_call" || event.type === "tool_result") {
+					// 8: custom Claake tool event
+					res.write(`8:${JSON.stringify(event)}\n`);
+					continue;
+				}
+				if (event.type === "done") {
+					break;
+				}
 			}
 
 			await onComplete(fullText);

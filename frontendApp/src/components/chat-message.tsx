@@ -1,4 +1,4 @@
-import type { ChatMessage as ChatMessageType } from "@claake/shared";
+import type { ChatMessage as ChatMessageType, ChatToolEvent } from "@claake/shared";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -36,6 +36,7 @@ export function ChatMessage({ message, agentName, isStreaming }: Props) {
 					<p className="whitespace-pre-wrap">{message.content}</p>
 				) : (
 					<div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:font-normal prose-code:before:content-none prose-code:after:content-none">
+						{message.tool_events?.length ? <ToolEvents events={message.tool_events} /> : null}
 						<ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
 						{isStreaming && (
 							<span
@@ -46,6 +47,25 @@ export function ChatMessage({ message, agentName, isStreaming }: Props) {
 					</div>
 				)}
 			</div>
+		</div>
+	);
+}
+
+function ToolEvents({ events }: { events: ChatToolEvent[] }) {
+	const calls = events.filter((event) => event.type === "tool_call");
+	if (calls.length === 0) return null;
+	return (
+		<div className="mb-2 flex flex-col gap-1">
+			{calls.map((event) => (
+				<div
+					key={event.id}
+					className="inline-flex w-fit items-center gap-2 border px-2 py-1 text-xs"
+					style={{ borderColor: "#d0dac4", background: "#faf9f5", color: "#6b6558" }}
+				>
+					<span>Outil</span>
+					<strong style={{ color: "#4e5c42" }}>{event.name}</strong>
+				</div>
+			))}
 		</div>
 	);
 }

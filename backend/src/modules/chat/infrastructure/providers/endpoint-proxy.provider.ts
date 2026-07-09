@@ -4,8 +4,10 @@ import { redactSensitive } from "../../../../common/security/redact-sensitive.js
 import type {
 	AIProviderPort,
 	FileAttachment,
+	ProviderStreamEvent,
 	StreamTextParams,
 } from "../../domain/ports/ai-provider.port.js";
+import { textStreamToEvents } from "../../domain/ports/ai-provider.port.js";
 
 const MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10MB
 const TIMEOUT_MS = 60_000;
@@ -67,6 +69,10 @@ function buildAnthropicContent(
 @Injectable()
 export class EndpointProxyProvider implements AIProviderPort {
 	private readonly logger = new Logger(EndpointProxyProvider.name);
+
+	streamEvents(params: StreamTextParams): AsyncIterable<ProviderStreamEvent> {
+		return textStreamToEvents(this.streamText(params));
+	}
 
 	async *streamText(params: StreamTextParams): AsyncIterable<string> {
 		if (!params.baseUrl) {

@@ -98,6 +98,11 @@ export class CreateAgentDto {
 	quality_checklist?: string[];
 
 	@IsOptional()
+	@IsArray()
+	@ArrayMaxSize(10)
+	tools?: Record<string, unknown>[];
+
+	@IsOptional()
 	@IsEnum(["FREE", "ONE_TIME", "SUBSCRIPTION", "PAY_PER_USE"])
 	pricing_model?: string;
 

@@ -1,4 +1,5 @@
 import type { Agent, User } from "@prisma/client";
+import { normalizeAgentTools } from "../../domain/agent-tools.js";
 import { AgentEntity } from "../../domain/entities/agent.entity.js";
 
 type AgentWithCreator = Agent & { creator: Pick<User, "displayName"> };
@@ -48,6 +49,7 @@ export class AgentMapper {
 			Array.isArray(raw.fewShotExamples) ? (raw.fewShotExamples as Record<string, unknown>[]) : [],
 			raw.outputFormat,
 			raw.qualityChecklist,
+			normalizeAgentTools(raw.tools),
 		);
 	}
 }

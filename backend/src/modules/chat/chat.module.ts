@@ -11,6 +11,7 @@ import {
 	ExecutionStrategyResolver,
 } from "./application/services/execution-strategy.resolver.js";
 import { MANAGE_API_KEYS_USE_CASE } from "./application/services/manage-api-keys.port.js";
+import { ToolRegistryService } from "./application/services/tool-registry.service.js";
 import { CreateSessionUseCase } from "./application/usecases/create-session.usecase.js";
 import { DeleteSessionUseCase } from "./application/usecases/delete-session.usecase.js";
 import { GetSessionMessagesUseCase } from "./application/usecases/get-session-messages.usecase.js";
@@ -43,6 +44,7 @@ import { PrismaChatRepository } from "./infrastructure/repositories/prisma-chat.
 		ExecutionStrategyResolver,
 		ChatQuotaService,
 		ChatObservabilityService,
+		ToolRegistryService,
 		ManageApiKeysUseCase,
 		{ provide: CHAT_SESSION_REPOSITORY, useClass: PrismaChatRepository },
 		{ provide: AI_PROVIDER_FACTORY, useExisting: AIProviderFactory },

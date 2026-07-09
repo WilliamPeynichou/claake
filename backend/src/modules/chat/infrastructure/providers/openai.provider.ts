@@ -2,15 +2,37 @@ import { Injectable } from "@nestjs/common";
 import type {
 	AIProviderPort,
 	FileAttachment,
+	ProviderStreamEvent,
 	StreamTextParams,
 } from "../../domain/ports/ai-provider.port.js";
+import { textStreamToEvents } from "../../domain/ports/ai-provider.port.js";
 
 const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
 const TIMEOUT_MS = 60_000;
+const MAX_TOOL_TURNS = 5;
 
 type OpenAIContentPart =
 	| { type: "text"; text: string }
 	| { type: "image_url"; image_url: { url: string } };
+
+type OpenAIToolCall = {
+	id: string;
+	type: "function";
+	function: { name: string; arguments: string };
+};
+
+type OpenAIMessage = {
+	role: string;
+	content: string | OpenAIContentPart[] | null;
+	tool_calls?: OpenAIToolCall[];
+	tool_call_id?: string;
+};
+
+/** One provider turn: streamed text deltas, collected tool calls, finish reason. */
+type TurnEvent =
+	| { kind: "text"; delta: string }
+	| { kind: "tool_call"; id: string; name: string; argumentsJson: string }
+	| { kind: "stop"; finishReason: string | null };
 
 function buildMultimodalContent(text: string, attachments: FileAttachment[]): OpenAIContentPart[] {
 	const parts: OpenAIContentPart[] = [];
@@ -30,12 +52,78 @@ function buildMultimodalContent(text: string, attachments: FileAttachment[]): Op
 
 @Injectable()
 export class OpenAIProvider implements AIProviderPort {
-	async *streamText(params: StreamTextParams): AsyncIterable<string> {
-		if (!params.apiKey) {
-			throw new Error("No API key provided for OpenAI provider");
+	/**
+	 * Native OpenAI function calling (M8.1). When the agent has tools and the backend
+	 * provides `executeTool`, runs the multi-turn loop: model emits `tool_calls`,
+	 * backend executes, `role: "tool"` results are fed back until the model answers.
+	 */
+	async *streamEvents(params: StreamTextParams): AsyncIterable<ProviderStreamEvent> {
+		if (!params.tools?.length || !params.executeTool) {
+			yield* textStreamToEvents(this.streamText(params));
+			return;
 		}
 
-		const messages: Array<{ role: string; content: string | OpenAIContentPart[] }> = [];
+		const messages = this.buildInitialMessages(params);
+
+		for (let turn = 0; turn <= MAX_TOOL_TURNS; turn++) {
+			const isLastTurn = turn === MAX_TOOL_TURNS;
+			const toolCalls: Array<{ id: string; name: string; argumentsJson: string }> = [];
+			let finishReason: string | null = null;
+
+			for await (const event of this.streamTurn(params, messages, !isLastTurn)) {
+				if (event.kind === "text") {
+					yield { type: "text", delta: event.delta };
+				} else if (event.kind === "tool_call") {
+					toolCalls.push(event);
+				} else {
+					finishReason = event.finishReason;
+				}
+			}
+
+			if (finishReason !== "tool_calls" || toolCalls.length === 0) {
+				yield { type: "done" };
+				return;
+			}
+
+			messages.push({
+				role: "assistant",
+				content: null,
+				tool_calls: toolCalls.map((call) => ({
+					id: call.id,
+					type: "function",
+					function: { name: call.name, arguments: call.argumentsJson },
+				})),
+			});
+			for (const call of toolCalls) {
+				let input: unknown = {};
+				try {
+					input = call.argumentsJson ? JSON.parse(call.argumentsJson) : {};
+				} catch {
+					input = {};
+				}
+				yield { type: "tool_call", id: call.id, name: call.name, input };
+				const output = await params.executeTool({ id: call.id, name: call.name, input });
+				yield { type: "tool_result", id: call.id, name: call.name, output };
+				messages.push({
+					role: "tool",
+					tool_call_id: call.id,
+					content: JSON.stringify(output ?? null),
+				});
+			}
+		}
+
+		yield { type: "done" };
+	}
+
+	async *streamText(params: StreamTextParams): AsyncIterable<string> {
+		const messages = this.buildInitialMessages(params);
+		for await (const event of this.streamTurn(params, messages, false)) {
+			if (event.kind === "text") yield event.delta;
+		}
+	}
+
+	private buildInitialMessages(params: StreamTextParams): OpenAIMessage[] {
+		const messages: OpenAIMessage[] = [];
 
 		if (params.systemPrompt) {
 			messages.push({ role: "system", content: params.systemPrompt });
@@ -52,8 +140,35 @@ export class OpenAIProvider implements AIProviderPort {
 
 			messages.push(message);
 		});
+		return messages;
+	}
+
+	private async *streamTurn(
+		params: StreamTextParams,
+		messages: OpenAIMessage[],
+		includeTools: boolean,
+	): AsyncIterable<TurnEvent> {
+		if (!params.apiKey) {
+			throw new Error("No API key provided for OpenAI provider");
+		}
 
 		const baseUrl = params.baseUrl ?? "https://api.openai.com";
+		const body: Record<string, unknown> = {
+			model: params.model,
+			messages,
+			max_tokens: params.maxTokens ?? 4096,
+			stream: true,
+		};
+		if (includeTools && params.tools?.length) {
+			body.tools = params.tools.map((tool) => ({
+				type: "function",
+				function: {
+					name: tool.name,
+					description: tool.description,
+					parameters: tool.inputSchema,
+				},
+			}));
+		}
 
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -65,12 +180,7 @@ export class OpenAIProvider implements AIProviderPort {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${params.apiKey}`,
 				},
-				body: JSON.stringify({
-					model: params.model,
-					messages,
-					max_tokens: params.maxTokens ?? 4096,
-					stream: true,
-				}),
+				body: JSON.stringify(body),
 				signal: controller.signal,
 			});
 		} catch {
@@ -87,6 +197,24 @@ export class OpenAIProvider implements AIProviderPort {
 		const decoder = new TextDecoder();
 		let buffer = "";
 		let totalSize = 0;
+		let finishReason: string | null = null;
+		// Tool calls stream as fragments keyed by index (id/name first, then argument chunks)
+		const pendingToolCalls = new Map<number, { id: string; name: string; argumentsJson: string }>();
+
+		const flushToolCalls = function* (): Iterable<TurnEvent> {
+			for (const call of [...pendingToolCalls.keys()].sort((a, b) => a - b)) {
+				const pending = pendingToolCalls.get(call);
+				if (pending?.id && pending.name) {
+					yield {
+						kind: "tool_call",
+						id: pending.id,
+						name: pending.name,
+						argumentsJson: pending.argumentsJson,
+					};
+				}
+			}
+			pendingToolCalls.clear();
+		};
 
 		try {
 			while (true) {
@@ -105,19 +233,45 @@ export class OpenAIProvider implements AIProviderPort {
 				for (const line of lines) {
 					if (!line.startsWith("data: ")) continue;
 					const data = line.slice(6);
-					if (data === "[DONE]") return;
+					if (data === "[DONE]") {
+						yield* flushToolCalls();
+						yield { kind: "stop", finishReason };
+						return;
+					}
 
+					let parsed: Record<string, any>;
 					try {
-						const parsed = JSON.parse(data);
-						const content = parsed.choices?.[0]?.delta?.content;
-						if (content) {
-							yield content;
-						}
+						parsed = JSON.parse(data);
 					} catch {
-						// Skip unparseable lines
+						continue; // Skip unparseable lines
+					}
+
+					const choice = parsed.choices?.[0];
+					if (!choice) continue;
+					if (choice.delta?.content) {
+						yield { kind: "text", delta: choice.delta.content };
+					}
+					for (const toolDelta of choice.delta?.tool_calls ?? []) {
+						const index = Number(toolDelta.index ?? 0);
+						const pending = pendingToolCalls.get(index) ?? {
+							id: "",
+							name: "",
+							argumentsJson: "",
+						};
+						if (toolDelta.id) pending.id = String(toolDelta.id);
+						if (toolDelta.function?.name) pending.name = String(toolDelta.function.name);
+						if (toolDelta.function?.arguments) {
+							pending.argumentsJson += String(toolDelta.function.arguments);
+						}
+						pendingToolCalls.set(index, pending);
+					}
+					if (choice.finish_reason) {
+						finishReason = String(choice.finish_reason);
 					}
 				}
 			}
+			yield* flushToolCalls();
+			yield { kind: "stop", finishReason };
 		} finally {
 			clearTimeout(timeout);
 			reader.releaseLock();

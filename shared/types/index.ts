@@ -1,3 +1,7 @@
+import type { AgentToolConfig, ChatToolEvent, PublicAgentTool } from "./tools";
+
+export type { AgentToolConfig, AgentToolName, ChatToolEvent, PublicAgentTool } from "./tools";
+
 export interface AdminPermissions {
 	canManageUsers: boolean;
 	canManageAgents: boolean;
@@ -64,6 +68,7 @@ export interface CreateAgentInput {
 	few_shot_examples?: Record<string, unknown>[];
 	output_format?: string;
 	quality_checklist?: string[];
+	tools?: AgentToolConfig[];
 }
 
 export interface AgentQualityFields {
@@ -108,6 +113,7 @@ export interface Agent {
 	few_shot_examples: Record<string, unknown>[];
 	output_format: string | null;
 	quality_checklist: string[];
+	tools: AgentToolConfig[];
 	cloud_strategy: CloudStrategy | null;
 	endpoint_format: EndpointFormat | null;
 	required_user_provider: string | null;
@@ -224,6 +230,7 @@ export interface AgentChatConfig {
 	few_shot_examples: Record<string, unknown>[];
 	output_format: string | null;
 	quality_checklist: string[];
+	tools: PublicAgentTool[];
 	capabilities: {
 		files: boolean;
 		images: boolean;
@@ -265,6 +272,7 @@ export interface ChatMessage {
 	metadata?: Record<string, unknown> | null;
 	timestamp?: string;
 	created_at?: string;
+	tool_events?: ChatToolEvent[];
 }
 
 export interface AgentCategory {

@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
 import { normalizeAgentCapabilities } from "../../domain/agent-capabilities.js";
+import { publicAgentTools } from "../../domain/agent-tools.js";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
@@ -78,6 +79,7 @@ export class GetAgentChatConfigUseCase {
 			few_shot_examples: agent.fewShotExamples,
 			output_format: agent.outputFormat,
 			quality_checklist: agent.qualityChecklist,
+			tools: publicAgentTools(agent.tools),
 			capabilities: normalizeCapabilities(agent.capabilities),
 			access,
 		};

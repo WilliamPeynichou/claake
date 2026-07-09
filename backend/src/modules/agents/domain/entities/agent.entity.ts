@@ -1,3 +1,5 @@
+import type { AgentToolConfig } from "../agent-tools.js";
+
 export class AgentEntity {
 	constructor(
 		public readonly id: string,
@@ -42,6 +44,7 @@ export class AgentEntity {
 		public readonly fewShotExamples: Record<string, unknown>[] = [],
 		public readonly outputFormat: string | null = null,
 		public readonly qualityChecklist: string[] = [],
+		public readonly tools: AgentToolConfig[] = [],
 	) {}
 
 	isOwnedBy(userId: string): boolean {
