@@ -1,5 +1,5 @@
-import { isIP } from "node:net";
 import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 
 const BLOCKED_HOSTNAMES = new Set(["localhost"]);
 
@@ -62,8 +62,11 @@ function expandIpv6(address: string): number[] | null {
 	const missing = 8 - explicit.length;
 	if (halves.length === 1 && missing !== 0) return null;
 	if (halves.length === 2 && missing < 0) return null;
-	return [...(parsedLeft as number[]), ...Array(Math.max(0, missing)).fill(0), ...(parsedRight as number[])]
-		.flatMap((group) => (group === -1 ? ipv4Groups : [group]));
+	return [
+		...(parsedLeft as number[]),
+		...Array(Math.max(0, missing)).fill(0),
+		...(parsedRight as number[]),
+	].flatMap((group) => (group === -1 ? ipv4Groups : [group]));
 }
 
 function ipv6StartsWith(address: string, prefixGroups: number[], prefixBits: number): boolean {

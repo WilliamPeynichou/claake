@@ -1,60 +1,62 @@
-# Plan — Tests e2e MVP
+# Plan — Milestone 7 Beta publique contrôlée
 
-Date : 2026-07-08
-Branche : `feature/e2e-mvp-flow`
-Réf : `docs/roadmap-claake-agents-chat.md` — priorité e2e MVP
+Date : 2026-07-09
+Branche : `main` locale
+Réf : `docs/roadmap-claake-agents-chat.md` — Milestone 7
 
 ## Objectif
 
-Couvrir parcours MVP critique :
+Finir la consolidation beta avant Phase 8 :
 
 ```txt
-création agent draft
-→ test draft créateur
-→ soumission review
-→ test admin pending
-→ approbation
-→ chat public
+CI PR
+→ e2e UI Playwright MVP
+→ observabilité beta minimale
+→ vérifications documentées
 ```
 
-## Contraintes
+## Contraintes architecture
 
-- Playwright absent. Utiliser infra e2e existante backend Jest.
-- Pas DB réelle : repos in-memory, use cases réels.
-- Backend reste source vérité : status, review, chat access, send message.
-- Pas UI e2e complet tant qu'infra Playwright pas installée.
+- Respecter `docs/architecture/analyse-technique-architecture-claake.md`.
+- Garder le backend source de vérité métier.
+- Ne pas déplacer logique métier dans Next.js.
+- Observabilité backend via service dédié, sans polluer les use cases avec formatage de logs.
+- UI e2e limitée à smoke/parcours non destructifs tant que Supabase/env test live absents.
 
 ## Plan
 
-- [x] Vérifier branche/état git.
-- [x] Explorer infra e2e existante.
-- [x] Créer branche `feature/e2e-mvp-flow`.
-- [x] Ajouter `backend/test/mvp-flow.e2e-spec.ts`.
-- [x] Lancer e2e ciblé.
-- [x] Corriger erreurs si besoin.
-- [x] Documenter dans `docs/suivi_roadmap/`.
+- [x] Relire architecture et suivi roadmap.
+- [x] Auditer scripts, CI, tests, points logs/observabilité.
+- [x] Ajouter workflow CI PR : install, lint, tests backend, e2e backend, builds web/api/desktop, sécurité.
+- [x] Ajouter Playwright web minimal : configuration + smoke catalogue/chat sans credentials.
+- [x] Ajouter observabilité beta backend : métriques chat/provider latence/succès/erreur via service application dédié.
+- [x] Ajouter tests unitaires observabilité.
+- [x] Lancer vérifications ciblées.
+- [x] Documenter plan et compte-rendu dans `docs/suivi_roadmap/`.
 
 ## Review
 
-- Branche créée : `feature/e2e-mvp-flow`.
-- Nouveau test : `backend/test/mvp-flow.e2e-spec.ts`.
-- `backend/test/jest-e2e.json` aligné avec le mapper `.js` → TS déjà utilisé par les tests unitaires.
-- Test e2e couvre :
-  - création agent `draft` ;
-  - blocage chat public sur draft ;
-  - test draft par créateur ;
-  - soumission `DRAFT → PENDING` ;
-  - test admin sur pending ;
-  - approbation `PENDING → APPROVED` ;
-  - `AgentChatConfig` public `can_chat` ;
-  - session + message chat public.
-- Choix : use cases réels + repositories in-memory + provider/quota mocks. Pas DB/Supabase.
-- Docs ajoutées :
-  - `docs/suivi_roadmap/plans/2026-07-08-tests-e2e-mvp.md` ;
-  - `docs/suivi_roadmap/comptes-rendus/2026-07-08-tests-e2e-mvp.md`.
+- CI ajoutée : `.github/workflows/ci.yml`.
+- Ancien workflow sécurité supprimé car intégré au nouveau CI.
+- Playwright ajouté côté web : `frontendWeb/playwright.config.ts` + `frontendWeb/e2e/public-smoke.spec.ts`.
+- Scripts ajoutés : `npm run web-e2e`, `npm -w @claake/frontend-web run test:e2e`.
+- Observabilité ajoutée : `ChatObservabilityService` + intégration `SendMessageUseCase`.
+- Événements observés : `chat.message.started`, `chat.provider.success`, `chat.provider.error`, `chat.message.completed`.
+- Données sensibles évitées : `userId` hashé, pas de clés API, pas de contenu prompt/réponse dans logs.
+- Docs ajoutées/mises à jour :
+  - `docs/suivi_roadmap/plans/2026-07-09-finir-milestone-7.md` ;
+  - `docs/suivi_roadmap/comptes-rendus/2026-07-09-finition-milestone-7.md` ;
+  - `docs/suivi_roadmap/README.md` ;
+  - `docs/roadmap-claake-agents-chat.md`.
 
 ## Vérifications
 
-- `npm -w @claake/backend run test:e2e -- mvp-flow.e2e-spec.ts` OK : 1 suite, 1 test.
-- `npx biome check backend/test/mvp-flow.e2e-spec.ts backend/test/jest-e2e.json tasks/todo.md` OK sur fichiers traités ; `tasks/todo.md` ignoré par config Biome.
-- `npm run api-build` OK.
+- `npx biome check ...` ciblé M7 : OK.
+- `npm -w @claake/backend run test -- send-message.usecase.spec.ts --runInBand` : OK, 21 tests.
+- `npm -w @claake/backend run test -- --runInBand` : OK, 32 suites, 201 tests.
+- `npm -w @claake/backend run test:e2e -- --runInBand` : OK, 1 suite, 1 test.
+- `npm run api-build` : OK.
+- `NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder NEXT_PUBLIC_API_URL=https://api.example.com npm run web-build` : OK.
+- `VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_ANON_KEY=ci-placeholder VITE_API_URL=http://localhost:3001 npm run desktop-build` : OK, warning chunk Vite >500 kB connu.
+- `npm run web-e2e` : OK, 3 tests.
+- `npm run lint` local : KO uniquement à cause de `ClaakePresentation/` non suivi/hors scope. CI checkout propre non concerné.

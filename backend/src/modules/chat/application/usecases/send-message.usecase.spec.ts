@@ -5,6 +5,7 @@ import { AgentEntity } from "../../../agents/domain/entities/agent.entity";
 import { AGENT_REPOSITORY } from "../../../agents/domain/ports/agent.repository.port";
 import { ChatSessionEntity } from "../../domain/entities/chat-session.entity";
 import { CHAT_SESSION_REPOSITORY } from "../../domain/ports/chat-session.repository.port";
+import { ChatObservabilityService } from "../services/chat-observability.service";
 import { ChatQuotaService } from "../services/chat-quota.service";
 import { EXECUTION_STRATEGY_RESOLVER } from "../services/execution-strategy.resolver";
 import { SendMessageUseCase } from "./send-message.usecase";
@@ -41,6 +42,12 @@ const mockAgentRepo = {
 };
 
 const mockStrategyResolver = { resolve: jest.fn() };
+const mockObservability = {
+	recordMessageStarted: jest.fn(),
+	recordProviderSuccess: jest.fn(),
+	recordProviderError: jest.fn(),
+	recordAssistantMessageSaved: jest.fn(),
+};
 
 function makeSession(
 	overrides: { title?: string | null; userId?: string } = {},
@@ -123,6 +130,7 @@ describe("SendMessageUseCase", () => {
 				{ provide: AGENT_REPOSITORY, useValue: mockAgentRepo },
 				{ provide: EXECUTION_STRATEGY_RESOLVER, useValue: mockStrategyResolver },
 				ChatQuotaService,
+				{ provide: ChatObservabilityService, useValue: mockObservability },
 				{
 					provide: AgentKnowledgeService,
 					useValue: { buildKnowledgeContext: jest.fn().mockResolvedValue(null) },
@@ -314,6 +322,54 @@ describe("SendMessageUseCase", () => {
 		);
 	});
 
+	it("trace le démarrage et le succès provider quand le stream est consommé", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(makeAgent({ models: ["mock"] }));
+
+		const { stream } = await useCase.execute("session-1", "user-1", "Bonjour");
+		const chunks: string[] = [];
+		for await (const chunk of stream) chunks.push(chunk);
+
+		expect(chunks.join("")).toBe("Bonjour monde!");
+		expect(mockObservability.recordMessageStarted).toHaveBeenCalledWith(
+			expect.objectContaining({
+				sessionId: "session-1",
+				agentId: "agent-1",
+				userId: "user-1",
+				model: "mock",
+				contentLength: 7,
+			}),
+		);
+		expect(mockObservability.recordProviderSuccess).toHaveBeenCalledWith(
+			expect.objectContaining({
+				sessionId: "session-1",
+				agentId: "agent-1",
+				outputLength: 14,
+			}),
+		);
+	});
+
+	it("trace les erreurs provider quand le stream échoue", async () => {
+		async function* failingStream(): AsyncGenerator<string> {
+			yield "Début";
+			throw new Error("provider_down");
+		}
+		mockProvider.streamText.mockReturnValue(failingStream());
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(makeAgent());
+
+		const { stream } = await useCase.execute("session-1", "user-1", "Bonjour");
+
+		await expect(async () => {
+			for await (const _chunk of stream) {
+				// consume stream
+			}
+		}).rejects.toThrow("provider_down");
+		expect(mockObservability.recordProviderError).toHaveBeenCalledWith(
+			expect.objectContaining({ error: "provider_down", outputLength: 5 }),
+		);
+	});
+
 	it("onComplete sauvegarde la réponse de l'assistant", async () => {
 		mockChatRepo.findById.mockResolvedValue(makeSession());
 		mockAgentRepo.findById.mockResolvedValue(makeAgent());
@@ -330,6 +386,13 @@ describe("SendMessageUseCase", () => {
 			"session-1",
 			"ASSISTANT",
 			"Réponse de l'IA",
+		);
+		expect(mockObservability.recordAssistantMessageSaved).toHaveBeenCalledWith(
+			expect.objectContaining({
+				sessionId: "session-1",
+				agentId: "agent-1",
+				outputLength: 15,
+			}),
 		);
 	});
 

@@ -17,6 +17,7 @@ import {
 	CHAT_SESSION_REPOSITORY,
 	type ChatSessionRepositoryPort,
 } from "../../domain/ports/chat-session.repository.port.js";
+import { ChatObservabilityService } from "../services/chat-observability.service.js";
 import { ChatQuotaService } from "../services/chat-quota.service.js";
 import {
 	EXECUTION_STRATEGY_RESOLVER,
@@ -54,6 +55,7 @@ export class SendMessageUseCase {
 		private readonly strategyResolver: ExecutionStrategyResolver,
 		private readonly quotaService: ChatQuotaService,
 		private readonly knowledgeService: AgentKnowledgeService,
+		private readonly observability: ChatObservabilityService,
 	) {}
 
 	async execute(
@@ -132,7 +134,18 @@ export class SendMessageUseCase {
 		const knowledgeContext = await this.knowledgeService.buildKnowledgeContext(agent.id, content);
 
 		const model = agent.models[0] ?? "claude-sonnet-4-20250514";
-		const stream = provider.streamText({
+		const providerName = provider.constructor.name;
+		const startedAt = Date.now();
+		this.observability.recordMessageStarted({
+			sessionId,
+			agentId: agent.id,
+			userId,
+			provider: providerName,
+			model,
+			contentLength: content.length,
+			attachmentCount: attachments.length,
+		});
+		const providerStream = provider.streamText({
 			model,
 			systemPrompt: buildQualitySystemPrompt(agent, knowledgeContext),
 			messages: formattedHistory,
@@ -141,10 +154,70 @@ export class SendMessageUseCase {
 			...extraParams,
 		});
 
+		const stream = this.observeProviderStream(providerStream, {
+			sessionId,
+			agentId: agent.id,
+			userId,
+			provider: providerName,
+			model,
+			startedAt,
+		});
+
 		const onComplete = async (fullText: string): Promise<ChatMessageEntity> => {
-			return this.chatRepo.addMessage(sessionId, "ASSISTANT", fullText);
+			const message = await this.chatRepo.addMessage(sessionId, "ASSISTANT", fullText);
+			this.observability.recordAssistantMessageSaved({
+				sessionId,
+				agentId: agent.id,
+				userId,
+				provider: providerName,
+				model,
+				durationMs: Date.now() - startedAt,
+				outputLength: fullText.length,
+			});
+			return message;
 		};
 
 		return { stream, onComplete };
+	}
+
+	private async *observeProviderStream(
+		stream: AsyncIterable<string>,
+		context: {
+			sessionId: string;
+			agentId: string;
+			userId: string;
+			provider: string;
+			model: string;
+			startedAt: number;
+		},
+	): AsyncIterable<string> {
+		let outputLength = 0;
+		try {
+			for await (const chunk of stream) {
+				outputLength += chunk.length;
+				yield chunk;
+			}
+			this.observability.recordProviderSuccess({
+				sessionId: context.sessionId,
+				agentId: context.agentId,
+				userId: context.userId,
+				provider: context.provider,
+				model: context.model,
+				durationMs: Date.now() - context.startedAt,
+				outputLength,
+			});
+		} catch (error) {
+			this.observability.recordProviderError({
+				sessionId: context.sessionId,
+				agentId: context.agentId,
+				userId: context.userId,
+				provider: context.provider,
+				model: context.model,
+				durationMs: Date.now() - context.startedAt,
+				outputLength,
+				error: error instanceof Error ? error.message : "unknown_error",
+			});
+			throw error;
+		}
 	}
 }

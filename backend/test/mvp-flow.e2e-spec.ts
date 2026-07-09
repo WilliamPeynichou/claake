@@ -253,6 +253,13 @@ describe("MVP agent flow (e2e)", () => {
 			maxHistoryMessages: 100,
 		};
 		const activityLog = { log: jest.fn() };
+		const knowledgeService = { buildKnowledgeContext: jest.fn().mockResolvedValue(null) };
+		const observability = {
+			recordMessageStarted: jest.fn(),
+			recordProviderSuccess: jest.fn(),
+			recordProviderError: jest.fn(),
+			recordAssistantMessageSaved: jest.fn(),
+		};
 
 		const createAgent = new CreateAgentUseCase(
 			agentRepo as never,
@@ -268,6 +275,8 @@ describe("MVP agent flow (e2e)", () => {
 			agentRepo as never,
 			strategyResolver as never,
 			quotaService as never,
+			knowledgeService as never,
+			observability as never,
 		);
 
 		const created = await createAgent.execute(
@@ -300,6 +309,8 @@ describe("MVP agent flow (e2e)", () => {
 
 		const draftSession = await createSession.execute(created.id, "creator-1", true, "USER");
 		await sendMessage.execute(draftSession.id, "creator-1", "Test draft", "TEXT", [], [], "USER");
+		expect(knowledgeService.buildKnowledgeContext).toHaveBeenCalledWith(created.id, "Test draft");
+		expect(observability.recordMessageStarted).toHaveBeenCalled();
 		expect(strategyResolver.resolve).toHaveBeenCalledTimes(1);
 
 		const submitResult = await submitAgent.execute(created.id, "creator-1");

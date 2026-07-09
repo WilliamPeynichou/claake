@@ -1,5 +1,5 @@
 const SENSITIVE_PATTERN =
-	/(authorization\s*[:=]\s*bearer\s+)[^\s,;"']+|(bearer\s+)[^\s,;"']+|((?:api[_-]?key|token|secret|password|webhook[_-]?secret)\s*[:=]\s*)[^\s,;"']+|\b(?:sk|rk|pk|whsec)_(?:test|live)?_[A-Za-z0-9_\-]+\b|\beyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\b/gi;
+	/(authorization\s*[:=]\s*bearer\s+)[^\s,;"']+|(bearer\s+)[^\s,;"']+|((?:api[_-]?key|token|secret|password|webhook[_-]?secret)\s*[:=]\s*)[^\s,;"']+|\b(?:sk|rk|pk|whsec)_(?:test|live)?_[A-Za-z0-9_-]+\b|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/gi;
 
 export function redactSensitive(value: unknown): string {
 	const text = value instanceof Error ? `${value.name}: ${value.message}` : String(value);

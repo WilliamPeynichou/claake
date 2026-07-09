@@ -25,7 +25,8 @@ export class CreateCheckoutUseCase {
 	async execute(agentId: string, userId: string): Promise<{ url: string }> {
 		const agent = await this.agentRepo.findById(agentId);
 		if (!agent) throw new NotFoundException("Agent not found");
-		if (!agent.isPublished()) throw new BadRequestException("This agent is not available for purchase");
+		if (!agent.isPublished())
+			throw new BadRequestException("This agent is not available for purchase");
 		if (agent.isFree()) throw new BadRequestException("This agent is free");
 
 		// Check if already purchased

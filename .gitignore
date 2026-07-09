@@ -34,6 +34,10 @@ next-env.d.ts
 
 # testing
 coverage/
+playwright-report/
+test-results/
+frontendWeb/playwright-report/
+frontendWeb/test-results/
 
 # tauri
 frontendApp/src-tauri/target/
