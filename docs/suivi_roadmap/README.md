@@ -56,4 +56,4 @@ plans/AAAA-MM-JJ-sujet.md
 | 6 — Fichiers et connaissance | ✅ 100% fonctionnel V1 | F5.2 enforcement + F5.3 knowledge base + recherche contextuelle simple |
 | 7 — Beta publique contrôlée | 🟡 ~60% | e2e MVP backend ajouté, reste CI/observabilité/e2e UI |
 
-Prochain verrou recommandé : **Milestone 6 — Fichiers et connaissance** ou **e2e UI Playwright** quand env test prêt.
+Prochain verrou recommandé : **Milestone 7 — Beta publique contrôlée** (CI, observabilité, e2e UI Playwright quand env test prêt).
