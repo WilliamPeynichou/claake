@@ -43,6 +43,10 @@ AgentDefinition partiel
 | Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Champs intégrés dans l'Agent Builder commun. Dette restante : éditeur UI nested dédié pour variables/few-shot JSON. |
 | Milestone 6 — Fichiers et connaissance | 100% fonctionnel V1 | Upload sécurisé + capabilities + enforcement par agent (F5.2). Base de connaissances agent V1 (F5.3) : CRUD backend, UI web créateur, édition inline, recherche contextuelle simple et injection contexte au chat. Dette : embeddings/pgvector, ingestion PDF automatique, ranking avancé. |
 | Milestone 7 — Beta publique contrôlée | ~60% | Sécurité backend renforcée, quotas chat livrés, e2e MVP backend ajouté. Reste CI, e2e UI Playwright, observabilité. |
+| Milestone 8 — Tool calling agent | 0% | Étendre `AIProviderPort` aux événements tool_use, registre de tools backend, tools intégrés (knowledge_search, fetch borné), config par agent, affichage chat. |
+| Milestone 9 — Embeddings et RAG | 0% | pgvector, ingestion PDF, chunking, embeddings provider, retrieval par similarité remplaçant le ranking par mots-clés. |
+| Milestone 10 — MCP | 0% | Client MCP backend, serveurs MCP par agent (HTTP/SSE), credentials chiffrés, allowlist admin, exposition des tools MCP au tool calling. |
+| Milestone 11 — Skills | 0% | Format skill (instructions + ressources), bibliothèque, attachement par agent, injection contextuelle, marketplace de skills. |
 
 ### Ce qui est maintenant considéré fait
 
@@ -95,17 +99,25 @@ Le prochain blocage produit n'est plus le mode test, le builder ou l'e2e backend
 consolidation avant élargissement :
 
 ```txt
-Milestone 6 fichiers/connaissance
-→ e2e UI Playwright
-→ CI + observabilité beta (M7)
+CI + observabilité beta + e2e UI (M7)
+→ tool calling (M8)
+→ embeddings/RAG (M9)
+→ MCP (M10)
+→ skills (M11)
 ```
+
+Après M7, le différenciateur marketplace devient **l'outillage IA** : un agent Claake ne
+doit plus être un wrapper de prompt, mais un agent équipé (tools, connaissance vectorisée,
+serveurs MCP, skills). C'est l'objet de la Phase 8.
 
 ### Prochain ordre recommandé
 
-1. Démarrer Milestone 6 — Fichiers et connaissance.
-2. Ajouter e2e UI Playwright quand environnement test/Supabase prêt.
-3. Brancher l'action **Suspendre** dans la gestion globale des agents publiés.
-4. Préparer Milestone 7 — Beta : CI, observabilité, premiers développeurs invités.
+1. Finir Milestone 7 — Beta : CI, e2e UI Playwright, observabilité, premiers développeurs invités.
+2. Milestone 8 — Tool calling agent (fondation outillage IA).
+3. Milestone 9 — Embeddings et RAG réel (pgvector, ingestion PDF).
+4. Milestone 10 — MCP : connecter les agents aux serveurs MCP.
+5. Milestone 11 — Skills : bibliothèque de compétences réutilisables.
+6. Brancher l'action **Suspendre** dans la gestion globale des agents publiés (dette M3).
 
 ---
 
@@ -198,8 +210,10 @@ Pour la première version, il faut privilégier :
 - équipes ;
 - pipelines multi-agents ;
 - endpoint vendeur public ;
-- workflows complexes ;
-- RAG avancé.
+- workflows complexes.
+
+Désormais planifié (cœur validé, cf. Phase 8) : tool calling (M8), embeddings/RAG (M9),
+MCP (M10), skills (M11).
 
 ---
 
@@ -1106,6 +1120,134 @@ Haute.
 
 ---
 
+# Phase 8 — Outillage IA : tools, embeddings, MCP, skills
+
+## Objectif
+
+Faire de Claake la meilleure marketplace d'agents IA **équipés**, pas de simples prompts.
+Un agent doit pouvoir déclarer et utiliser des outils, une connaissance vectorisée, des
+serveurs MCP et des skills — le tout validé par l'admin et exécuté côté backend.
+
+Principe inchangé : le backend reste source de vérité. Un tool, un serveur MCP ou une skill
+est une **capacité déclarée dans `AgentDefinition`**, validée par `AgentValidation`, exposée
+par `AgentChatConfig`, exécutée par `ProviderExecution`. Rien ne s'exécute côté client.
+
+## Feature 8.1 — Fondation tool calling (M8)
+
+Aujourd'hui `AIProviderPort.streamText` ne renvoie que du texte. Étape fondatrice :
+
+- étendre le port provider à un flux d'événements typés :
+
+```ts
+type ProviderStreamEvent =
+	| { type: "text"; delta: string }
+	| { type: "tool_call"; id: string; name: string; input: unknown }
+	| { type: "tool_result"; id: string; output: unknown }
+	| { type: "done" };
+```
+
+- boucle d'exécution backend : provider émet `tool_call` → backend exécute le tool →
+  renvoie `tool_result` au provider → reprise du stream ;
+- mapping natif Anthropic (`tool_use`) et OpenAI (`function calling`) ;
+- registre de tools backend (`ToolRegistry`) avec schéma JSON par tool ;
+- champ Prisma `Agent.tools` (JSONB) : tools activés + config, propagé DTO/shared/builder ;
+- `AgentChatConfig.tools` pour affichage côté chat (web + desktop) ;
+- affichage chat : bloc "l'agent utilise l'outil X" pendant le stream ;
+- validation admin : les tools activés sont visibles dans la review.
+
+### Tools intégrés V1 (aucune exécution arbitraire)
+
+- `knowledge_search` : recherche dans la base de connaissances de l'agent (remplace
+  l'injection systématique par un accès à la demande) ;
+- `fetch_url` : lecture HTTP bornée (allowlist domaines déclarés par l'agent, protection
+  SSRF existante réutilisée, taille/timeout plafonnés) ;
+- `current_datetime` : outil trivial de validation du pipeline.
+
+### Sécurité
+
+- pas de code arbitraire : tools = implémentations backend auditées ;
+- quotas d'appels tools par message et par session (`ChatQuotaService` étendu) ;
+- logs d'activité par appel tool (actor, agent, tool, durée) ;
+- endpoint vendeur toujours désactivé en V1 publique.
+
+### Priorité
+
+Très haute après M7. C'est la fondation de MCP et des skills.
+
+## Feature 8.2 — Embeddings et RAG réel (M9)
+
+Remplace la dette M6 (ranking mots-clés) :
+
+- extension pgvector + colonne embedding sur `agent_knowledge` (chunks) ;
+- table `agent_knowledge_chunks` : chunking configurable (taille/overlap) ;
+- provider d'embeddings via clé existante (OpenAI `text-embedding-3-small` d'abord,
+  fallback keyword si aucune clé disponible) ;
+- ingestion PDF automatique (réutilise pipeline upload validé M6) ;
+- retrieval par similarité cosine branché sur `knowledge_search` (top-k + seuil) ;
+- ré-indexation à l'édition d'un document ;
+- coût d'embedding imputé à la stratégie de clé de l'agent (créateur ou utilisateur).
+
+### Priorité
+
+Haute. Dépend de M8 pour l'exposition en tool, mais l'indexation peut démarrer en parallèle.
+
+## Feature 8.3 — MCP : serveurs d'outils externes (M10)
+
+Ouvrir l'écosystème sans écrire chaque tool nous-mêmes :
+
+- client MCP backend (transport HTTP streamable/SSE ; pas de stdio en V1 SaaS) ;
+- table `agent_mcp_servers` : URL, auth (credentials chiffrés via chiffrement versionné
+  existant), tools exposés, statut ;
+- découverte des tools MCP (`tools/list`) et exposition dans le `ToolRegistry` M8 ;
+- **allowlist admin** : un serveur MCP doit être validé avant usage public (même flux que
+  la review agent : draft → review → approved) ;
+- config par agent dans le builder : choisir serveurs + tools autorisés ;
+- garde-fous : timeout, taille réponse, quotas, logs par appel, SSRF ;
+- review admin : serveurs MCP et tools visibles dans la file, testables via `?test=1`.
+
+### Priorité
+
+Haute après M8. Différenciateur marketplace majeur.
+
+## Feature 8.4 — Skills : compétences réutilisables (M11)
+
+Une skill = un paquet versionné d'instructions + ressources, activable par agent :
+
+```txt
+skill
+├── manifest (nom, description, version, déclencheurs)
+├── instructions (markdown injecté à la demande)
+└── ressources (documents knowledge liés, tools requis)
+```
+
+- table `skills` + `agent_skills` (n-n), CRUD créateur ;
+- injection contextuelle : la skill n'est chargée dans le prompt que si pertinente
+  (déclencheurs par mots-clés V1, similarité embeddings V2 via M9) ;
+- skills publiques réutilisables entre agents → **marketplace de skills** (mêmes statuts
+  DRAFT/PENDING/APPROVED, review admin) ;
+- une skill peut requérir des tools (M8) ou serveurs MCP (M10) : la validation vérifie la
+  cohérence ;
+- builder : étape "Compétences" (activer skills existantes ou en créer).
+
+### Priorité
+
+Moyenne-haute. Dernière brique : dépend de M8 (tools) et profite de M9 (embeddings).
+
+## Séquencement Phase 8
+
+```txt
+M8 tool calling (port provider + registre + tools intégrés)
+→ M9 embeddings/RAG (pgvector + ingestion + knowledge_search vectoriel)
+→ M10 MCP (tools externes validés admin)
+→ M11 skills (paquets réutilisables + marketplace)
+```
+
+Chaque milestone suit le process éprouvé : plan dans `docs/suivi_roadmap/plans/`,
+branche `feature/*`, backend d'abord (Prisma → entity → usecase → DTO → transformer),
+puis shared, puis web/desktop, tests + Biome + builds, compte-rendu, merge `--no-ff`.
+
+---
+
 # Phase 7 — Monétisation
 
 ## Objectif
@@ -1246,20 +1388,62 @@ Livrable :
 - premiers développeurs invités ;
 - premiers agents validés.
 
+## Milestone 8 — Tool calling agent
+
+Livrable :
+
+- `AIProviderPort` étendu aux événements `tool_call`/`tool_result` (Anthropic + OpenAI) ;
+- boucle d'exécution tools côté backend (`ProviderExecution`) ;
+- `ToolRegistry` backend + tools intégrés : `knowledge_search`, `fetch_url` borné,
+  `current_datetime` ;
+- champ `Agent.tools` propagé Prisma → DTO → shared → builder → review admin ;
+- `AgentChatConfig.tools` + affichage des appels tools dans le chat web/desktop ;
+- quotas et logs par appel tool.
+
+## Milestone 9 — Embeddings et RAG
+
+Livrable :
+
+- pgvector + `agent_knowledge_chunks` (chunking + embeddings) ;
+- ingestion PDF automatique ;
+- retrieval similarité cosine dans `knowledge_search` (fallback keyword) ;
+- ré-indexation à l'édition ;
+- coût d'embedding imputé à la stratégie de clé.
+
+## Milestone 10 — MCP
+
+Livrable :
+
+- client MCP backend (HTTP/SSE) + `agent_mcp_servers` (credentials chiffrés) ;
+- découverte `tools/list` intégrée au `ToolRegistry` ;
+- allowlist/review admin des serveurs MCP ;
+- config par agent dans le builder + visibilité review ;
+- garde-fous : timeout, quotas, SSRF, logs.
+
+## Milestone 11 — Skills
+
+Livrable :
+
+- modèle `skills` + `agent_skills`, CRUD créateur ;
+- injection contextuelle (déclencheurs V1, embeddings V2) ;
+- dépendances skill → tools/MCP vérifiées à la validation ;
+- étape builder "Compétences" ;
+- skills publiques avec review admin — marketplace de skills.
+
 ---
 
 # Les 10 prochaines features à développer
 
-1. Ajouter le mode test agent draft/admin côté backend sans affaiblir le chat public.
-2. Ajouter le bouton **Tester dans le chat** côté dashboard créateur.
-3. Ajouter le bouton **Tester dans le chat** côté admin review pour agents `PENDING`.
-4. Refactoriser la création/édition agent dans un `Agent Builder` réutilisable — fait (`frontendWeb/features/agents/builder/`).
-5. Utiliser `AgentChatConfig.capabilities` pour afficher/masquer l'upload dans le chat.
-6. Ajouter retour automatique au chat après ajout d'une clé API utilisateur.
-7. Renforcer `ValidateAgentUseCase` sur les nouveaux champs chat et désactiver l'endpoint vendeur en V1 publique.
-8. Améliorer la page détail agent avec provider, modèle, stratégie, limitations et CTA access-aware.
-9. Ajouter quotas chat simples : messages/minute, messages/jour, taille prompt/historique — fait (`ChatQuotaService`).
-10. Ajouter tests e2e MVP : page agent → chat, clé API manquante, ajout clé, test draft, review admin — backend MVP fait, UI Playwright à faire.
+1. CI (lint + tests + builds) sur PR — M7.
+2. e2e UI Playwright du parcours MVP quand env test/Supabase prêt — M7.
+3. Observabilité : erreurs provider, latence, usage par agent — M7.
+4. Étendre `AIProviderPort` aux événements tool_call/tool_result (Anthropic + OpenAI) — M8.
+5. `ToolRegistry` backend + tools intégrés `knowledge_search`, `fetch_url` borné — M8.
+6. Champ `Agent.tools` + étape builder + affichage review admin + chat — M8.
+7. pgvector + chunking + embeddings sur la knowledge base, fallback keyword — M9.
+8. Ingestion PDF automatique dans la knowledge base — M9.
+9. Client MCP backend + `agent_mcp_servers` + allowlist admin — M10.
+10. Modèle skills + injection contextuelle + étape builder — M11.
 
 ## Features roadmap déjà réalisées ou très avancées
 

@@ -55,5 +55,9 @@ plans/AAAA-MM-JJ-sujet.md
 | 5 — Qualité agent | ✅ 100% fonctionnel V1 | branche `feature/milestone-5-agent-quality` |
 | 6 — Fichiers et connaissance | ✅ 100% fonctionnel V1 | F5.2 enforcement + F5.3 knowledge base + recherche contextuelle simple |
 | 7 — Beta publique contrôlée | 🟡 ~60% | e2e MVP backend ajouté, reste CI/observabilité/e2e UI |
+| 8 — Tool calling agent | ⚪ 0% | port provider événements tools, ToolRegistry, tools intégrés |
+| 9 — Embeddings et RAG | ⚪ 0% | pgvector, chunking, ingestion PDF, retrieval vectoriel |
+| 10 — MCP | ⚪ 0% | client MCP backend, serveurs par agent, allowlist admin |
+| 11 — Skills | ⚪ 0% | paquets instructions+ressources, injection contextuelle, marketplace |
 
-Prochain verrou recommandé : **Milestone 7 — Beta publique contrôlée** (CI, observabilité, e2e UI Playwright quand env test prêt).
+Prochain verrou recommandé : **Milestone 7 — Beta publique contrôlée** (CI, observabilité, e2e UI Playwright quand env test prêt), puis **Phase 8 — Outillage IA** (M8 tools → M9 embeddings → M10 MCP → M11 skills).
