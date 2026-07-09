@@ -29,6 +29,7 @@ export function agentToForm(agent: Agent): AgentBuilderForm {
 			: "",
 		outputFormat: agent.output_format ?? "",
 		qualityChecklist: agent.quality_checklist.join("\n"),
+		tools: agent.tools.length ? JSON.stringify(agent.tools, null, 2) : "",
 		endpointFormat: (agent.endpoint_format?.toUpperCase() ?? "OPENAI") as CreateEndpointFormat,
 		dockerImage: agent.docker_image ?? "",
 		downloadUrl: agent.download_url ?? "",

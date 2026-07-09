@@ -49,6 +49,7 @@ export class CreateAgentUseCase {
 			fewShotExamples: dto.few_shot_examples ?? [],
 			outputFormat: dto.output_format ?? null,
 			qualityChecklist: dto.quality_checklist ?? [],
+			tools: (dto.tools ?? []) as never,
 			pricingModel: (dto.pricing_model ?? "FREE").toUpperCase(),
 			price: dto.price ?? 0,
 			creditCost: dto.credit_cost ?? 1,

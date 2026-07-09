@@ -1,3 +1,5 @@
+import type { PublicAgentTool } from "@claake/shared";
+
 export type AgentChatConfigStatus = "approved" | "draft" | "pending" | "rejected" | "suspended";
 
 export type AgentChatConfigMode = "cloud" | "local" | "hybrid";
@@ -28,6 +30,7 @@ export class AgentChatConfigResponseDto {
 	few_shot_examples!: Record<string, unknown>[];
 	output_format!: string | null;
 	quality_checklist!: string[];
+	tools!: PublicAgentTool[];
 	capabilities!: {
 		files: boolean;
 		images: boolean;

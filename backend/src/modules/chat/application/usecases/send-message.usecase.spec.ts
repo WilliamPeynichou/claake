@@ -8,6 +8,7 @@ import { CHAT_SESSION_REPOSITORY } from "../../domain/ports/chat-session.reposit
 import { ChatObservabilityService } from "../services/chat-observability.service";
 import { ChatQuotaService } from "../services/chat-quota.service";
 import { EXECUTION_STRATEGY_RESOLVER } from "../services/execution-strategy.resolver";
+import { ToolRegistryService } from "../services/tool-registry.service";
 import { SendMessageUseCase } from "./send-message.usecase";
 
 async function* mockStream(): AsyncGenerator<string> {
@@ -48,6 +49,10 @@ const mockObservability = {
 	recordProviderError: jest.fn(),
 	recordAssistantMessageSaved: jest.fn(),
 };
+const mockToolRegistry = {
+	getDefinitions: jest.fn().mockReturnValue([]),
+	execute: jest.fn(),
+};
 
 function makeSession(
 	overrides: { title?: string | null; userId?: string } = {},
@@ -72,6 +77,7 @@ function makeAgent(
 		status?: string;
 		pricingModel?: string;
 		creatorId?: string;
+		tools?: any[];
 	} = {},
 ): AgentEntity {
 	return new AgentEntity(
@@ -116,6 +122,8 @@ function makeAgent(
 		overrides.variables ?? null,
 		overrides.fewShotExamples ?? [],
 		overrides.outputFormat ?? null,
+		[],
+		overrides.tools ?? [],
 	);
 }
 
@@ -131,6 +139,7 @@ describe("SendMessageUseCase", () => {
 				{ provide: EXECUTION_STRATEGY_RESOLVER, useValue: mockStrategyResolver },
 				ChatQuotaService,
 				{ provide: ChatObservabilityService, useValue: mockObservability },
+				{ provide: ToolRegistryService, useValue: mockToolRegistry },
 				{
 					provide: AgentKnowledgeService,
 					useValue: { buildKnowledgeContext: jest.fn().mockResolvedValue(null) },
@@ -142,6 +151,7 @@ describe("SendMessageUseCase", () => {
 		jest.clearAllMocks();
 
 		mockProvider.streamText.mockReturnValue(mockStream());
+		delete (mockProvider as any).streamEvents;
 		mockStrategyResolver.resolve.mockResolvedValue({ provider: mockProvider, extraParams: {} });
 		mockChatRepo.addMessage.mockResolvedValue({ id: "msg-1", role: "USER", content: "hello" });
 		mockChatRepo.getMessages.mockResolvedValue({ messages: [], total: 0 });
@@ -328,7 +338,9 @@ describe("SendMessageUseCase", () => {
 
 		const { stream } = await useCase.execute("session-1", "user-1", "Bonjour");
 		const chunks: string[] = [];
-		for await (const chunk of stream) chunks.push(chunk);
+		for await (const event of stream) {
+			if (event.type === "text") chunks.push(event.delta);
+		}
 
 		expect(chunks.join("")).toBe("Bonjour monde!");
 		expect(mockObservability.recordMessageStarted).toHaveBeenCalledWith(
@@ -394,6 +406,75 @@ describe("SendMessageUseCase", () => {
 				outputLength: 15,
 			}),
 		);
+	});
+
+	it("forward les tool events provider et exécute via callback backend", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(
+			makeAgent({ tools: [{ name: "current_datetime", enabled: true }] }),
+		);
+		mockToolRegistry.getDefinitions.mockReturnValue([
+			{ name: "current_datetime", description: "Date", inputSchema: { type: "object" } },
+		]);
+		mockToolRegistry.execute.mockResolvedValue({ iso: "2026-07-09T12:00:00.000Z" });
+		(mockProvider as any).streamEvents = jest.fn(async function* (params) {
+			const call = { id: "tool-1", name: "current_datetime", input: {} };
+			yield { type: "tool_call", ...call };
+			const output = await params.executeTool(call);
+			yield { type: "tool_result", id: call.id, name: call.name, output };
+			yield { type: "text", delta: "Done" };
+			yield { type: "done" };
+		});
+
+		const result = await useCase.execute("session-1", "user-1", "Quelle heure ?");
+		const events = [];
+		for await (const event of result.stream) events.push(event);
+
+		expect(mockToolRegistry.execute).toHaveBeenCalledWith(
+			"current_datetime",
+			{},
+			expect.objectContaining({ userId: "user-1", sessionId: "session-1" }),
+			0,
+		);
+		expect(events).toEqual([
+			{ type: "tool_call", id: "tool-1", name: "current_datetime", input: {} },
+			{
+				type: "tool_result",
+				id: "tool-1",
+				name: "current_datetime",
+				output: { iso: "2026-07-09T12:00:00.000Z" },
+			},
+			{ type: "text", delta: "Done" },
+			{ type: "done" },
+		]);
+	});
+
+	it("refuse le 6e tool call provider via quota registry", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(
+			makeAgent({ tools: [{ name: "current_datetime", enabled: true }] }),
+		);
+		mockToolRegistry.getDefinitions.mockReturnValue([
+			{ name: "current_datetime", description: "Date", inputSchema: { type: "object" } },
+		]);
+		mockToolRegistry.execute.mockImplementation((_name, _input, _context, callIndex) => {
+			if (callIndex >= 5) throw new Error("Tool call quota exceeded for this message");
+			return { ok: true };
+		});
+		(mockProvider as any).streamEvents = jest.fn(async function* (params) {
+			for (let index = 0; index < 6; index++) {
+				const call = { id: `tool-${index}`, name: "current_datetime", input: {} };
+				yield { type: "tool_call", ...call };
+				await params.executeTool(call);
+			}
+		});
+
+		const result = await useCase.execute("session-1", "user-1", "spam tools");
+		await expect(async () => {
+			for await (const _event of result.stream) {
+				// consume stream
+			}
+		}).rejects.toThrow("Tool call quota exceeded for this message");
 	});
 
 	it("refuse si la session n'existe pas", async () => {

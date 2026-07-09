@@ -188,6 +188,7 @@ model Agent {
   fewShotExamples  Json?    @map("few_shot_examples")
   outputFormat     String?  @map("output_format")
   qualityChecklist String[] @default([]) @map("quality_checklist")
+  tools            Json?
 
   cloudStrategy       CloudStrategy?  @map("cloud_strategy")
   endpointUrl         String?         @map("endpoint_url")

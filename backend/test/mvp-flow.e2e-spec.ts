@@ -211,7 +211,6 @@ class InMemoryChatRepository {
 			null,
 			null,
 			new Date(),
-			[],
 		);
 		this.messages.set(sessionId, [...(this.messages.get(sessionId) ?? []), message]);
 		return message;
@@ -260,6 +259,7 @@ describe("MVP agent flow (e2e)", () => {
 			recordProviderError: jest.fn(),
 			recordAssistantMessageSaved: jest.fn(),
 		};
+		const toolRegistry = { getDefinitions: jest.fn().mockReturnValue([]), execute: jest.fn() };
 
 		const createAgent = new CreateAgentUseCase(
 			agentRepo as never,
@@ -277,6 +277,7 @@ describe("MVP agent flow (e2e)", () => {
 			quotaService as never,
 			knowledgeService as never,
 			observability as never,
+			toolRegistry as never,
 		);
 
 		const created = await createAgent.execute(

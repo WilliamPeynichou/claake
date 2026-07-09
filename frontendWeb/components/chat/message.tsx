@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatMessage as ChatMessageType } from "@claake/shared";
+import type { ChatMessage as ChatMessageType, ChatToolEvent } from "@claake/shared";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -12,9 +12,13 @@ interface Props {
 	isStreaming?: boolean;
 }
 
-export function Message({ message, agentName, agentInitial, isStreaming }: Props) {
+export function Message({
+	message,
+	agentName: _agentName,
+	agentInitial: _agentInitial,
+	isStreaming,
+}: Props) {
 	const isUser = message.role === "user";
-	const initial = agentInitial ?? agentName?.[0]?.toUpperCase() ?? "A";
 
 	if (isUser) {
 		return (
@@ -56,6 +60,7 @@ export function Message({ message, agentName, agentInitial, isStreaming }: Props
 					fontFamily: "'DM Sans', system-ui, sans-serif",
 				}}
 			>
+				{message.tool_events?.length ? <ToolEvents events={message.tool_events} /> : null}
 				<div
 					className="prose prose-sm max-w-none"
 					style={
@@ -134,6 +139,25 @@ export function Message({ message, agentName, agentInitial, isStreaming }: Props
 					/>
 				)}
 			</div>
+		</div>
+	);
+}
+
+function ToolEvents({ events }: { events: ChatToolEvent[] }) {
+	const calls = events.filter((event) => event.type === "tool_call");
+	if (calls.length === 0) return null;
+	return (
+		<div className="mb-2 flex flex-col gap-1">
+			{calls.map((event) => (
+				<div
+					key={event.id}
+					className="inline-flex w-fit items-center gap-2 border px-2 py-1 text-xs"
+					style={{ borderColor: "#d0dac4", background: "#f3f0e8", color: "#6b6558" }}
+				>
+					<span>L'agent utilise l'outil</span>
+					<strong style={{ color: "#4e5c42" }}>{event.name}</strong>
+				</div>
+			))}
 		</div>
 	);
 }

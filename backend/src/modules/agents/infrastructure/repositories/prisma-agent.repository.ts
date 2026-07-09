@@ -58,7 +58,6 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 			case "rating":
 				orderBy = { rating: "desc" };
 				break;
-			case "newest":
 			default:
 				orderBy = { createdAt: "desc" };
 				break;
@@ -124,6 +123,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 				fewShotExamples: (data.fewShotExamples as any) ?? undefined,
 				outputFormat: data.outputFormat,
 				qualityChecklist: data.qualityChecklist ?? [],
+				tools: (data.tools as any) ?? undefined,
 				pricingModel: (data.pricingModel as any) ?? "FREE",
 				price: data.price ?? 0,
 				creditCost: data.creditCost ?? 1,
@@ -165,6 +165,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		if (data.fewShotExamples !== undefined) updateData.fewShotExamples = data.fewShotExamples;
 		if (data.outputFormat !== undefined) updateData.outputFormat = data.outputFormat;
 		if (data.qualityChecklist !== undefined) updateData.qualityChecklist = data.qualityChecklist;
+		if (data.tools !== undefined) updateData.tools = data.tools;
 		if (data.pricingModel !== undefined) updateData.pricingModel = data.pricingModel;
 		if (data.cloudStrategy !== undefined) updateData.cloudStrategy = data.cloudStrategy;
 		if (data.endpointUrl !== undefined) updateData.endpointUrl = data.endpointUrl;

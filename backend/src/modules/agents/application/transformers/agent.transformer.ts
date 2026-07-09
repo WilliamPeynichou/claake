@@ -38,6 +38,7 @@ export class AgentTransformer {
 			few_shot_examples: entity.fewShotExamples,
 			output_format: entity.outputFormat,
 			quality_checklist: entity.qualityChecklist,
+			tools: entity.tools,
 			cloud_strategy: entity.cloudStrategy?.toLowerCase() ?? null,
 			endpoint_format: entity.endpointFormat?.toLowerCase() ?? null,
 			required_user_provider: entity.requiredUserProvider,

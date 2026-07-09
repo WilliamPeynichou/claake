@@ -43,7 +43,7 @@ AgentDefinition partiel
 | Milestone 5 — Qualité agent | 100% fonctionnel V1 | Variables, few-shot, format de sortie, checklist qualité, stockage backend/shared/web et injection prompt côté chat. Champs intégrés dans l'Agent Builder commun. Dette restante : éditeur UI nested dédié pour variables/few-shot JSON. |
 | Milestone 6 — Fichiers et connaissance | 100% fonctionnel V1 | Upload sécurisé + capabilities + enforcement par agent (F5.2). Base de connaissances agent V1 (F5.3) : CRUD backend, UI web créateur, édition inline, recherche contextuelle simple et injection contexte au chat. Dette : embeddings/pgvector, ingestion PDF automatique, ranking avancé. |
 | Milestone 7 — Beta publique contrôlée | 100% fonctionnel beta technique | Sécurité backend renforcée, quotas chat, e2e MVP backend, CI PR, e2e UI Playwright smoke et observabilité chat/provider livrés. Reste hors M7 technique : env staging/Supabase live + premiers développeurs invités. |
-| Milestone 8 — Tool calling agent | 0% | Étendre `AIProviderPort` aux événements tool_use, registre de tools backend, tools intégrés (knowledge_search, fetch borné), config par agent, affichage chat. |
+| Milestone 8 — Tool calling agent | 100% fonctionnel V1 fondation | `ProviderStreamEvent`, `ToolRegistry` backend, tools intégrés (`current_datetime`, `knowledge_search`, `fetch_url` borné), `Agent.tools`, `AgentChatConfig.tools`, stream tool events, affichage web/desktop et mapping natif multi-turn Anthropic/OpenAI livrés. |
 | Milestone 9 — Embeddings et RAG | 0% | pgvector, ingestion PDF, chunking, embeddings provider, retrieval par similarité remplaçant le ranking par mots-clés. |
 | Milestone 10 — MCP | 0% | Client MCP backend, serveurs MCP par agent (HTTP/SSE), credentials chiffrés, allowlist admin, exposition des tools MCP au tool calling. |
 | Milestone 11 — Skills | 0% | Format skill (instructions + ressources), bibliothèque, attachement par agent, injection contextuelle, marketplace de skills. |
@@ -111,12 +111,11 @@ serveurs MCP, skills). C'est l'objet de la Phase 8.
 
 ### Prochain ordre recommandé
 
-1. Milestone 8 — Tool calling agent (fondation outillage IA).
-2. Milestone 9 — Embeddings et RAG réel (pgvector, ingestion PDF).
-3. Milestone 10 — MCP : connecter les agents aux serveurs MCP.
-4. Milestone 11 — Skills : bibliothèque de compétences réutilisables.
-5. Brancher l'action **Suspendre** dans la gestion globale des agents publiés (dette M3).
-6. Env staging/Supabase test + premiers développeurs invités (suite ouverture beta).
+1. Milestone 9 — Embeddings et RAG réel (pgvector, ingestion PDF).
+2. Milestone 10 — MCP : connecter les agents aux serveurs MCP.
+3. Milestone 11 — Skills : bibliothèque de compétences réutilisables.
+4. Brancher l'action **Suspendre** dans la gestion globale des agents publiés (dette M3).
+5. Env staging/Supabase test + premiers développeurs invités (suite ouverture beta).
 
 ---
 
@@ -1433,16 +1432,16 @@ Livrable :
 
 # Les 10 prochaines features à développer
 
-1. Étendre `AIProviderPort` aux événements tool_call/tool_result (Anthropic + OpenAI) — M8.
-2. `ToolRegistry` backend + tools intégrés `knowledge_search`, `fetch_url` borné — M8.
-3. Champ `Agent.tools` + étape builder + affichage review admin + chat — M8.
-4. pgvector + chunking + embeddings sur la knowledge base, fallback keyword — M9.
-5. Ingestion PDF automatique dans la knowledge base — M9.
-6. Client MCP backend + `agent_mcp_servers` + allowlist admin — M10.
-7. Modèle skills + injection contextuelle + étape builder — M11.
-8. Env staging/Supabase test + premiers développeurs invités — beta.
-9. Brancher action **Suspendre** dans gestion globale des agents publiés — dette M3.
-10. Code-split desktop pour réduire chunk Vite >500 kB — dette M4.
+1. pgvector + chunking + embeddings sur la knowledge base, fallback keyword — M9.
+2. Ingestion PDF automatique dans la knowledge base — M9.
+3. Client MCP backend + `agent_mcp_servers` + allowlist admin — M10.
+4. Modèle skills + injection contextuelle + étape builder — M11.
+5. M8.1 : mapping natif multi-turn Anthropic/OpenAI tool_use/function calling.
+6. Env staging/Supabase test + premiers développeurs invités — beta.
+7. Brancher action **Suspendre** dans gestion globale des agents publiés — dette M3.
+8. Code-split desktop pour réduire chunk Vite >500 kB — dette M4.
+9. UI builder tools dédiée au lieu de JSON brut — dette M8.
+10. Persistance optionnelle des tool events — dette M8.
 
 ## Features roadmap déjà réalisées ou très avancées
 

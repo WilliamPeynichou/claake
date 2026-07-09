@@ -28,6 +28,7 @@ export interface AgentBuilderForm {
 	fewShotExamples: string;
 	outputFormat: string;
 	qualityChecklist: string;
+	tools: string;
 	endpoint: string;
 	endpointFormat: CreateEndpointFormat;
 	sellerApiKey: string;
@@ -54,6 +55,7 @@ export const INITIAL_AGENT_FORM: AgentBuilderForm = {
 	fewShotExamples: "",
 	outputFormat: "",
 	qualityChecklist: "",
+	tools: "",
 	endpoint: "",
 	endpointFormat: "OPENAI",
 	sellerApiKey: "",

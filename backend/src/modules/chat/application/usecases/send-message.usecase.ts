@@ -12,7 +12,7 @@ import {
 } from "../../../agents/domain/ports/agent.repository.port.js";
 import type { ChatMessageEntity } from "../../domain/entities/chat-message.entity.js";
 import { ChatSessionEntity } from "../../domain/entities/chat-session.entity.js";
-import type { FileAttachment } from "../../domain/ports/ai-provider.port.js";
+import type { FileAttachment, ProviderStreamEvent } from "../../domain/ports/ai-provider.port.js";
 import {
 	CHAT_SESSION_REPOSITORY,
 	type ChatSessionRepositoryPort,
@@ -23,6 +23,7 @@ import {
 	EXECUTION_STRATEGY_RESOLVER,
 	type ExecutionStrategyResolver,
 } from "../services/execution-strategy.resolver.js";
+import { ToolRegistryService } from "../services/tool-registry.service.js";
 
 function buildQualitySystemPrompt(
 	agent: NonNullable<Awaited<ReturnType<AgentRepositoryPort["findById"]>>>,
@@ -56,6 +57,7 @@ export class SendMessageUseCase {
 		private readonly quotaService: ChatQuotaService,
 		private readonly knowledgeService: AgentKnowledgeService,
 		private readonly observability: ChatObservabilityService,
+		private readonly toolRegistry: ToolRegistryService,
 	) {}
 
 	async execute(
@@ -67,7 +69,7 @@ export class SendMessageUseCase {
 		attachmentIds: string[] = [],
 		actorRole?: string,
 	): Promise<{
-		stream: AsyncIterable<string>;
+		stream: AsyncIterable<ProviderStreamEvent>;
 		onComplete: (fullText: string) => Promise<ChatMessageEntity>;
 	}> {
 		const session = await this.chatRepo.findById(sessionId);
@@ -145,18 +147,37 @@ export class SendMessageUseCase {
 			contentLength: content.length,
 			attachmentCount: attachments.length,
 		});
-		const providerStream = provider.streamText({
+		// Backend-owned tool executor: quotas and security enforced here, providers
+		// only orchestrate the model loop and feed results back.
+		let toolCallCount = 0;
+		const executeTool = async (call: { id: string; name: string; input: unknown }) => {
+			const output = await this.toolRegistry.execute(
+				call.name,
+				call.input,
+				{ agent, userId, sessionId },
+				toolCallCount,
+			);
+			toolCallCount += 1;
+			return output;
+		};
+
+		const streamInput = {
 			model,
 			systemPrompt: buildQualitySystemPrompt(agent, knowledgeContext),
 			messages: formattedHistory,
 			maxTokens: 4096,
 			attachments: attachments.length > 0 ? attachments : undefined,
+			tools: this.toolRegistry.getDefinitions(agent),
+			executeTool,
 			...extraParams,
-		});
+		};
+		const providerStream = provider.streamEvents
+			? provider.streamEvents(streamInput)
+			: this.textToEvents(provider.streamText(streamInput));
 
 		const stream = this.observeProviderStream(providerStream, {
 			sessionId,
-			agentId: agent.id,
+			agent,
 			userId,
 			provider: providerName,
 			model,
@@ -181,25 +202,29 @@ export class SendMessageUseCase {
 	}
 
 	private async *observeProviderStream(
-		stream: AsyncIterable<string>,
+		stream: AsyncIterable<ProviderStreamEvent>,
 		context: {
 			sessionId: string;
-			agentId: string;
+			agent: NonNullable<Awaited<ReturnType<AgentRepositoryPort["findById"]>>>;
 			userId: string;
 			provider: string;
 			model: string;
 			startedAt: number;
 		},
-	): AsyncIterable<string> {
+	): AsyncIterable<ProviderStreamEvent> {
 		let outputLength = 0;
 		try {
-			for await (const chunk of stream) {
-				outputLength += chunk.length;
-				yield chunk;
+			for await (const event of stream) {
+				if (event.type === "text") {
+					outputLength += event.delta.length;
+				}
+				// tool_call/tool_result are emitted by the provider loop itself;
+				// execution already happened backend-side via the executeTool callback.
+				yield event;
 			}
 			this.observability.recordProviderSuccess({
 				sessionId: context.sessionId,
-				agentId: context.agentId,
+				agentId: context.agent.id,
 				userId: context.userId,
 				provider: context.provider,
 				model: context.model,
@@ -209,7 +234,7 @@ export class SendMessageUseCase {
 		} catch (error) {
 			this.observability.recordProviderError({
 				sessionId: context.sessionId,
-				agentId: context.agentId,
+				agentId: context.agent.id,
 				userId: context.userId,
 				provider: context.provider,
 				model: context.model,
@@ -219,5 +244,12 @@ export class SendMessageUseCase {
 			});
 			throw error;
 		}
+	}
+
+	private async *textToEvents(stream: AsyncIterable<string>): AsyncIterable<ProviderStreamEvent> {
+		for await (const delta of stream) {
+			yield { type: "text", delta };
+		}
+		yield { type: "done" };
 	}
 }

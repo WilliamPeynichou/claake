@@ -76,6 +76,7 @@ export class UpdateAgentUseCase {
 		if (dto.few_shot_examples !== undefined) updateData.fewShotExamples = dto.few_shot_examples;
 		if (dto.output_format !== undefined) updateData.outputFormat = dto.output_format;
 		if (dto.quality_checklist !== undefined) updateData.qualityChecklist = dto.quality_checklist;
+		if (dto.tools !== undefined) updateData.tools = dto.tools as never;
 		if (dto.cloud_strategy !== undefined) updateData.cloudStrategy = dto.cloud_strategy;
 		if (dto.endpoint_url !== undefined) updateData.endpointUrl = dto.endpoint_url;
 		if (dto.endpoint_format !== undefined) updateData.endpointFormat = dto.endpoint_format;

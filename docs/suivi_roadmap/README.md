@@ -28,6 +28,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `comptes-rendus/2026-07-08-m6-knowledge-ui.md` — M6/F5.3 : UI web créateur de la base de connaissances (éditeur agent). **Mergé dans `main` et poussé.**
 - `comptes-rendus/2026-07-08-m6-finalisation.md` — M6 final V1 : recherche contextuelle simple + édition inline knowledge. **Mergé dans `main` et poussé.**
 - `comptes-rendus/2026-07-09-finition-milestone-7.md` — M7 final : CI PR, e2e UI Playwright smoke, observabilité chat/provider.
+- `comptes-rendus/2026-07-09-m8-tool-calling.md` — M8 V1 : ProviderStreamEvent, ToolRegistry, Agent.tools, stream tool events, affichage web/desktop.
 
 ## Index plans
 
@@ -44,6 +45,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-08-m6-file-enforcement.md` — Plan M6 enforcement upload par agent (F5.2). **✅ Réalisé et livré.**
 - `plans/2026-07-08-m6-knowledge-base.md` — Plan M6 base de connaissances agent (F5.3). **✅ V1 réalisée et livrée.**
 - `plans/2026-07-09-finir-milestone-7.md` — Plan M7 beta technique : CI, Playwright, observabilité. **✅ Réalisé.**
+- `plans/2026-07-09-m8-tool-calling.md` — Plan M8 tool calling agent. **✅ V1 réalisé.**
 
 ## État des milestones
 
@@ -57,9 +59,9 @@ plans/AAAA-MM-JJ-sujet.md
 | 5 — Qualité agent | ✅ 100% fonctionnel V1 | branche `feature/milestone-5-agent-quality` |
 | 6 — Fichiers et connaissance | ✅ 100% fonctionnel V1 | F5.2 enforcement + F5.3 knowledge base + recherche contextuelle simple |
 | 7 — Beta publique contrôlée | ✅ 100% fonctionnel beta technique | CI PR + e2e UI Playwright smoke + observabilité chat/provider livrés |
-| 8 — Tool calling agent | ⚪ 0% | port provider événements tools, ToolRegistry, tools intégrés |
+| 8 — Tool calling agent | ✅ 100% fonctionnel V1 fondation | ProviderStreamEvent + ToolRegistry + Agent.tools + affichage tool events + Anthropic/OpenAI natif multi-turn |
 | 9 — Embeddings et RAG | ⚪ 0% | pgvector, chunking, ingestion PDF, retrieval vectoriel |
 | 10 — MCP | ⚪ 0% | client MCP backend, serveurs par agent, allowlist admin |
 | 11 — Skills | ⚪ 0% | paquets instructions+ressources, injection contextuelle, marketplace |
 
-Prochain verrou recommandé : **Milestone 8 — Tool calling agent** (port provider événements tools, ToolRegistry, tools intégrés), puis **M9 embeddings/RAG → M10 MCP → M11 skills**. Prévoir aussi env staging/Supabase test pour ouverture beta réelle.
+Prochain verrou recommandé : **Milestone 9 — Embeddings/RAG** (pgvector, chunks, embeddings, ingestion PDF), puis **M10 MCP → M11 skills**. Prévoir aussi env staging/Supabase test pour ouverture beta réelle.

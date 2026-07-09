@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiClient } from "../api/client";
-import type { ChatMessage, ChatSession } from "../types";
+import type { ChatMessage, ChatSession, ChatToolEvent } from "../types";
 
 export interface UseChatOptions {
 	apiClient: ApiClient;
@@ -173,6 +173,18 @@ export function useChat({
 
 							if (line.startsWith("d:")) {
 								receivedDone = true;
+								continue;
+							}
+
+							if (line.startsWith("8:")) {
+								const toolEvent = JSON.parse(line.slice(2)) as ChatToolEvent;
+								setMessages((prev) =>
+									prev.map((m) =>
+										m.id === assistantId
+											? { ...m, tool_events: [...(m.tool_events ?? []), toolEvent] }
+											: m,
+									),
+								);
 								continue;
 							}
 

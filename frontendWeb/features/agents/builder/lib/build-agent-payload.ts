@@ -34,6 +34,7 @@ function derived(form: AgentBuilderForm) {
 		fewShotExamples: form.fewShotExamples.trim()
 			? (JSON.parse(form.fewShotExamples) as Record<string, unknown>[])
 			: undefined,
+		tools: form.tools.trim() ? (JSON.parse(form.tools) as CreateAgentInput["tools"]) : undefined,
 		isLocalCapable,
 		isCloud,
 	};
@@ -82,6 +83,7 @@ export function buildCreateAgentPayload(
 		few_shot_examples: d.fewShotExamples,
 		output_format: form.outputFormat || undefined,
 		quality_checklist: d.qualityChecklist.length ? d.qualityChecklist : undefined,
+		tools: d.tools,
 		pricing_model: "FREE",
 	};
 }
@@ -111,6 +113,7 @@ export function buildUpdateAgentPayload(
 		few_shot_examples: d.fewShotExamples,
 		output_format: form.outputFormat || undefined,
 		quality_checklist: d.qualityChecklist,
+		tools: d.tools,
 		cloud_strategy: d.isCloud ? form.cloudStrategy : undefined,
 		required_user_provider:
 			form.cloudStrategy === "USER_API_KEY" ? form.requiredUserProvider : undefined,
