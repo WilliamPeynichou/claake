@@ -82,6 +82,52 @@ describe("AgentKnowledgeService", () => {
 		);
 	});
 
+	it("réindexe les documents existants", async () => {
+		const records = [
+			{ id: "k-1", agentId: "agent-1", title: "Doc 1", content: "A", createdAt: new Date() },
+			{ id: "k-2", agentId: "agent-1", title: "Doc 2", content: "B", createdAt: new Date() },
+		];
+		const prisma = makePrisma({
+			agentKnowledge: { findMany: jest.fn().mockResolvedValue(records) },
+		});
+		const index = { indexDocument: jest.fn().mockResolvedValue(undefined), retrieve: jest.fn() };
+		const service = new AgentKnowledgeService(prisma, index as never);
+
+		await expect(service.reindex("agent-1", CREATOR)).resolves.toEqual({ indexed: 2 });
+		expect(index.indexDocument).toHaveBeenCalledTimes(2);
+	});
+
+	it("préfère le retrieval vectoriel quand disponible", async () => {
+		const prisma = makePrisma();
+		const index = {
+			indexDocument: jest.fn(),
+			retrieve: jest
+				.fn()
+				.mockResolvedValue([{ title: "Match", content: "Contexte vectoriel", score: 0.9 }]),
+		};
+		const service = new AgentKnowledgeService(prisma, index as never);
+		await expect(service.buildKnowledgeContext("agent-1", "question")).resolves.toContain(
+			"Contexte vectoriel",
+		);
+	});
+
+	it("retombe sur les mots-clés si retrieval vectoriel indisponible", async () => {
+		const prisma = makePrisma({
+			agentKnowledge: {
+				findMany: jest
+					.fn()
+					.mockResolvedValue([
+						{ title: "Retour colis", content: "Retour produit", createdAt: new Date() },
+					]),
+			},
+		});
+		const index = { indexDocument: jest.fn(), retrieve: jest.fn().mockResolvedValue(null) };
+		const service = new AgentKnowledgeService(prisma, index as never);
+		await expect(service.buildKnowledgeContext("agent-1", "retour")).resolves.toContain(
+			"Retour colis",
+		);
+	});
+
 	it("construit un contexte à partir des documents", async () => {
 		const prisma = makePrisma({
 			agentKnowledge: {

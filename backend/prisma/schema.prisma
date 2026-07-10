@@ -216,6 +216,7 @@ model Agent {
   pipelineSteps    PipelineStep[]
   uploadedFiles    UploadedFile[]
   knowledge        AgentKnowledge[]
+  knowledgeChunks AgentKnowledgeChunk[]
 
   @@index([slug])
   @@index([creatorId])
@@ -530,7 +531,27 @@ model AgentKnowledge {
   title     String
   content   String
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  chunks    AgentKnowledgeChunk[]
 
   @@index([agentId])
   @@map("agent_knowledge")
+}
+
+model AgentKnowledgeChunk {
+  id          String   @id @default(uuid())
+  agentId     String   @map("agent_id")
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  knowledgeId String   @map("knowledge_id")
+  knowledge   AgentKnowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  chunkIndex  Int      @map("chunk_index")
+  content     String
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([knowledgeId, chunkIndex])
+  @@index([agentId])
+  @@index([knowledgeId])
+  @@map("agent_knowledge_chunks")
 }

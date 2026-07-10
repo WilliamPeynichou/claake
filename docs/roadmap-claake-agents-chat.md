@@ -44,7 +44,7 @@ AgentDefinition partiel
 | Milestone 6 — Fichiers et connaissance | 100% fonctionnel V1 | Upload sécurisé + capabilities + enforcement par agent (F5.2). Base de connaissances agent V1 (F5.3) : CRUD backend, UI web créateur, édition inline, recherche contextuelle simple et injection contexte au chat. Dette : embeddings/pgvector, ingestion PDF automatique, ranking avancé. |
 | Milestone 7 — Beta publique contrôlée | 100% fonctionnel beta technique | Sécurité backend renforcée, quotas chat, e2e MVP backend, CI PR, e2e UI Playwright smoke et observabilité chat/provider livrés. Reste hors M7 technique : env staging/Supabase live + premiers développeurs invités. |
 | Milestone 8 — Tool calling agent | 100% fonctionnel V1 fondation | `ProviderStreamEvent`, `ToolRegistry` backend, tools intégrés (`current_datetime`, `knowledge_search`, `fetch_url` borné), `Agent.tools`, `AgentChatConfig.tools`, stream tool events, affichage web/desktop et mapping natif multi-turn Anthropic/OpenAI livrés. |
-| Milestone 9 — Embeddings et RAG | 0% | pgvector, ingestion PDF, chunking, embeddings provider, retrieval par similarité remplaçant le ranking par mots-clés. |
+| Milestone 9 — Embeddings et RAG | 100% fonctionnel V1 | Chunks pgvector, embeddings OpenAI optionnels, retrieval cosine top-k, fallback keyword, réindexation documents existants et ingestion PDF créateur livrés. Dette : OCR PDF image-only, index vectoriel à tuner après volume, imputation coûts avancée. |
 | Milestone 10 — MCP | 0% | Client MCP backend, serveurs MCP par agent (HTTP/SSE), credentials chiffrés, allowlist admin, exposition des tools MCP au tool calling. |
 | Milestone 11 — Skills | 0% | Format skill (instructions + ressources), bibliothèque, attachement par agent, injection contextuelle, marketplace de skills. |
 
@@ -111,11 +111,10 @@ serveurs MCP, skills). C'est l'objet de la Phase 8.
 
 ### Prochain ordre recommandé
 
-1. Milestone 9 — Embeddings et RAG réel (pgvector, ingestion PDF).
-2. Milestone 10 — MCP : connecter les agents aux serveurs MCP.
-3. Milestone 11 — Skills : bibliothèque de compétences réutilisables.
-4. Brancher l'action **Suspendre** dans la gestion globale des agents publiés (dette M3).
-5. Env staging/Supabase test + premiers développeurs invités (suite ouverture beta).
+1. Milestone 10 — MCP : connecter les agents aux serveurs MCP.
+2. Milestone 11 — Skills : bibliothèque de compétences réutilisables.
+3. Brancher l'action **Suspendre** dans la gestion globale des agents publiés (dette M3).
+4. Env staging/Supabase test + premiers développeurs invités (suite ouverture beta).
 
 ---
 

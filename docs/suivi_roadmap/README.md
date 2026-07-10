@@ -29,6 +29,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `comptes-rendus/2026-07-08-m6-finalisation.md` — M6 final V1 : recherche contextuelle simple + édition inline knowledge. **Mergé dans `main` et poussé.**
 - `comptes-rendus/2026-07-09-finition-milestone-7.md` — M7 final : CI PR, e2e UI Playwright smoke, observabilité chat/provider.
 - `comptes-rendus/2026-07-09-m8-tool-calling.md` — M8 V1 : ProviderStreamEvent, ToolRegistry, Agent.tools, stream tool events, affichage web/desktop.
+- `comptes-rendus/2026-07-09-m9-embeddings-rag.md` — M9 V1 : chunks pgvector, embeddings, retrieval hybride, ingestion PDF.
 
 ## Index plans
 
@@ -46,6 +47,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-08-m6-knowledge-base.md` — Plan M6 base de connaissances agent (F5.3). **✅ V1 réalisée et livrée.**
 - `plans/2026-07-09-finir-milestone-7.md` — Plan M7 beta technique : CI, Playwright, observabilité. **✅ Réalisé.**
 - `plans/2026-07-09-m8-tool-calling.md` — Plan M8 tool calling agent. **✅ V1 réalisé.**
+- `plans/2026-07-09-m9-embeddings-rag.md` — Plan M9 embeddings/RAG. **✅ V1 réalisé.**
 
 ## État des milestones
 
@@ -60,8 +62,8 @@ plans/AAAA-MM-JJ-sujet.md
 | 6 — Fichiers et connaissance | ✅ 100% fonctionnel V1 | F5.2 enforcement + F5.3 knowledge base + recherche contextuelle simple |
 | 7 — Beta publique contrôlée | ✅ 100% fonctionnel beta technique | CI PR + e2e UI Playwright smoke + observabilité chat/provider livrés |
 | 8 — Tool calling agent | ✅ 100% fonctionnel V1 fondation | ProviderStreamEvent + ToolRegistry + Agent.tools + affichage tool events + Anthropic/OpenAI natif multi-turn |
-| 9 — Embeddings et RAG | ⚪ 0% | pgvector, chunking, ingestion PDF, retrieval vectoriel |
+| 9 — Embeddings et RAG | ✅ 100% fonctionnel V1 | pgvector, chunking, embeddings optionnels, PDF, retrieval vectoriel + fallback keyword |
 | 10 — MCP | ⚪ 0% | client MCP backend, serveurs par agent, allowlist admin |
 | 11 — Skills | ⚪ 0% | paquets instructions+ressources, injection contextuelle, marketplace |
 
-Prochain verrou recommandé : **Milestone 9 — Embeddings/RAG** (pgvector, chunks, embeddings, ingestion PDF), puis **M10 MCP → M11 skills**. Prévoir aussi env staging/Supabase test pour ouverture beta réelle.
+Prochain verrou recommandé : **Milestone 10 — MCP**, puis **M11 skills**. Prévoir aussi env staging/Supabase test pour ouverture beta réelle.

@@ -1,5 +1,12 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+	ForbiddenException,
+	Injectable,
+	Logger,
+	NotFoundException,
+	Optional,
+} from "@nestjs/common";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
+import { KnowledgeIndexService } from "./knowledge-index.service.js";
 
 const MAX_KNOWLEDGE_CHARS = 6000;
 const MAX_KNOWLEDGE_DOCUMENTS = 5;
@@ -20,7 +27,34 @@ export interface AgentKnowledgeItem {
  */
 @Injectable()
 export class AgentKnowledgeService {
-	constructor(private readonly prisma: PrismaService) {}
+	private readonly logger = new Logger(AgentKnowledgeService.name);
+
+	constructor(
+		private readonly prisma: PrismaService,
+		@Optional() private readonly index?: KnowledgeIndexService,
+	) {}
+
+	async ensureCanManage(agentId: string, actor: Actor): Promise<void> {
+		await this.assertCanManage(agentId, actor);
+	}
+
+	async reindex(agentId: string, actor: Actor): Promise<{ indexed: number }> {
+		await this.assertCanManage(agentId, actor);
+		if (!this.index) return { indexed: 0 };
+		const records = await this.prisma.agentKnowledge.findMany({ where: { agentId } });
+		let indexed = 0;
+		for (const record of records) {
+			try {
+				await this.index.indexDocument(record);
+				indexed += 1;
+			} catch (error) {
+				this.logger.warn(
+					`Knowledge reindex failed for document=${record.id}: ${error instanceof Error ? error.message : "unknown"}`,
+				);
+			}
+		}
+		return { indexed };
+	}
 
 	async add(
 		agentId: string,
@@ -31,6 +65,7 @@ export class AgentKnowledgeService {
 		const record = await this.prisma.agentKnowledge.create({
 			data: { agentId, title: input.title.trim(), content: input.content.trim() },
 		});
+		await this.safeIndex(record);
 		return this.toItem(record);
 	}
 
@@ -61,6 +96,7 @@ export class AgentKnowledgeService {
 				content: input.content?.trim() || current.content,
 			},
 		});
+		await this.safeIndex(updated);
 		return this.toItem(updated);
 	}
 
@@ -78,6 +114,13 @@ export class AgentKnowledgeService {
 	 * "Recherche contextuelle simple" V1 = concaténation des documents de l'agent.
 	 */
 	async buildKnowledgeContext(agentId: string, query?: string): Promise<string | null> {
+		if (query?.trim() && this.index) {
+			const retrieved = await this.index.retrieve(agentId, query);
+			if (retrieved && retrieved.length > 0) {
+				return this.capContext(retrieved.map((chunk) => `# ${chunk.title}\n${chunk.content}`));
+			}
+		}
+
 		const records = await this.prisma.agentKnowledge.findMany({
 			where: { agentId },
 			orderBy: { createdAt: "asc" },
@@ -85,10 +128,13 @@ export class AgentKnowledgeService {
 		if (records.length === 0) return null;
 
 		const ranked = this.rankByQuery(records, query).slice(0, MAX_KNOWLEDGE_DOCUMENTS);
+		return this.capContext(ranked.map((record) => `# ${record.title}\n${record.content}`));
+	}
+
+	private capContext(blocks: string[]): string | null {
 		const parts: string[] = [];
 		let total = 0;
-		for (const record of ranked) {
-			const block = `# ${record.title}\n${record.content}`;
+		for (const block of blocks) {
 			const remaining = MAX_KNOWLEDGE_CHARS - total;
 			if (remaining <= 0) break;
 			if (block.length > remaining) {
@@ -98,7 +144,23 @@ export class AgentKnowledgeService {
 			parts.push(block);
 			total += block.length;
 		}
-		return parts.join("\n\n");
+		return parts.length > 0 ? parts.join("\n\n") : null;
+	}
+
+	private async safeIndex(record: {
+		id: string;
+		agentId: string;
+		title: string;
+		content: string;
+	}): Promise<void> {
+		if (!this.index) return;
+		try {
+			await this.index.indexDocument(record);
+		} catch (error) {
+			this.logger.warn(
+				`Knowledge indexing failed for document=${record.id}; keyword fallback remains available: ${error instanceof Error ? error.message : "unknown"}`,
+			);
+		}
 	}
 
 	private rankByQuery<T extends { title: string; content: string }>(
