@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -11,9 +12,13 @@ import {
 	Post,
 	Query,
 	Req,
+	UploadedFile,
 	UseGuards,
+	UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { Throttle } from "@nestjs/throttler";
+import { memoryStorage } from "multer";
 import { RequirePermission } from "../../../../common/decorators/admin-permission.decorator.js";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
 import { AdminPermissionGuard } from "../../../../common/guards/admin-permission.guard.js";
@@ -27,6 +32,7 @@ import { ReviewAgentDto } from "../../application/dtos/review-agent.dto.js";
 import { UpdateAgentDto } from "../../application/dtos/update-agent.dto.js";
 import { UpdateAgentKnowledgeDto } from "../../application/dtos/update-agent-knowledge.dto.js";
 import { AgentKnowledgeService } from "../../application/services/agent-knowledge.service.js";
+import { PdfKnowledgeExtractionService } from "../../application/services/pdf-knowledge-extraction.service.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
 import { GetAgentUseCase } from "../../application/usecases/get-agent.usecase.js";
@@ -54,6 +60,7 @@ export class AgentController {
 		private readonly deleteAgent: DeleteAgentUseCase,
 		private readonly unpublishAgent: UnpublishAgentUseCase,
 		private readonly knowledge: AgentKnowledgeService,
+		private readonly pdfKnowledge: PdfKnowledgeExtractionService,
 		private readonly prisma: PrismaService,
 	) {}
 
@@ -155,6 +162,35 @@ export class AgentController {
 	@UseGuards(SupabaseAuthGuard)
 	async listKnowledge(@Param("id") id: string, @Req() req: { user: RequestUser }) {
 		return this.knowledge.list(id, { userId: req.user.id, role: req.user.role });
+	}
+
+	@Post(":id/knowledge/reindex")
+	@UseGuards(SupabaseAuthGuard)
+	@Throttle({ default: { ttl: 60_000, limit: 2 } })
+	async reindexKnowledge(@Param("id") id: string, @Req() req: { user: RequestUser }) {
+		return this.knowledge.reindex(id, { userId: req.user.id, role: req.user.role });
+	}
+
+	@Post(":id/knowledge/pdf")
+	@UseGuards(SupabaseAuthGuard)
+	@Throttle({ default: { ttl: 60_000, limit: 5 } })
+	@UseInterceptors(
+		FileInterceptor("file", {
+			storage: memoryStorage(),
+			limits: { fileSize: 10 * 1024 * 1024 },
+		}),
+	)
+	async addKnowledgePdf(
+		@Param("id") id: string,
+		@UploadedFile() file: Express.Multer.File,
+		@Req() req: { user: RequestUser },
+	) {
+		if (!file) throw new BadRequestException("Aucun fichier fourni.");
+		const actor = { userId: req.user.id, role: req.user.role };
+		await this.knowledge.ensureCanManage(id, actor);
+		const content = await this.pdfKnowledge.extract(file);
+		const title = file.originalname.replace(/\.pdf$/i, "").slice(0, 200) || "Document PDF";
+		return this.knowledge.add(id, actor, { title, content });
 	}
 
 	@Post(":id/knowledge")

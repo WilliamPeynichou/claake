@@ -1,7 +1,7 @@
 "use client";
 
 import type { AgentKnowledge } from "@claake/shared";
-import { Edit2, Loader2, Save, Trash2, X } from "lucide-react";
+import { Edit2, FileUp, Loader2, RefreshCw, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ export function KnowledgeManager({ agentId, token }: KnowledgeManagerProps) {
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
 	const [saving, setSaving] = useState(false);
+	const [importingPdf, setImportingPdf] = useState(false);
+	const [reindexing, setReindexing] = useState(false);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editTitle, setEditTitle] = useState("");
 	const [editContent, setEditContent] = useState("");
@@ -54,6 +56,38 @@ export function KnowledgeManager({ agentId, token }: KnowledgeManagerProps) {
 			setError(err instanceof Error ? err.message : "Erreur lors de l'ajout.");
 		} finally {
 			setSaving(false);
+		}
+	}
+
+	async function handleReindex() {
+		setReindexing(true);
+		setError(null);
+		try {
+			const result = await apiClient.agents.knowledge.reindex(agentId, token);
+			if (result.indexed === 0) setError("Aucun document à réindexer.");
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Réindexation impossible.");
+		} finally {
+			setReindexing(false);
+		}
+	}
+
+	async function handlePdf(file: File | undefined) {
+		if (!file) return;
+		setImportingPdf(true);
+		setError(null);
+		try {
+			const created = await apiClient.agents.knowledge.createFromPdf(
+				agentId,
+				file,
+				file.name,
+				token,
+			);
+			setItems((prev) => [created, ...prev]);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Import PDF impossible.");
+		} finally {
+			setImportingPdf(false);
 		}
 	}
 
@@ -94,14 +128,45 @@ export function KnowledgeManager({ agentId, token }: KnowledgeManagerProps) {
 	return (
 		<div className="space-y-4">
 			<p className="text-sm text-muted-foreground">
-				Ajoutez des documents (texte) que l&apos;agent utilisera comme contexte dans le chat.
+				Ajoutez du texte ou importez un PDF. Le contenu est découpé puis indexé ; la recherche
+				vectorielle est utilisée quand le provider embeddings est configuré, sinon le fallback par
+				mots-clés reste actif.
 			</p>
+
+			<div className="flex justify-end">
+				<Button variant="outline" size="sm" onClick={handleReindex} disabled={reindexing}>
+					{reindexing ? (
+						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+					) : (
+						<RefreshCw className="mr-2 h-4 w-4" />
+					)}
+					Réindexer les documents
+				</Button>
+			</div>
 
 			{error && (
 				<div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
 					{error}
 				</div>
 			)}
+
+			<div className="rounded-md border p-4">
+				<Label htmlFor="knowledge-pdf">Importer un PDF</Label>
+				<div className="mt-2 flex items-center gap-2">
+					<Input
+						id="knowledge-pdf"
+						type="file"
+						accept="application/pdf,.pdf"
+						disabled={importingPdf}
+						onChange={(event) => handlePdf(event.target.files?.[0])}
+					/>
+					{importingPdf ? (
+						<Loader2 className="h-4 w-4 animate-spin" />
+					) : (
+						<FileUp className="h-4 w-4" />
+					)}
+				</div>
+			</div>
 
 			<div className="space-y-2 rounded-md border p-4">
 				<div className="space-y-2">

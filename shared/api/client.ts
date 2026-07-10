@@ -80,6 +80,24 @@ export function createApiClient(baseUrl: string) {
 		return json as T;
 	}
 
+	async function fetchForm<T>(path: string, form: FormData, token: string): Promise<T> {
+		const res = await fetch(`${baseUrl}${path}`, {
+			method: "POST",
+			headers: { Authorization: `Bearer ${token}` },
+			body: form,
+		});
+		if (!res.ok) {
+			const body = await res.json().catch(() => ({}));
+			const message =
+				typeof body.error === "string"
+					? body.error
+					: (body.error?.message ?? `API error: ${res.status} ${res.statusText}`);
+			throw new ApiError(res.status, message);
+		}
+		const json = await res.json();
+		return json && typeof json === "object" && "data" in json ? (json.data as T) : (json as T);
+	}
+
 	function withAuth(token: string, init?: RequestInit): RequestInit {
 		return {
 			...init,
@@ -124,6 +142,16 @@ export function createApiClient(baseUrl: string) {
 						`/agents/${agentId}/knowledge`,
 						withAuth(token, { method: "POST", body: JSON.stringify(input) }),
 					),
+				reindex: (agentId: string, token: string) =>
+					fetchJson<{ indexed: number }>(
+						`/agents/${agentId}/knowledge/reindex`,
+						withAuth(token, { method: "POST" }),
+					),
+				createFromPdf: (agentId: string, file: Blob, fileName: string, token: string) => {
+					const form = new FormData();
+					form.append("file", file, fileName);
+					return fetchForm<AgentKnowledge>(`/agents/${agentId}/knowledge/pdf`, form, token);
+				},
 				update: (
 					agentId: string,
 					knowledgeId: string,
