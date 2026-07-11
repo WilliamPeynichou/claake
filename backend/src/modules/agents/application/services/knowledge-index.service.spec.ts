@@ -41,11 +41,11 @@ describe("KnowledgeIndexService", () => {
 		expect(tx.$executeRaw).not.toHaveBeenCalled();
 	});
 
-	it("stores vectors when embeddings are available", async () => {
+	it("stores vectors in a single batched statement when embeddings are available", async () => {
 		const vectors = [Array(1536).fill(0.1), Array(1536).fill(0.2)];
 		const { service, tx } = makeService(vectors);
 		await service.indexDocument({ id: "k-1", agentId: "a-1", title: "Doc", content: "body" });
-		expect(tx.$executeRaw).toHaveBeenCalledTimes(2);
+		expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
 	});
 
 	it("returns null retrieval without a query embedding", async () => {
@@ -58,6 +58,17 @@ describe("KnowledgeIndexService", () => {
 		const { service, prisma } = makeService([Array(1536).fill(0.1)]);
 		(prisma.$queryRaw as jest.Mock).mockResolvedValue([
 			{ title: "Doc", content: "match", score: 0.9 },
+		]);
+		await expect(service.retrieve("a-1", "question")).resolves.toEqual([
+			{ title: "Doc", content: "match", score: 0.9 },
+		]);
+	});
+
+	it("filters out chunks below the similarity threshold", async () => {
+		const { service, prisma } = makeService([Array(1536).fill(0.1)]);
+		(prisma.$queryRaw as jest.Mock).mockResolvedValue([
+			{ title: "Doc", content: "match", score: 0.9 },
+			{ title: "Doc", content: "noise", score: 0.1 },
 		]);
 		await expect(service.retrieve("a-1", "question")).resolves.toEqual([
 			{ title: "Doc", content: "match", score: 0.9 },

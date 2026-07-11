@@ -1,3 +1,49 @@
+# Correction M9 — suite vérification code (2026-07-11)
+
+Vérification code vs docs `plans/2026-07-09-m9-embeddings-rag.md` + compte-rendu.
+Conforme globalement (tests M9 : 5 suites, 29 pass). Écarts à corriger :
+
+## Checklist correction
+
+- [x] 1. `KnowledgeIndexService.indexDocument` : UPDATE vecteurs batché en un seul
+      `UPDATE ... FROM (VALUES ...)` — plus de risque timeout transaction.
+- [x] 2. Seuil de similarité cosine `MIN_RETRIEVAL_SCORE = 0.3` dans `retrieve` ;
+      chunks sous le seuil exclus → fallback keyword.
+- [ ] 3. Documenter/aligner la limite : PDF 200k chars extraits mais ~100k indexés en vecteur
+      (100 chunks max). Soit relever `MAX_KNOWLEDGE_CHUNKS` avec batching embed, soit noter
+      la limite dans le compte-rendu.
+- [ ] 4. Incohérence tailles : DTO texte 20k vs PDF 200k via le même `add()` — borner ou
+      documenter explicitement le chemin PDF.
+- [ ] 5. `KnowledgeIndexService.removeDocument` jamais appelé (cascade DB couvre) : supprimer
+      ou brancher dans `AgentKnowledgeService.remove` pour cohérence explicite.
+- [ ] 6. Plan M9 : cocher le dernier item Lot 5 (commit/merge/push) si livré, sinon livrer.
+- [x] Tests + lint + build après corrections (jest knowledge-index 6/6, biome OK,
+      erreurs tsc préexistantes sur main non liées).
+
+Priorité : 1 et 2 (comportement), 3–6 (hygiène/doc).
+
+---
+
+# Milestone 10 — Intégration MCP chat
+
+## Lot ToolRegistry / SendMessage
+
+- [x] Identifier et injecter optionnellement le port MCP sans modifier les providers.
+- [x] Rendre la préparation du catalogue asynchrone et figée par message.
+- [x] Router les exécutions built-in et MCP via le catalogue préparé, quota commun inclus.
+- [x] Ajouter les tests de régression registry et use case.
+- [x] Lancer les tests ciblés et le build backend.
+
+## Review
+
+- `MCP_TOOL_PORT` reste optionnel : le chat fonctionne sans module MCP/provider enregistré.
+- Catalogue préparé une seule fois par message, définitions gelées et exécuteurs capturés.
+- Quota commun vérifié avant toute tentative built-in ou MCP.
+- Tests ciblés : 2 suites, 34 tests OK.
+- Build backend : OK ; Biome ciblé : aucune erreur (warnings préexistants dans les specs).
+
+---
+
 # Milestone 9 — Embeddings et RAG
 
 Date : 2026-07-09

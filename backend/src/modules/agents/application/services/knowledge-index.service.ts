@@ -11,6 +11,9 @@ export interface RetrievedKnowledgeChunk {
 	score: number;
 }
 
+/** Below this cosine similarity, chunks are considered irrelevant; keyword fallback applies. */
+const MIN_RETRIEVAL_SCORE = 0.3;
+
 @Injectable()
 export class KnowledgeIndexService {
 	private readonly logger = new Logger(KnowledgeIndexService.name);
@@ -42,15 +45,18 @@ export class KnowledgeIndexService {
 			if (records.length === 0) return;
 			await tx.agentKnowledgeChunk.createMany({ data: records });
 			if (!vectors) return;
-			for (let index = 0; index < records.length; index++) {
+			const rows = records.flatMap((record, index) => {
 				const vector = vectors[index];
-				if (!vector) continue;
-				await tx.$executeRaw(
-					Prisma.sql`UPDATE "agent_knowledge_chunks"
-					SET "embedding" = ${this.vectorLiteral(vector)}::vector
-					WHERE "id" = ${records[index]?.id}`,
-				);
-			}
+				return vector ? [Prisma.sql`(${record.id}, ${this.vectorLiteral(vector)}::vector)`] : [];
+			});
+			if (rows.length === 0) return;
+			// Single batched statement keeps the interactive transaction well under Prisma's timeout.
+			await tx.$executeRaw(
+				Prisma.sql`UPDATE "agent_knowledge_chunks" AS c
+				SET "embedding" = v."embedding"
+				FROM (VALUES ${Prisma.join(rows)}) AS v("id", "embedding")
+				WHERE c."id" = v."id"`,
+			);
 		});
 	}
 
@@ -69,7 +75,7 @@ export class KnowledgeIndexService {
 
 		try {
 			const safeLimit = Math.min(Math.max(limit, 1), 10);
-			return await this.prisma.$queryRaw<RetrievedKnowledgeChunk[]>(
+			const results = await this.prisma.$queryRaw<RetrievedKnowledgeChunk[]>(
 				Prisma.sql`SELECT c."content", k."title",
 					(1 - (c."embedding" <=> ${this.vectorLiteral(queryVector)}::vector))::float AS "score"
 				FROM "agent_knowledge_chunks" c
@@ -78,6 +84,7 @@ export class KnowledgeIndexService {
 				ORDER BY c."embedding" <=> ${this.vectorLiteral(queryVector)}::vector
 				LIMIT ${safeLimit}`,
 			);
+			return results.filter((chunk) => chunk.score >= MIN_RETRIEVAL_SCORE);
 		} catch (error) {
 			this.logger.warn(
 				`Vector retrieval unavailable for agent=${agentId}; keyword fallback enabled: ${error instanceof Error ? error.message : "unknown"}`,
