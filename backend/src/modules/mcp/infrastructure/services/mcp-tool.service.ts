@@ -28,6 +28,7 @@ export class McpToolService implements McpToolPort {
 
 	async prepareTools(agentId: string): Promise<PreparedMcpTool[]> {
 		const servers = await this.repository.findByAgent(agentId);
+		const usedAliases = new Set<string>();
 		return servers
 			.filter((server) => server.reviewStatus === "APPROVED" && server.isActive)
 			.flatMap((server) =>
@@ -35,7 +36,7 @@ export class McpToolService implements McpToolPort {
 					.filter((tool) => tool.isSelected)
 					.map((tool) => ({
 						definition: {
-							name: this.alias(server.id, tool.name),
+							name: this.alias(server.id, tool.name, usedAliases),
 							description: tool.description ?? `MCP tool ${tool.name}`,
 							inputSchema: this.objectSchema(tool.inputSchema),
 						},
@@ -61,12 +62,17 @@ export class McpToolService implements McpToolPort {
 		return this.boundResult(result);
 	}
 
-	private alias(serverId: string, toolName: string): string {
+	/** Deterministic per prepare(): tools are sorted by name; collisions get a numeric suffix. */
+	private alias(serverId: string, toolName: string, used: Set<string>): string {
 		const safeToolName = toolName
 			.toLowerCase()
 			.replace(/[^a-z0-9_]/g, "_")
 			.slice(0, 36);
-		return `mcp_${serverId.replace(/-/g, "").slice(0, 12)}_${safeToolName}`;
+		const base = `mcp_${serverId.replace(/-/g, "").slice(0, 12)}_${safeToolName}`;
+		let alias = base;
+		for (let index = 2; used.has(alias); index++) alias = `${base}_${index}`;
+		used.add(alias);
+		return alias;
 	}
 
 	private objectSchema(schema: unknown): Record<string, unknown> {

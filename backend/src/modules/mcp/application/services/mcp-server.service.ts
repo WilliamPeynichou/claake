@@ -44,13 +44,12 @@ export class McpServerService {
 
 	async create(agentId: string, actor: McpActor, dto: CreateMcpServerDto) {
 		await this.assertCanManageAgent(agentId, actor);
+		const credentialsEncrypted = this.encryptedAuth(dto.auth);
 		const server = await this.repository.create({
 			agentId,
 			name: dto.name.trim(),
 			url: dto.url,
-			credentialsEncrypted: dto.auth
-				? this.encryption.encrypt(JSON.stringify(this.authHeaders(dto.auth)))
-				: undefined,
+			...(credentialsEncrypted ? { credentialsEncrypted } : {}),
 		});
 		return this.response(server);
 	}
@@ -61,16 +60,15 @@ export class McpServerService {
 			throw new BadRequestException("Le serveur MCP doit être approuvé avant activation.");
 		}
 		const invalidatesApproval = dto.url !== undefined || dto.auth !== undefined;
-		if (invalidatesApproval && current.reviewStatus === "APPROVED") {
+		// PENDING included: a submitted server must not keep its review slot after URL/auth change.
+		if (invalidatesApproval && current.reviewStatus !== "DRAFT") {
 			await this.repository.setReview(id, { status: "DRAFT", reason: null });
 		}
 		return this.response(
 			await this.repository.update(id, {
 				name: dto.name?.trim(),
 				url: dto.url,
-				credentialsEncrypted: dto.auth
-					? this.encryption.encrypt(JSON.stringify(this.authHeaders(dto.auth)))
-					: undefined,
+				credentialsEncrypted: dto.auth === undefined ? undefined : this.encryptedAuth(dto.auth),
 				isActive: invalidatesApproval ? false : dto.enabled,
 			}),
 		);
@@ -166,9 +164,21 @@ export class McpServerService {
 		return { headers: JSON.parse(this.encryption.decrypt(server.credentialsEncrypted)) };
 	}
 
+	/** Returns null when no headers to store, so `auth: {type:"NONE"}` clears credentials. */
+	private encryptedAuth(auth: CreateMcpServerDto["auth"]): string | null {
+		const headers = this.authHeaders(auth);
+		return headers ? this.encryption.encrypt(JSON.stringify(headers)) : null;
+	}
+
 	private authHeaders(auth: CreateMcpServerDto["auth"]): Record<string, string> | undefined {
 		if (!auth || auth.type === "NONE") return undefined;
-		if (auth.type === "BEARER") return { Authorization: `Bearer ${auth.token}` };
+		if (auth.type === "BEARER") {
+			if (!auth.token) throw new BadRequestException("Un token bearer est requis.");
+			return { Authorization: `Bearer ${auth.token}` };
+		}
+		if (!auth.header || !auth.value) {
+			throw new BadRequestException("Header et valeur sont requis pour l'auth API_KEY.");
+		}
 		return { [auth.header]: auth.value };
 	}
 

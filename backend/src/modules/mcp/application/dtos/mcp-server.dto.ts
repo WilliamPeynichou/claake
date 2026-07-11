@@ -1,12 +1,37 @@
+import { Type } from "class-transformer";
 import {
 	IsBoolean,
-	IsObject,
+	IsIn,
 	IsOptional,
 	IsString,
 	IsUrl,
 	MaxLength,
 	MinLength,
+	ValidateNested,
 } from "class-validator";
+
+export class McpAuthDto {
+	@IsIn(["NONE", "BEARER", "API_KEY"])
+	type!: "NONE" | "BEARER" | "API_KEY";
+
+	@IsOptional()
+	@IsString()
+	@MinLength(1)
+	@MaxLength(4096)
+	token?: string;
+
+	@IsOptional()
+	@IsString()
+	@MinLength(1)
+	@MaxLength(128)
+	header?: string;
+
+	@IsOptional()
+	@IsString()
+	@MinLength(1)
+	@MaxLength(4096)
+	value?: string;
+}
 
 export class CreateMcpServerDto {
 	@IsString()
@@ -19,11 +44,9 @@ export class CreateMcpServerDto {
 	url!: string;
 
 	@IsOptional()
-	@IsObject()
-	auth?:
-		| { type: "NONE" }
-		| { type: "BEARER"; token: string }
-		| { type: "API_KEY"; header: string; value: string };
+	@ValidateNested()
+	@Type(() => McpAuthDto)
+	auth?: McpAuthDto;
 }
 
 export class UpdateMcpServerDto {
@@ -39,11 +62,9 @@ export class UpdateMcpServerDto {
 	url?: string;
 
 	@IsOptional()
-	@IsObject()
-	auth?:
-		| { type: "NONE" }
-		| { type: "BEARER"; token: string }
-		| { type: "API_KEY"; header: string; value: string };
+	@ValidateNested()
+	@Type(() => McpAuthDto)
+	auth?: McpAuthDto;
 
 	@IsOptional()
 	@IsBoolean()

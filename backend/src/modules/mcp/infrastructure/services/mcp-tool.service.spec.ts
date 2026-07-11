@@ -23,6 +23,23 @@ describe("McpToolService", () => {
 		expect(prepared[0]?.definition.name).toBe("mcp_server1_search");
 	});
 
+	it("deduplicates aliases when sanitized tool names collide", async () => {
+		repository.findByAgent.mockResolvedValue([
+			server({
+				tools: [
+					tool({ id: "tool-1", name: "a".repeat(40), isSelected: true }),
+					tool({ id: "tool-2", name: `${"a".repeat(38)}bc`, isSelected: true }),
+				],
+			}),
+		]);
+
+		const prepared = await service.prepareTools("agent-1");
+		const names = prepared.map((item) => item.definition.name);
+
+		expect(new Set(names).size).toBe(2);
+		expect(names[1]).toBe(`${names[0]}_2`);
+	});
+
 	it("revalidates server state before call and never calls revoked tools", async () => {
 		const active = server({ tools: [tool({ isSelected: true })] });
 		repository.findByAgent.mockResolvedValue([active]);
