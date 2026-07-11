@@ -30,29 +30,33 @@ Branche : `feature/m9-embeddings-rag`
   de contrat M8.
 - Contexte final toujours plafonné à 6000 caractères.
 
-### PDF
+### PDF et OCR
 
-- `pdf-parse` côté backend.
+- `pdf-parse` côté backend, extraction locale prioritaire.
 - Endpoint multipart owner/admin `POST /agents/:id/knowledge/pdf`, 10 Mo, throttle 5/min.
-- Validation signature/MIME PDF via le validator upload existant, refus contenu actif,
-  extraction texte bornée à 200k caractères, erreur OCR actionnable.
+- Validation signature/MIME PDF via validator upload existant, refus contenu actif.
+- Extraction bornée à 200k caractères.
+- PDF image-only : fallback `mistral-ocr-latest`, timeout 30 s, clé serveur
+  `MISTRAL_API_KEY` optionnelle.
 - API shared `knowledge.createFromPdf()` + import PDF dans `KnowledgeManager` web.
 
 ## Vérifications
 
 - Prisma generate : OK.
 - Tests ciblés M9 : 5 suites, 26 tests.
-- Backend complet : 38 suites, 231 tests.
+- Backend complet : 38 suites, 234 tests.
+- Tests OCR ciblés : 5/5.
 - Backend e2e : 1/1.
 - Biome : 0 erreur (warnings repo préexistants).
 - Builds API, web, desktop : OK.
 
 ## Sécurité / limites
 
-- Clé embeddings uniquement serveur, jamais loggée.
+- Clés embeddings et OCR uniquement serveur, jamais loggées.
+- Appel OCR uniquement quand extraction locale ne retourne aucun texte.
+- Échec ou absence de configuration OCR produit une erreur utilisateur bornée et explicite.
 - SQL vectoriel paramétré via `Prisma.sql`; limite bornée 1..10.
 - Pas d'échec chat si embeddings indisponibles.
-- PDF image-only nécessite OCR : hors M9 V1.
 - Index IVFFlat différé : à créer après volume réel et tuning lists/probes.
 - Coût embeddings actuellement clé plateforme (`OPENAI_EMBEDDING_API_KEY`) ; imputation
   créateur/utilisateur avancée reportée après mesure d'usage.

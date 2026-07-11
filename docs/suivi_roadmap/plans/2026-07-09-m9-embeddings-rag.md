@@ -51,7 +51,7 @@ Ajouter ingestion PDF créateur vers la knowledge base.
 ### Lot 4 — Ingestion PDF
 
 - [x] Endpoint owner/admin pour créer un document knowledge depuis un PDF uploadé et validé.
-- [x] Extraction texte PDF bornée ; erreur actionnable si PDF sans texte.
+- [x] Extraction texte PDF bornée ; fallback Mistral OCR pour PDF sans texte.
 - [x] Client partagé + UI créateur minimale.
 
 ### Lot 5 — Tests/docs/livraison

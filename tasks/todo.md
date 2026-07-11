@@ -23,9 +23,19 @@ knowledge texte/PDF
 - [x] Indexation création/update + réindexation documents M6 existants.
 - [x] Retrieval cosine top-k + fallback keyword automatique.
 - [x] Import PDF backend validé/borné + shared client + UI web.
+- [x] Fallback Mistral OCR (`mistral-ocr-latest`) pour les PDF sans texte extractible.
+- [x] Tests ciblés du fallback OCR et de ses erreurs de configuration/fournisseur.
 - [x] Tests ciblés et suite complète.
 - [x] Lint + builds API/web/desktop.
 - [x] Plan, compte-rendu, README suivi et roadmap mis à jour.
+
+## Extension OCR Mistral
+
+1. Conserver `pdf-parse` comme chemin principal pour les PDF texte.
+2. Appeler Mistral OCR uniquement lorsque l'extraction locale est vide.
+3. Borner la durée de l'appel et normaliser/limiter le texte OCR comme le texte local.
+4. Retourner des erreurs utilisateur explicites si la clé manque ou si le fournisseur échoue.
+5. Couvrir le chemin local, le fallback OCR et les erreurs par des tests unitaires.
 
 ## Vérifications
 
@@ -35,8 +45,18 @@ knowledge texte/PDF
 - Builds API/web/desktop : OK.
 - Prisma generate : OK.
 
+## Review OCR Mistral
+
+- Extraction locale conservée en priorité ; aucun appel OCR pour un PDF texte.
+- PDF image envoyé en base64 à `POST /v1/ocr` avec `mistral-ocr-latest`.
+- Timeout de 30 secondes, texte normalisé et borné à 200 000 caractères.
+- Configuration ajoutée : `MISTRAL_API_KEY` dans `backend/.env.example`.
+- Tests ciblés : 5/5 OK.
+- Suite backend : 38 suites, 234 tests OK.
+- Build backend : OK.
+- Biome ciblé : OK ; lint global : 0 erreur, 161 warnings préexistants.
+
 ## Dette explicite
 
-- OCR PDF image-only.
 - Index vectoriel IVFFlat/HNSW à tuner après volume réel.
 - Imputation avancée coûts embeddings créateur/utilisateur.
