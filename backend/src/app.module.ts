@@ -10,6 +10,7 @@ import { CategoryModule } from "./modules/categories/category.module.js";
 import { ChatModule } from "./modules/chat/chat.module.js";
 import { FavoriteModule } from "./modules/favorites/favorite.module.js";
 import { HealthModule } from "./modules/health/health.module.js";
+import { McpModule } from "./modules/mcp/mcp.module.js";
 import { NotificationModule } from "./modules/notifications/notification.module.js";
 import { PaymentModule } from "./modules/payments/payment.module.js";
 import { ReviewModule } from "./modules/reviews/review.module.js";
@@ -64,6 +65,7 @@ function validateEnv(config: Record<string, unknown>) {
 		ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
 		PrismaModule,
 		HealthModule,
+		McpModule,
 		ActivityModule,
 		AgentModule,
 		CategoryModule,

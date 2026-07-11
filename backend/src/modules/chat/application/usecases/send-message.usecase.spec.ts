@@ -52,6 +52,7 @@ const mockObservability = {
 const mockToolRegistry = {
 	getDefinitions: jest.fn().mockReturnValue([]),
 	execute: jest.fn(),
+	prepare: jest.fn(),
 };
 
 function makeSession(
@@ -150,6 +151,11 @@ describe("SendMessageUseCase", () => {
 		useCase = module.get(SendMessageUseCase);
 		jest.clearAllMocks();
 
+		mockToolRegistry.prepare.mockImplementation(async (_agent, context) => ({
+			definitions: mockToolRegistry.getDefinitions(),
+			execute: (name: string, input: unknown, callIndex: number) =>
+				mockToolRegistry.execute(name, input, context, callIndex),
+		}));
 		mockProvider.streamText.mockReturnValue(mockStream());
 		delete (mockProvider as any).streamEvents;
 		mockStrategyResolver.resolve.mockResolvedValue({ provider: mockProvider, extraParams: {} });
@@ -430,6 +436,10 @@ describe("SendMessageUseCase", () => {
 		const events = [];
 		for await (const event of result.stream) events.push(event);
 
+		expect(mockToolRegistry.prepare).toHaveBeenCalledWith(
+			expect.objectContaining({ id: "agent-1" }),
+			expect.objectContaining({ userId: "user-1", sessionId: "session-1" }),
+		);
 		expect(mockToolRegistry.execute).toHaveBeenCalledWith(
 			"current_datetime",
 			{},

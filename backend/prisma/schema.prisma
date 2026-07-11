@@ -98,6 +98,14 @@ enum UploadedFileType {
   DOCUMENT
 }
 
+enum McpReviewStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
 // ─── Users & Teams ──────────────────────────────────────────────────────────
 
 model User {
@@ -217,6 +225,7 @@ model Agent {
   uploadedFiles    UploadedFile[]
   knowledge        AgentKnowledge[]
   knowledgeChunks AgentKnowledgeChunk[]
+  mcpServers      McpServer[]
 
   @@index([slug])
   @@index([creatorId])
@@ -241,6 +250,46 @@ model AgentVersion {
   @@unique([agentId, version])
   @@index([agentId])
   @@map("agent_versions")
+}
+
+model McpServer {
+  id                   String          @id @default(uuid())
+  agentId              String          @map("agent_id")
+  name                 String
+  url                  String
+  credentialsEncrypted String?         @map("credentials_encrypted")
+  reviewStatus         McpReviewStatus @default(DRAFT) @map("review_status")
+  reviewReason         String?         @map("review_reason")
+  isActive             Boolean         @default(false) @map("is_active")
+  submittedAt          DateTime?       @map("submitted_at")
+  reviewedAt           DateTime?       @map("reviewed_at")
+  reviewedBy           String?         @map("reviewed_by")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  agent Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tools McpTool[]
+
+  @@index([agentId])
+  @@index([reviewStatus, submittedAt])
+  @@map("mcp_servers")
+}
+
+model McpTool {
+  id          String   @id @default(uuid())
+  serverId    String   @map("server_id")
+  name        String
+  description String?
+  inputSchema Json     @map("input_schema")
+  isSelected  Boolean  @default(false) @map("is_selected")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  server McpServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@unique([serverId, name])
+  @@index([serverId, isSelected])
+  @@map("mcp_tools")
 }
 
 // ─── Commerce (Acheteur / Vendeur) ──────────────────────────────────────────

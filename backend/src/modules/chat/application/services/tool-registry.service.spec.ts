@@ -19,6 +19,60 @@ describe("ToolRegistryService", () => {
 		jest.restoreAllMocks();
 	});
 
+	it("prépare un catalogue figé built-in et MCP pour tout le message", async () => {
+		const mcpExecute = jest.fn().mockResolvedValue({ ok: true });
+		const mcpPort = {
+			prepareTools: jest.fn().mockResolvedValue([
+				{
+					definition: {
+						name: "mcp_server_search",
+						description: "Recherche MCP",
+						inputSchema: { type: "object" },
+					},
+					execute: mcpExecute,
+				},
+			]),
+		};
+		service = new ToolRegistryService(knowledgeService as any, mcpPort);
+		const agent = makeAgent([{ name: "current_datetime", enabled: true }]);
+		const catalogue = await service.prepare(agent, makeContext(agent));
+
+		agent.tools.length = 0;
+		expect(Object.isFrozen(catalogue)).toBe(true);
+		expect(Object.isFrozen(catalogue.definitions)).toBe(true);
+		expect(catalogue.definitions.map((tool) => tool.name)).toEqual([
+			"current_datetime",
+			"mcp_server_search",
+		]);
+		await expect(catalogue.execute("current_datetime", {}, 0)).resolves.toMatchObject({
+			iso: "2026-07-09T12:00:00.000Z",
+		});
+		await expect(catalogue.execute("mcp_server_search", { query: "x" }, 1)).resolves.toEqual({
+			ok: true,
+		});
+		expect(mcpExecute).toHaveBeenCalledWith({ query: "x" });
+		expect(mcpPort.prepareTools).toHaveBeenCalledTimes(1);
+	});
+
+	it("applique le quota commun avant une tentative MCP", async () => {
+		const mcpExecute = jest.fn();
+		const agent = makeAgent([]);
+		service = new ToolRegistryService(knowledgeService as any, {
+			prepareTools: jest.fn().mockResolvedValue([
+				{
+					definition: { name: "mcp_tool", description: "MCP", inputSchema: {} },
+					execute: mcpExecute,
+				},
+			]),
+		});
+		const catalogue = await service.prepare(agent, makeContext(agent));
+
+		await expect(catalogue.execute("mcp_tool", {}, 5)).rejects.toThrow(
+			"Tool call quota exceeded for this message",
+		);
+		expect(mcpExecute).not.toHaveBeenCalled();
+	});
+
 	it("exposes enabled tool definitions only", () => {
 		const definitions = service.getDefinitions(
 			makeAgent([

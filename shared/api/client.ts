@@ -17,6 +17,14 @@ import type {
 	UserProfile,
 	ValidationResult,
 } from "../types";
+import type {
+	CreateMcpServerInput,
+	McpReviewDecision,
+	McpReviewItem,
+	McpServer,
+	SelectMcpToolsInput,
+	UpdateMcpServerInput,
+} from "../types/mcp";
 
 export interface AgentListResponse {
 	agents: Agent[];
@@ -229,6 +237,58 @@ export function createApiClient(baseUrl: string) {
 					`/agents/${agentId}/unpublish`,
 					withAuth(token, { method: "PATCH" }),
 				),
+			mcp: {
+				list: (agentId: string, token: string) =>
+					fetchJson<McpServer[]>(`/agents/${agentId}/mcp`, withAuth(token)),
+				create: (agentId: string, input: CreateMcpServerInput, token: string) =>
+					fetchJson<McpServer>(
+						`/agents/${agentId}/mcp`,
+						withAuth(token, { method: "POST", body: JSON.stringify(input) }),
+					),
+				update: (agentId: string, serverId: string, input: UpdateMcpServerInput, token: string) =>
+					fetchJson<McpServer>(
+						`/agents/${agentId}/mcp/${serverId}`,
+						withAuth(token, { method: "PATCH", body: JSON.stringify(input) }),
+					),
+				delete: (agentId: string, serverId: string, token: string) =>
+					fetchJson<{ deleted: boolean }>(
+						`/agents/${agentId}/mcp/${serverId}`,
+						withAuth(token, { method: "DELETE" }),
+					),
+				discover: (agentId: string, serverId: string, token: string) =>
+					fetchJson<McpServer>(
+						`/agents/${agentId}/mcp/${serverId}/discover`,
+						withAuth(token, { method: "POST" }),
+					),
+				selectTools: (
+					agentId: string,
+					serverId: string,
+					input: SelectMcpToolsInput,
+					token: string,
+				) =>
+					fetchJson<McpServer>(
+						`/agents/${agentId}/mcp/${serverId}/tools`,
+						withAuth(token, { method: "PATCH", body: JSON.stringify(input) }),
+					),
+				submit: (agentId: string, serverId: string, token: string) =>
+					fetchJson<McpServer>(
+						`/agents/${agentId}/mcp/${serverId}/submit`,
+						withAuth(token, { method: "POST" }),
+					),
+			},
+		},
+		admin: {
+			mcp: {
+				list: (token: string) => fetchJson<McpReviewItem[]>("/admin/mcp/pending", withAuth(token)),
+				review: (serverId: string, decision: McpReviewDecision, token: string, reason?: string) =>
+					fetchJson<McpServer>(
+						`/admin/mcp/${serverId}/review`,
+						withAuth(token, {
+							method: "PATCH",
+							body: JSON.stringify({ decision, reason }),
+						}),
+					),
+			},
 		},
 		categories: {
 			list: () => fetchJson<AgentCategory[]>("/categories"),

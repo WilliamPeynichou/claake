@@ -16,6 +16,7 @@ import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { uploadAgentConfigFile, uploadAgentImage } from "@/lib/supabase/storage";
 import { KnowledgeManager } from "../knowledge";
+import { McpManager } from "../mcp/mcp-manager";
 import { useAgentBuilderForm } from "./agent-builder.reducer";
 import type { SetField } from "./agent-builder.types";
 import { agentToForm } from "./lib/agent-to-form";
@@ -312,6 +313,12 @@ export function EditAgentFlow() {
 					<div className="space-y-4">
 						<h3 className="text-lg font-semibold">Base de connaissances</h3>
 						{token && <KnowledgeManager agentId={id} token={token} />}
+					</div>
+
+					<Separator />
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold">Serveurs MCP</h3>
+						{token && <McpManager agentId={id} token={token} />}
 					</div>
 
 					<Separator />

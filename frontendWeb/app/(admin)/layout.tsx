@@ -7,6 +7,7 @@ import {
 	Flag,
 	LayoutDashboard,
 	ShieldCheck,
+	Unplug,
 	UserCog,
 	Users,
 } from "lucide-react";
@@ -18,6 +19,7 @@ const adminLinks = [
 	{ href: "/admin", label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/admin/agents", label: "Agents", icon: Bot },
 	{ href: "/admin/review", label: "File de revue", icon: ShieldCheck },
+	{ href: "/admin/mcp", label: "Revue MCP", icon: Unplug },
 	{ href: "/admin/users", label: "Utilisateurs", icon: Users },
 	{ href: "/admin/stats", label: "Statistiques", icon: BarChart3 },
 	{ href: "/admin/activity", label: "Activité", icon: Activity },

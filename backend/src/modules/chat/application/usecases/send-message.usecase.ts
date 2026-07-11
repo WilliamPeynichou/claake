@@ -147,18 +147,14 @@ export class SendMessageUseCase {
 			contentLength: content.length,
 			attachmentCount: attachments.length,
 		});
+		const preparedTools = await this.toolRegistry.prepare(agent, { agent, userId, sessionId });
 		// Backend-owned tool executor: quotas and security enforced here, providers
 		// only orchestrate the model loop and feed results back.
 		let toolCallCount = 0;
 		const executeTool = async (call: { id: string; name: string; input: unknown }) => {
-			const output = await this.toolRegistry.execute(
-				call.name,
-				call.input,
-				{ agent, userId, sessionId },
-				toolCallCount,
-			);
+			const callIndex = toolCallCount;
 			toolCallCount += 1;
-			return output;
+			return preparedTools.execute(call.name, call.input, callIndex);
 		};
 
 		const streamInput = {
@@ -167,7 +163,7 @@ export class SendMessageUseCase {
 			messages: formattedHistory,
 			maxTokens: 4096,
 			attachments: attachments.length > 0 ? attachments : undefined,
-			tools: this.toolRegistry.getDefinitions(agent),
+			tools: preparedTools.definitions,
 			executeTool,
 			...extraParams,
 		};
