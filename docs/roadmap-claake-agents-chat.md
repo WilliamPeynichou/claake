@@ -1421,6 +1421,22 @@ Livrable :
 - étape builder "Compétences" ;
 - skills publiques avec review admin — marketplace de skills.
 
+## Milestone 12 — Consolidation post-audit et Skills V2
+
+Réf : `docs/suivi_roadmap/plans/2026-07-11-m12-consolidation-skills-v2.md`
+
+Livrable :
+
+- Skills V2 : injection contextuelle des ressources skills dans le chat
+  (déclencheurs V1, embeddings M9 V2), bibliothèque n-n partagée entre agents,
+  validation des dépendances tools M8/MCP M10 ;
+- dettes M9 : couverture vectorielle des PDF longs (>100 chunks), alignement
+  des bornes texte/PDF, suppression du code mort, index IVFFlat après volume ;
+- dettes M10 : quota MCP dédié + circuit breaker, e2e serveur MCP live sur staging ;
+- environnement staging/Supabase test — prérequis beta réelle ;
+- dettes UI : suspension agents publiés (M3), code-split desktop (M4),
+  builder tools graphique et persistance tool events (M8).
+
 ---
 
 # Les 10 prochaines features à développer

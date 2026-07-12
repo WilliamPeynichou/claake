@@ -52,6 +52,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-09-m9-embeddings-rag.md` — Plan M9 embeddings/RAG. **✅ V1 réalisé.**
 - `plans/2026-07-11-m10-mcp.md` — Plan M10 MCP. **✅ V1 réalisée.**
 - `plans/2026-07-11-m11-skills-markdown-resources.md` — Plan M11 import de ressources Markdown. **✅ V1 réalisée.**
+- `plans/2026-07-11-m12-consolidation-skills-v2.md` — Plan M12 consolidation post-audit + Skills V2. **⏳ À faire.**
 
 ## État des milestones
 
@@ -69,5 +70,6 @@ plans/AAAA-MM-JJ-sujet.md
 | 9 — Embeddings et RAG | ✅ 100% fonctionnel V1 | pgvector, chunking, embeddings optionnels, PDF, retrieval vectoriel + fallback keyword |
 | 10 — MCP | ✅ 100% fonctionnel V1 | Serveurs MCP Streamable HTTP, credentials AES-256-GCM write-only, découverte/sélection, review admin, ToolRegistry figé et UI web |
 | 11 — Skills | ✅ 100% fonctionnel V1 | Skills par agent, import fichier/dossier Markdown strict et ressources persistées ; injection contextuelle, marketplace et review admin V2 |
+| 12 — Consolidation + Skills V2 | ⏳ 0% planifié | Injection contextuelle skills, partage n-n, dettes audits M9/M10, staging, dettes UI M3/M4/M8 |
 
-Prochain verrou recommandé : **Skills V2** (injection, partage, marketplace/review), puis env staging/Supabase test pour ouverture beta réelle.
+Prochain verrou recommandé : **M12 Lot 1** (injection contextuelle skills), puis staging/Supabase test pour ouverture beta réelle.
