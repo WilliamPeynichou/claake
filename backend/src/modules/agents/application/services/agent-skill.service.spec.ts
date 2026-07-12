@@ -6,6 +6,7 @@ function makePrisma(overrides: Record<string, unknown> = {}) {
 	return {
 		agent: { findUnique: jest.fn().mockResolvedValue({ creatorId: "creator-1" }) },
 		agentSkill: {
+			count: jest.fn().mockResolvedValue(0),
 			create: jest.fn().mockImplementation(({ data }) =>
 				Promise.resolve({
 					id: "skill-1",
@@ -80,6 +81,20 @@ describe("AgentSkillService", () => {
 				{ userId: "creator-1" },
 				{ name: "Test", description: "d".repeat(2001) },
 			),
+		).rejects.toBeInstanceOf(BadRequestException);
+	});
+
+	it("rejects creation and import once the per-agent skill quota is reached", async () => {
+		const prisma = makePrisma();
+		(prisma.agentSkill.count as jest.Mock).mockResolvedValue(20);
+		const service = new AgentSkillService(prisma);
+		await expect(
+			service.create("agent-1", { userId: "creator-1" }, { name: "Test" }),
+		).rejects.toBeInstanceOf(BadRequestException);
+		await expect(
+			service.importMarkdown("agent-1", { userId: "creator-1" }, { name: "Test" }, [
+				file("README.md"),
+			]),
 		).rejects.toBeInstanceOf(BadRequestException);
 	});
 

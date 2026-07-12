@@ -14,6 +14,7 @@ type Actor = { userId: string; role?: string };
 type MarkdownFile = Pick<Express.Multer.File, "buffer" | "mimetype" | "originalname" | "size">;
 
 const MAX_SKILL_DESCRIPTION_CHARS = 2000;
+const MAX_SKILLS_PER_AGENT = 20;
 
 export interface AgentSkillResourceItem {
 	id: string;
@@ -53,6 +54,7 @@ export class AgentSkillService {
 	): Promise<AgentSkillItem> {
 		await this.assertCanManage(agentId, actor);
 		const name = this.validateName(input.name);
+		await this.assertSkillQuota(agentId);
 		const skill = await this.prisma.agentSkill.create({
 			data: { agentId, name, description: this.validateDescription(input.description) },
 			include: { resources: { orderBy: { path: "asc" } } },
@@ -68,6 +70,7 @@ export class AgentSkillService {
 	): Promise<AgentSkillItem> {
 		await this.assertCanManage(agentId, actor);
 		const name = this.validateName(input.name);
+		await this.assertSkillQuota(agentId);
 		if (!files?.length) throw new BadRequestException("Aucun fichier Markdown fourni.");
 		if (files.length > MAX_RESOURCES_PER_IMPORT) {
 			throw new BadRequestException(`Maximum ${MAX_RESOURCES_PER_IMPORT} fichiers par import.`);
@@ -96,6 +99,15 @@ export class AgentSkillService {
 		const skill = await this.prisma.agentSkill.findUnique({ where: { id: skillId } });
 		if (!skill || skill.agentId !== agentId) throw new NotFoundException("Skill introuvable.");
 		await this.prisma.agentSkill.delete({ where: { id: skillId } });
+	}
+
+	private async assertSkillQuota(agentId: string): Promise<void> {
+		const count = await this.prisma.agentSkill.count({ where: { agentId } });
+		if (count >= MAX_SKILLS_PER_AGENT) {
+			throw new BadRequestException(
+				`Un agent est limité à ${MAX_SKILLS_PER_AGENT} skills. Supprimez-en un avant d'en ajouter.`,
+			);
+		}
 	}
 
 	private validateName(name: string): string {
