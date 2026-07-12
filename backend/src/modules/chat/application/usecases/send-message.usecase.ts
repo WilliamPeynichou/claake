@@ -26,6 +26,27 @@ import {
 } from "../services/execution-strategy.resolver.js";
 import { ToolRegistryService } from "../services/tool-registry.service.js";
 
+const MAX_PERSISTED_TOOL_EVENTS = 10;
+const MAX_PERSISTED_TOOL_CHARS = 2000;
+
+/** Bounded, serializable snapshot of a tool call for message history. */
+function toPersistedToolEvent(event: ProviderStreamEvent): Record<string, unknown> | null {
+	if (event.type !== "tool_call" && event.type !== "tool_result") return null;
+	const payload = event.type === "tool_call" ? event.input : event.output;
+	let serialized: string;
+	try {
+		serialized = JSON.stringify(payload) ?? "null";
+	} catch {
+		serialized = "[unserializable]";
+	}
+	return {
+		type: event.type,
+		id: event.id,
+		name: event.name,
+		payload: serialized.slice(0, MAX_PERSISTED_TOOL_CHARS),
+	};
+}
+
 function buildQualitySystemPrompt(
 	agent: NonNullable<Awaited<ReturnType<AgentRepositoryPort["findById"]>>>,
 	knowledgeContext?: string | null,
@@ -178,17 +199,29 @@ export class SendMessageUseCase {
 			? provider.streamEvents(streamInput)
 			: this.textToEvents(provider.streamText(streamInput));
 
-		const stream = this.observeProviderStream(providerStream, {
-			sessionId,
-			agent,
-			userId,
-			provider: providerName,
-			model,
-			startedAt,
-		});
+		const toolEvents: Record<string, unknown>[] = [];
+		const stream = this.observeProviderStream(
+			providerStream,
+			{
+				sessionId,
+				agent,
+				userId,
+				provider: providerName,
+				model,
+				startedAt,
+			},
+			toolEvents,
+		);
 
 		const onComplete = async (fullText: string): Promise<ChatMessageEntity> => {
-			const message = await this.chatRepo.addMessage(sessionId, "ASSISTANT", fullText);
+			const message = await this.chatRepo.addMessage(
+				sessionId,
+				"ASSISTANT",
+				fullText,
+				"TEXT",
+				null,
+				toolEvents.length > 0 ? { toolEvents } : null,
+			);
 			this.observability.recordAssistantMessageSaved({
 				sessionId,
 				agentId: agent.id,
@@ -214,6 +247,7 @@ export class SendMessageUseCase {
 			model: string;
 			startedAt: number;
 		},
+		toolEvents?: Record<string, unknown>[],
 	): AsyncIterable<ProviderStreamEvent> {
 		let outputLength = 0;
 		try {
@@ -223,6 +257,10 @@ export class SendMessageUseCase {
 				}
 				// tool_call/tool_result are emitted by the provider loop itself;
 				// execution already happened backend-side via the executeTool callback.
+				if (toolEvents && toolEvents.length < MAX_PERSISTED_TOOL_EVENTS) {
+					const persisted = toPersistedToolEvent(event);
+					if (persisted) toolEvents.push(persisted);
+				}
 				yield event;
 			}
 			this.observability.recordProviderSuccess({

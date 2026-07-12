@@ -11,6 +11,19 @@ export default defineConfig({
 		},
 	},
 	clearScreen: false,
+	build: {
+		// Split heavy vendors so the main chunk stays under the 500 kB warning (M4 debt).
+		rollupOptions: {
+			output: {
+				manualChunks: {
+					react: ["react", "react-dom", "react-router-dom"],
+					markdown: ["react-markdown", "remark-gfm"],
+					supabase: ["@supabase/supabase-js"],
+					icons: ["lucide-react"],
+				},
+			},
+		},
+	},
 	server: {
 		port: 5173,
 		strictPort: true,

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Agent } from "@claake/shared";
-import { Eye, Search, Trash2 } from "lucide-react";
+import { Ban, Eye, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -32,14 +32,34 @@ export default function AdminAgentsPage() {
 	const [agents, setAgents] = useState<Agent[]>([]);
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
+	const [busyId, setBusyId] = useState<string | null>(null);
 
-	useEffect(() => {
+	const refresh = () => {
 		if (!token) return;
 		apiClient.agents
 			.list({ all: true }, token)
 			.then((res) => setAgents(res.agents))
 			.catch(() => {});
+	};
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refresh depends only on token
+	useEffect(() => {
+		refresh();
 	}, [token]);
+
+	const suspendAgent = async (agentId: string) => {
+		if (!token || busyId) return;
+		if (!window.confirm("Suspendre cet agent ? Il ne sera plus accessible aux utilisateurs.")) {
+			return;
+		}
+		setBusyId(agentId);
+		try {
+			await apiClient.agents.review(agentId, "suspend", token);
+			refresh();
+		} finally {
+			setBusyId(null);
+		}
+	};
 
 	const filtered = agents.filter((a) => {
 		const matchesSearch =
@@ -114,6 +134,17 @@ export default function AdminAgentsPage() {
 														<Eye className="h-4 w-4" />
 													</Button>
 												</Link>
+												{agent.status === "approved" && (
+													<Button
+														variant="ghost"
+														size="icon"
+														title="Suspendre"
+														disabled={busyId === agent.id}
+														onClick={() => suspendAgent(agent.id)}
+													>
+														<Ban className="h-4 w-4 text-destructive" />
+													</Button>
+												)}
 												<Button variant="ghost" size="icon">
 													<Trash2 className="h-4 w-4 text-destructive" />
 												</Button>

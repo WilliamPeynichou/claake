@@ -437,6 +437,9 @@ describe("SendMessageUseCase", () => {
 			"session-1",
 			"ASSISTANT",
 			"Réponse de l'IA",
+			"TEXT",
+			null,
+			null,
 		);
 		expect(mockObservability.recordAssistantMessageSaved).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -490,6 +493,26 @@ describe("SendMessageUseCase", () => {
 			{ type: "text", delta: "Done" },
 			{ type: "done" },
 		]);
+
+		await result.onComplete("Done");
+		expect(mockChatRepo.addMessage).toHaveBeenCalledWith(
+			"session-1",
+			"ASSISTANT",
+			"Done",
+			"TEXT",
+			null,
+			{
+				toolEvents: [
+					{ type: "tool_call", id: "tool-1", name: "current_datetime", payload: "{}" },
+					{
+						type: "tool_result",
+						id: "tool-1",
+						name: "current_datetime",
+						payload: JSON.stringify({ iso: "2026-07-09T12:00:00.000Z" }),
+					},
+				],
+			},
+		);
 	});
 
 	it("refuse le 6e tool call provider via quota registry", async () => {
