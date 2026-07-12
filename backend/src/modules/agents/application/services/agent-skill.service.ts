@@ -14,7 +14,7 @@ type Actor = { userId: string; role?: string };
 type MarkdownFile = Pick<Express.Multer.File, "buffer" | "mimetype" | "originalname" | "size">;
 
 const MAX_SKILL_DESCRIPTION_CHARS = 2000;
-const MAX_SKILLS_PER_AGENT = 20;
+const MAX_SKILLS_PER_AGENT = 30;
 
 export interface AgentSkillResourceItem {
 	id: string;

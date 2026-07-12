@@ -86,7 +86,7 @@ describe("AgentSkillService", () => {
 
 	it("rejects creation and import once the per-agent skill quota is reached", async () => {
 		const prisma = makePrisma();
-		(prisma.agentSkill.count as jest.Mock).mockResolvedValue(20);
+		(prisma.agentSkill.count as jest.Mock).mockResolvedValue(30);
 		const service = new AgentSkillService(prisma);
 		await expect(
 			service.create("agent-1", { userId: "creator-1" }, { name: "Test" }),

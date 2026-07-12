@@ -21,7 +21,7 @@ Le backend est autorité et refuse, avant écriture :
 - extension différente de `.md` ;
 - MIME différent de `text/markdown` ou `text/plain` (ou absent, comportement de certains navigateurs) ;
 - fichier vide, > 1 Mo ou lot > 100 fichiers ;
-- plus de 20 skills pour un même agent (création et import) ;
+- plus de 30 skills pour un même agent (création et import) ;
 - contenu non UTF-8 ou contenant un octet NUL ;
 - chemin absolu, segment vide, `.` ou `..` ;
 - chemins relatifs en doublon dans un même import.
