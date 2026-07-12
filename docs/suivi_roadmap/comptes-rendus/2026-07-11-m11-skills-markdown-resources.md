@@ -19,7 +19,7 @@ supprimées en cascade avec leur skill ou l'agent.
 Le backend est autorité et refuse, avant écriture :
 
 - extension différente de `.md` ;
-- MIME différent de `text/markdown` ou `text/plain` ;
+- MIME différent de `text/markdown` ou `text/plain` (ou absent, comportement de certains navigateurs) ;
 - fichier vide, > 1 Mo ou lot > 100 fichiers ;
 - contenu non UTF-8 ou contenant un octet NUL ;
 - chemin absolu, segment vide, `.` ou `..` ;
@@ -31,9 +31,9 @@ fichiers serveur n'est utilisé.
 
 ## API et interface
 
-- `GET /agents/:id/skills` : liste owner/admin.
-- `POST /agents/:id/skills` : création vide.
-- `POST /agents/:id/skills/import` : multipart `files`, création atomique d'un skill avec ses ressources.
+- `GET /agents/:id/skills` : liste owner/admin, contenu des ressources inclus.
+- `POST /agents/:id/skills` : création vide d'un skill lié à l'agent.
+- `POST /agents/:id/skills/import` : multipart `files`, création atomique d'un skill lié à l'agent avec ses ressources.
 - `DELETE /agents/:id/skills/:skillId` : suppression owner/admin.
 - `shared/types/skills.ts` et `apiClient.agents.skills`.
 - `SkillManager` dans page d'édition agent : sélection fichiers `.md` ou dossier, import, liste et suppression.
@@ -49,6 +49,6 @@ fichiers serveur n'est utilisé.
 ## Suite V2
 
 - Injection contextuelle par déclencheurs puis embeddings M9.
-- Bibliothèque et partage de skills entre agents.
+- Bibliothèque et partage de skills entre agents (remplacer le lien direct actuel par une relation n-n).
 - Marketplace skills et workflow DRAFT/PENDING/APPROVED/review admin.
 - Validation des dépendances tools M8 et MCP M10.

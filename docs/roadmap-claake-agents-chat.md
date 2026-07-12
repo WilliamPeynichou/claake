@@ -46,7 +46,7 @@ AgentDefinition partiel
 | Milestone 8 — Tool calling agent | 100% fonctionnel V1 fondation | `ProviderStreamEvent`, `ToolRegistry` backend, tools intégrés (`current_datetime`, `knowledge_search`, `fetch_url` borné), `Agent.tools`, `AgentChatConfig.tools`, stream tool events, affichage web/desktop et mapping natif multi-turn Anthropic/OpenAI livrés. |
 | Milestone 9 — Embeddings et RAG | 100% fonctionnel V1 | Chunks pgvector, embeddings OpenAI optionnels, retrieval cosine top-k, fallback keyword, réindexation, ingestion PDF et fallback Mistral OCR pour PDF image-only livrés. Dette : index vectoriel à tuner après volume, imputation coûts avancée. |
 | Milestone 10 — MCP | 100% fonctionnel V1 | Serveurs MCP Streamable HTTP par agent, credentials AES-256-GCM write-only, découverte/sélection, review admin, snapshot approuvé et exposition ToolRegistry M8. Limites : quota MCP dédié/circuit breaker et e2e live staging reportés. |
-| Milestone 11 — Skills | 100% fonctionnel V1 | Skills par agent, import fichier/dossier Markdown strict, ressources persistées et gestionnaire créateur. Marketplace, injection contextuelle et review admin restent à planifier. |
+| Milestone 11 — Skills | 100% fonctionnel V1 | Skills directement liés à un agent, import fichier/dossier Markdown strict, ressources persistées et gestionnaire créateur. Bibliothèque partageable, marketplace, injection contextuelle et review admin restent à planifier. |
 
 ### Ce qui est maintenant considéré fait
 
@@ -1208,23 +1208,17 @@ Haute après M8. Différenciateur marketplace majeur.
 
 ## Feature 8.4 — Skills : compétences réutilisables (M11)
 
-Une skill = un paquet versionné d'instructions + ressources, activable par agent :
+Une skill V1 est aujourd'hui liée directement à un agent et contient des ressources Markdown validées. La suite (bibliothèque partageable, version, manifest, déclencheurs, injection et marketplace) relève de Skills V2.
 
 ```txt
-skill
+Skills V2
 ├── manifest (nom, description, version, déclencheurs)
-├── instructions (markdown injecté à la demande)
+├── instructions Markdown injectées à la demande
 └── ressources (documents knowledge liés, tools requis)
 ```
 
-- table `skills` + `agent_skills` (n-n), CRUD créateur ;
-- injection contextuelle : la skill n'est chargée dans le prompt que si pertinente
-  (déclencheurs par mots-clés V1, similarité embeddings V2 via M9) ;
-- skills publiques réutilisables entre agents → **marketplace de skills** (mêmes statuts
-  DRAFT/PENDING/APPROVED, review admin) ;
-- une skill peut requérir des tools (M8) ou serveurs MCP (M10) : la validation vérifie la
-  cohérence ;
-- builder : étape "Compétences" (activer skills existantes ou en créer).
+- V1 livrée : `agent_skills` + `agent_skill_resources`, import Markdown fichier/dossier strict, CRUD créateur par agent et UI builder.
+- V2 : bibliothèque `skills` + relation n-n `agent_skills`, injection contextuelle, marketplace et review admin.
 
 ### Priorité
 

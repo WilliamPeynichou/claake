@@ -13,7 +13,7 @@ fichier .md / dossier
 → navigateur transmet fichiers
 → API valide chaque fichier
 → ressources skill persistées
-→ création ou attachement skill à agent
+→ skill liée directement à un agent
 → injection contextuelle future
 ```
 
@@ -31,15 +31,15 @@ fichier .md / dossier
 
 ### Lot 1 — Domaine et persistance
 
-- [x] Modèles Prisma `Skill`, `SkillResource`, `AgentSkill`.
-- [x] Migration, ownership créateur, cascade, unicité des chemins ressources.
-- [x] Module backend domain/application/infrastructure.
+- Modèles Prisma `AgentSkill` et `AgentSkillResource`, liés directement à l'agent.
+- Migration, ownership créateur, cascade, unicité des chemins ressources.
+- Service backend intégré au module `agents`.
 
 ### Lot 2 — Import sécurisé
 
-- [x] Validator Markdown réutilisable, bornes fichiers et lot.
-- [x] Endpoint multipart fichier unique et lot dossier.
-- [x] CRUD ressources, suppression et réponse sans contenu non nécessaire.
+- [x] Validator Markdown, bornes fichiers et lot.
+- [x] Endpoint multipart de lot : le même endpoint couvre fichier unique ou dossier.
+- [x] Lecture/listing, suppression du skill et réponse propriétaire avec contenu ressources.
 - [x] Tests extension/MIME/binaire/taille/traversal/ownership.
 
 ### Lot 3 — Contrats et UI
