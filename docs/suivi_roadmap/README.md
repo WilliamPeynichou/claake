@@ -70,6 +70,6 @@ plans/AAAA-MM-JJ-sujet.md
 | 9 — Embeddings et RAG | ✅ 100% fonctionnel V1 | pgvector, chunking, embeddings optionnels, PDF, retrieval vectoriel + fallback keyword |
 | 10 — MCP | ✅ 100% fonctionnel V1 | Serveurs MCP Streamable HTTP, credentials AES-256-GCM write-only, découverte/sélection, review admin, ToolRegistry figé et UI web |
 | 11 — Skills | ✅ 100% fonctionnel V1 | Skills par agent, import fichier/dossier Markdown strict et ressources persistées ; injection contextuelle, marketplace et review admin V2 |
-| 12 — Consolidation + Skills V2 | ⏳ 0% planifié | Injection contextuelle skills, partage n-n, dettes audits M9/M10, staging, dettes UI M3/M4/M8 |
+| 12 — Consolidation + Skills V2 | 🟡 ~50% | Injection contextuelle skills livrée, dettes M9 (PDF longs, bornes) et M10 (quota MCP dédié, circuit breaker) soldées ; restent partage n-n, staging, dettes UI |
 
-Prochain verrou recommandé : **M12 Lot 1** (injection contextuelle skills), puis staging/Supabase test pour ouverture beta réelle.
+Prochain verrou recommandé : **M12 Lot 5** (staging/Supabase test) pour débloquer e2e MCP live et beta réelle, puis Lot 2 (partage/review skills).
