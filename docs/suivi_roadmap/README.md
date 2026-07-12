@@ -52,7 +52,8 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-09-m9-embeddings-rag.md` — Plan M9 embeddings/RAG. **✅ V1 réalisé.**
 - `plans/2026-07-11-m10-mcp.md` — Plan M10 MCP. **✅ V1 réalisée.**
 - `plans/2026-07-11-m11-skills-markdown-resources.md` — Plan M11 import de ressources Markdown. **✅ V1 réalisée.**
-- `plans/2026-07-11-m12-consolidation-skills-v2.md` — Plan M12 consolidation post-audit + Skills V2. **⏳ À faire.**
+- `plans/2026-07-11-m12-consolidation-skills-v2.md` — Plan M12 consolidation post-audit + Skills V2. **✅ Code livré ; reliquats infra/M13.**
+- `plans/2026-07-12-m13-staging-beta-skills-public.md` — Plan M13 staging, beta et Skills publiques. **⏳ À faire.**
 
 ## État des milestones
 
@@ -70,6 +71,7 @@ plans/AAAA-MM-JJ-sujet.md
 | 9 — Embeddings et RAG | ✅ 100% fonctionnel V1 | pgvector, chunking, embeddings optionnels, PDF, retrieval vectoriel + fallback keyword |
 | 10 — MCP | ✅ 100% fonctionnel V1 | Serveurs MCP Streamable HTTP, credentials AES-256-GCM write-only, découverte/sélection, review admin, ToolRegistry figé et UI web |
 | 11 — Skills | ✅ 100% fonctionnel V1 | Skills par agent, import fichier/dossier Markdown strict et ressources persistées ; injection contextuelle, marketplace et review admin V2 |
-| 12 — Consolidation + Skills V2 | ✅ code livré / infra bloquée | Injection skills, bibliothèque n-n, dépendances tools/MCP, dettes M9/M10 et UI M3/M4/M8 soldées ; staging, e2e live, marketplace/review et embeddings skills reportés M13/ops |
+| 12 — Consolidation + Skills V2 | ✅ code livré | Injection contextuelle, bibliothèque n-n, dépendances tools/MCP, dettes M9/M10/UI soldées ; reliquats exploitation reportés M13 |
+| 13 — Staging, beta et Skills publiques | ⏳ 0% planifié | Staging Supabase/CI, e2e MCP live, beta, marketplace/review, retrieval vectoriel skills et tuning exploitation |
 
-Prochain verrou recommandé : **provisionner staging/Supabase test** pour débloquer e2e MCP live et beta réelle. M13 portera marketplace/review public et sélection vectorielle des skills.
+Prochain verrou recommandé : **M13 Lot 1** — provisionner staging/Supabase test pour débloquer e2e MCP live et beta réelle.
