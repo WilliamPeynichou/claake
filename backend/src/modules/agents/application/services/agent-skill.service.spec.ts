@@ -58,6 +58,31 @@ describe("AgentSkillService", () => {
 		).rejects.toBeInstanceOf(BadRequestException);
 	});
 
+	it("accepts files without MIME type as some browsers omit it", async () => {
+		const service = new AgentSkillService(makePrisma());
+		const noMime = file("README.md");
+		// biome-ignore lint/suspicious/noExplicitAny: simulate browser omitting MIME
+		(noMime as any).mimetype = undefined;
+		const skill = await service.importMarkdown(
+			"agent-1",
+			{ userId: "creator-1" },
+			{ name: "Test" },
+			[noMime],
+		);
+		expect(skill.resources).toHaveLength(1);
+	});
+
+	it("rejects skill descriptions above the maximum length", async () => {
+		const service = new AgentSkillService(makePrisma());
+		await expect(
+			service.create(
+				"agent-1",
+				{ userId: "creator-1" },
+				{ name: "Test", description: "d".repeat(2001) },
+			),
+		).rejects.toBeInstanceOf(BadRequestException);
+	});
+
 	it("rejects non text/Markdown MIME types", async () => {
 		const service = new AgentSkillService(makePrisma());
 		await expect(

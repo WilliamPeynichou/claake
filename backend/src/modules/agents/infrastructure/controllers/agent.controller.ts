@@ -29,6 +29,7 @@ import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard
 import { PrismaService } from "../../../../prisma/prisma.service.js";
 import { CreateAgentDto } from "../../application/dtos/create-agent.dto.js";
 import { CreateAgentKnowledgeDto } from "../../application/dtos/create-agent-knowledge.dto.js";
+import { CreateAgentSkillDto } from "../../application/dtos/create-agent-skill.dto.js";
 import { ReviewAgentDto } from "../../application/dtos/review-agent.dto.js";
 import { UpdateAgentDto } from "../../application/dtos/update-agent.dto.js";
 import { UpdateAgentKnowledgeDto } from "../../application/dtos/update-agent-knowledge.dto.js";
@@ -169,9 +170,10 @@ export class AgentController {
 
 	@Post(":id/skills")
 	@UseGuards(SupabaseAuthGuard)
+	@Throttle({ default: { ttl: 60_000, limit: 20 } })
 	async createSkill(
 		@Param("id") id: string,
-		@Body() body: { name: string; description?: string },
+		@Body() body: CreateAgentSkillDto,
 		@Req() req: { user: RequestUser },
 	) {
 		return this.skills.create(id, { userId: req.user.id, role: req.user.role }, body);
@@ -188,7 +190,7 @@ export class AgentController {
 	)
 	async importSkillMarkdown(
 		@Param("id") id: string,
-		@Body() body: { name: string; description?: string },
+		@Body() body: CreateAgentSkillDto,
 		@UploadedFiles() files: Express.Multer.File[],
 		@Req() req: { user: RequestUser },
 	) {

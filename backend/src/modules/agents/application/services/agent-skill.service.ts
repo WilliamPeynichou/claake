@@ -13,6 +13,8 @@ const MARKDOWN_MIME_TYPES = new Set(["", "text/markdown", "text/plain"]);
 type Actor = { userId: string; role?: string };
 type MarkdownFile = Pick<Express.Multer.File, "buffer" | "mimetype" | "originalname" | "size">;
 
+const MAX_SKILL_DESCRIPTION_CHARS = 2000;
+
 export interface AgentSkillResourceItem {
 	id: string;
 	path: string;
@@ -52,7 +54,7 @@ export class AgentSkillService {
 		await this.assertCanManage(agentId, actor);
 		const name = this.validateName(input.name);
 		const skill = await this.prisma.agentSkill.create({
-			data: { agentId, name, description: input.description?.trim() || null },
+			data: { agentId, name, description: this.validateDescription(input.description) },
 			include: { resources: { orderBy: { path: "asc" } } },
 		});
 		return this.toItem(skill);
@@ -81,7 +83,7 @@ export class AgentSkillService {
 			data: {
 				agentId,
 				name,
-				description: input.description?.trim() || null,
+				description: this.validateDescription(input.description),
 				resources: { create: resources },
 			},
 			include: { resources: { orderBy: { path: "asc" } } },
@@ -104,6 +106,16 @@ export class AgentSkillService {
 		return normalized;
 	}
 
+	private validateDescription(description?: string): string | null {
+		const normalized = description?.trim() || null;
+		if (normalized && normalized.length > MAX_SKILL_DESCRIPTION_CHARS) {
+			throw new BadRequestException(
+				`La description du skill est limitée à ${MAX_SKILL_DESCRIPTION_CHARS} caractères.`,
+			);
+		}
+		return normalized;
+	}
+
 	private validateMarkdownFile(file: MarkdownFile): { path: string; content: string } {
 		const path = file?.originalname?.replaceAll("\\", "/").trim();
 		if (!path?.toLowerCase().endsWith(".md")) {
@@ -115,7 +127,7 @@ export class AgentSkillService {
 		) {
 			throw new BadRequestException("Le chemin de la ressource Markdown est invalide.");
 		}
-		if (!MARKDOWN_MIME_TYPES.has(file.mimetype?.toLowerCase())) {
+		if (!MARKDOWN_MIME_TYPES.has(file.mimetype?.toLowerCase() ?? "")) {
 			throw new BadRequestException("Le type MIME doit être Markdown ou texte brut.");
 		}
 		if (
