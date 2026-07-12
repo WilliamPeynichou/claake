@@ -22,46 +22,48 @@ dettes M9/M10/M11 soldées
 
 - [x] Injection des ressources skills dans le system prompt du chat (déclencheurs par
       mots-clés V1, bornée en taille comme la knowledge M6).
-- [ ] Réutiliser le pipeline embeddings M9 pour la sélection des ressources (V2).
-- [ ] Validation des dépendances skill → tools M8 / serveurs MCP M10 à la sauvegarde
-      (reporté : les skills V1 ne déclarent pas encore de dépendances — à introduire avec le Lot 2).
+- [ ] Réutiliser le pipeline embeddings M9 pour la sélection des ressources (V2, reporté M13 :
+      nécessite index vectoriel des ressources skills et mesure d'usage).
+- [x] Validation des dépendances skill → tools M8 / serveurs MCP M10 à la sauvegarde
+      (create/import/attach : built-ins activés ou tools MCP sélectionnés, approuvés et actifs).
 - [x] Tests injection, bornes et fallback sans embeddings.
 
 ### Lot 2 — Skills V2 : partage et review
 
-- [ ] Relation n-n skills/agents (bibliothèque), migration depuis le lien direct actuel.
-- [ ] Workflow DRAFT/PENDING/APPROVED + review admin (réutiliser le pattern MCP M10).
-- [ ] Marketplace/annuaire de skills publics (peut glisser en M13 si trop large).
+- [x] Relation n-n skills/agents (bibliothèque), migration depuis le lien direct actuel.
+- [ ] Workflow DRAFT/PENDING/APPROVED + review admin : reporté M13 (marketplace/review public,
+      pas requis pour bibliothèque privée créateur livrée).
+- [ ] Marketplace/annuaire de skills publics : reporté M13 (délimitation produit explicite).
 
 ### Lot 3 — Dettes M9 (audit 2026-07-11)
 
 - [x] PDF longs : couvrir >100 chunks (plafond supprimé, batching embeddings par lots de 100).
 - [x] Aligner les bornes de contenu : `MAX_KNOWLEDGE_CONTENT_CHARS = 200k` partagé texte/PDF.
 - [x] Supprimer `KnowledgeIndexService.removeDocument` (code mort, cascade DB couvre).
-- [ ] Index IVFFlat pgvector après mesure du volume réel (lists/probes).
-- [ ] Imputation des coûts embeddings créateur/utilisateur après mesure d'usage.
-- [ ] Index IVFFlat pgvector après mesure du volume réel (lists/probes).
-- [ ] Imputation des coûts embeddings créateur/utilisateur après mesure d'usage.
+- [ ] Index IVFFlat pgvector après mesure du volume réel (lists/probes, reporté exploitation).
+- [ ] Imputation des coûts embeddings créateur/utilisateur après mesure d'usage (reporté exploitation).
 
 ### Lot 4 — Dettes M10 (audit 2026-07-11)
 
 - [x] Quota MCP dédié par message (3 appels MCP max, plafond commun M8 conservé) +
       circuit breaker par serveur (3 échecs consécutifs → ouverture 60 s).
-- [ ] e2e serveur MCP live (nécessite staging, voir Lot 5).
-- [ ] Épinglage socket strict anti DNS rebinding (couche HTTP bas niveau) si mesurable.
+- [ ] e2e serveur MCP live (nécessite staging, reporté prérequis infra).
+- [ ] Épinglage socket strict anti DNS rebinding (couche HTTP bas niveau) si mesurable
+      (reporté : SSRF + re-résolution avant requête déjà actifs).
 
-### Lot 5 — Staging et beta
+### Lot 5 — Staging et beta (prérequis externes)
 
-- [ ] Environnement staging + Supabase test (`NEXT_PUBLIC_SUPABASE_URL` et clés dédiées).
-- [ ] Collecte de pages Next débloquée en CI (dépend de l'env, préexistant hors M10/M11).
-- [ ] Premiers développeurs invités — beta contrôlée réelle.
+- [ ] Environnement staging + Supabase test (`NEXT_PUBLIC_SUPABASE_URL` et clés dédiées) :
+      bloqué, credentials/projet Supabase requis.
+- [ ] Collecte de pages Next débloquée en CI : bloqué par env staging.
+- [ ] Premiers développeurs invités : décision produit/ops requise.
 
 ### Lot 6 — Dettes UI historiques
 
-- [ ] Action **Suspendre** dans la gestion globale des agents publiés (dette M3).
-- [ ] Code-split desktop, chunk Vite >500 kB (dette M4).
-- [ ] UI builder tools graphique au lieu de JSON brut (dette M8).
-- [ ] Persistance optionnelle des tool events (dette M8).
+- [x] Action **Suspendre** dans la gestion globale des agents publiés (dette M3).
+- [x] Code-split desktop, chunk Vite >500 kB (dette M4 ; main chunk 227 kB).
+- [x] UI builder tools graphique au lieu de JSON brut (dette M8).
+- [x] Persistance optionnelle des tool events (dette M8 ; metadata assistant bornée).
 
 ## Priorités
 
