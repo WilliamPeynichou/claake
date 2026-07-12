@@ -46,7 +46,7 @@ AgentDefinition partiel
 | Milestone 8 — Tool calling agent | 100% fonctionnel V1 fondation | `ProviderStreamEvent`, `ToolRegistry` backend, tools intégrés (`current_datetime`, `knowledge_search`, `fetch_url` borné), `Agent.tools`, `AgentChatConfig.tools`, stream tool events, affichage web/desktop et mapping natif multi-turn Anthropic/OpenAI livrés. |
 | Milestone 9 — Embeddings et RAG | 100% fonctionnel V1 | Chunks pgvector, embeddings OpenAI optionnels, retrieval cosine top-k, fallback keyword, réindexation, ingestion PDF et fallback Mistral OCR pour PDF image-only livrés. Dette : index vectoriel à tuner après volume, imputation coûts avancée. |
 | Milestone 10 — MCP | 100% fonctionnel V1 | Serveurs MCP Streamable HTTP par agent, credentials AES-256-GCM write-only, découverte/sélection, review admin, snapshot approuvé et exposition ToolRegistry M8. Limites : quota MCP dédié/circuit breaker et e2e live staging reportés. |
-| Milestone 11 — Skills | 0% | Format skill (instructions + ressources), bibliothèque, attachement par agent, injection contextuelle, marketplace de skills. |
+| Milestone 11 — Skills | 100% fonctionnel V1 | Skills par agent, import fichier/dossier Markdown strict, ressources persistées et gestionnaire créateur. Marketplace, injection contextuelle et review admin restent à planifier. |
 
 ### Ce qui est maintenant considéré fait
 
@@ -111,7 +111,7 @@ serveurs MCP, skills). C'est l'objet de la Phase 8.
 
 ### Prochain ordre recommandé
 
-1. Milestone 11 — Skills : bibliothèque de compétences réutilisables.
+1. Skills V2 : injection contextuelle, partage/bibliothèque, marketplace et review admin.
 2. Quotas MCP dédiés, limite de concurrence et circuit breaker après mesure d'usage.
 3. Brancher l'action **Suspendre** dans la gestion globale des agents publiés (dette M3).
 4. Env staging/Supabase test + premiers développeurs invités (suite ouverture beta).

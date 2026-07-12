@@ -5,6 +5,7 @@ import { OptionalSupabaseAuthGuard } from "../../common/guards/optional-supabase
 import { RolesGuard } from "../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../common/guards/supabase-auth.guard.js";
 import { AgentKnowledgeService } from "./application/services/agent-knowledge.service.js";
+import { AgentSkillService } from "./application/services/agent-skill.service.js";
 import { EmbeddingService } from "./application/services/embedding.service.js";
 import { KnowledgeChunkingService } from "./application/services/knowledge-chunking.service.js";
 import { KnowledgeIndexService } from "./application/services/knowledge-index.service.js";
@@ -48,8 +49,9 @@ import { PrismaAgentRepository } from "./infrastructure/repositories/prisma-agen
 		KnowledgeChunkingService,
 		KnowledgeIndexService,
 		PdfKnowledgeExtractionService,
+		AgentSkillService,
 		{ provide: AGENT_REPOSITORY, useClass: PrismaAgentRepository },
 	],
-	exports: [AGENT_REPOSITORY, AgentKnowledgeService, KnowledgeIndexService],
+	exports: [AGENT_REPOSITORY, AgentKnowledgeService, AgentSkillService, KnowledgeIndexService],
 })
 export class AgentModule {}

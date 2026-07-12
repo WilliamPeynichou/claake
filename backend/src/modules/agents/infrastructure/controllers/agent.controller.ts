@@ -13,10 +13,11 @@ import {
 	Query,
 	Req,
 	UploadedFile,
+	UploadedFiles,
 	UseGuards,
 	UseInterceptors,
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import { Throttle } from "@nestjs/throttler";
 import { memoryStorage } from "multer";
 import { RequirePermission } from "../../../../common/decorators/admin-permission.decorator.js";
@@ -32,6 +33,7 @@ import { ReviewAgentDto } from "../../application/dtos/review-agent.dto.js";
 import { UpdateAgentDto } from "../../application/dtos/update-agent.dto.js";
 import { UpdateAgentKnowledgeDto } from "../../application/dtos/update-agent-knowledge.dto.js";
 import { AgentKnowledgeService } from "../../application/services/agent-knowledge.service.js";
+import { AgentSkillService } from "../../application/services/agent-skill.service.js";
 import { PdfKnowledgeExtractionService } from "../../application/services/pdf-knowledge-extraction.service.js";
 import { CreateAgentUseCase } from "../../application/usecases/create-agent.usecase.js";
 import { DeleteAgentUseCase } from "../../application/usecases/delete-agent.usecase.js";
@@ -60,6 +62,7 @@ export class AgentController {
 		private readonly deleteAgent: DeleteAgentUseCase,
 		private readonly unpublishAgent: UnpublishAgentUseCase,
 		private readonly knowledge: AgentKnowledgeService,
+		private readonly skills: AgentSkillService,
 		private readonly pdfKnowledge: PdfKnowledgeExtractionService,
 		private readonly prisma: PrismaService,
 	) {}
@@ -158,7 +161,55 @@ export class AgentController {
 		return this.getDownloadInfo.execute(id, req.user.id);
 	}
 
-	@Get(":id/knowledge")
+	@Get(":id/skills")
+	@UseGuards(SupabaseAuthGuard)
+	async listSkills(@Param("id") id: string, @Req() req: { user: RequestUser }) {
+		return this.skills.list(id, { userId: req.user.id, role: req.user.role });
+	}
+
+	@Post(":id/skills")
+	@UseGuards(SupabaseAuthGuard)
+	async createSkill(
+		@Param("id") id: string,
+		@Body() body: { name: string; description?: string },
+		@Req() req: { user: RequestUser },
+	) {
+		return this.skills.create(id, { userId: req.user.id, role: req.user.role }, body);
+	}
+
+	@Post(":id/skills/import")
+	@UseGuards(SupabaseAuthGuard)
+	@Throttle({ default: { ttl: 60_000, limit: 10 } })
+	@UseInterceptors(
+		FilesInterceptor("files", 100, {
+			storage: memoryStorage(),
+			limits: { fileSize: 1024 * 1024, files: 100 },
+		}),
+	)
+	async importSkillMarkdown(
+		@Param("id") id: string,
+		@Body() body: { name: string; description?: string },
+		@UploadedFiles() files: Express.Multer.File[],
+		@Req() req: { user: RequestUser },
+	) {
+		return this.skills.importMarkdown(
+			id,
+			{ userId: req.user.id, role: req.user.role },
+			body,
+			files,
+		);
+	}
+
+	@Delete(":id/skills/:skillId")
+	@HttpCode(204)
+	@UseGuards(SupabaseAuthGuard)
+	async removeSkill(
+		@Param("id") id: string,
+		@Param("skillId") skillId: string,
+		@Req() req: { user: RequestUser },
+	) {
+		await this.skills.remove(id, skillId, { userId: req.user.id, role: req.user.role });
+	}
 	@UseGuards(SupabaseAuthGuard)
 	async listKnowledge(@Param("id") id: string, @Req() req: { user: RequestUser }) {
 		return this.knowledge.list(id, { userId: req.user.id, role: req.user.role });

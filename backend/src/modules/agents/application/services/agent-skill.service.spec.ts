@@ -1,0 +1,108 @@
+import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
+import type { PrismaService } from "../../../../prisma/prisma.service";
+import { AgentSkillService } from "./agent-skill.service";
+
+function makePrisma(overrides: Record<string, unknown> = {}) {
+	return {
+		agent: { findUnique: jest.fn().mockResolvedValue({ creatorId: "creator-1" }) },
+		agentSkill: {
+			create: jest.fn().mockImplementation(({ data }) =>
+				Promise.resolve({
+					id: "skill-1",
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					...data,
+					resources: data.resources?.create ?? [],
+				}),
+			),
+			findMany: jest.fn().mockResolvedValue([]),
+			findUnique: jest.fn().mockResolvedValue(null),
+			delete: jest.fn().mockResolvedValue(undefined),
+		},
+		...overrides,
+	} as unknown as PrismaService;
+}
+
+function file(name: string, content = "# Resource", mimetype = "text/markdown") {
+	const buffer = Buffer.from(content);
+	return { originalname: name, mimetype, buffer, size: buffer.length } as Express.Multer.File;
+}
+
+describe("AgentSkillService", () => {
+	it("imports multiple Markdown files from a folder, preserving relative paths", async () => {
+		const prisma = makePrisma();
+		const service = new AgentSkillService(prisma);
+
+		const skill = await service.importMarkdown(
+			"agent-1",
+			{ userId: "creator-1" },
+			{ name: "Support" },
+			[file("support/SKILL.md"), file("support/references/ref.md", "Reference")],
+		);
+
+		expect(skill.resources.map((resource) => resource.path)).toEqual([
+			"support/SKILL.md",
+			"support/references/ref.md",
+		]);
+		expect(
+			(prisma.agentSkill.create as jest.Mock).mock.calls[0][0].data.resources.create,
+		).toHaveLength(2);
+	});
+
+	it("rejects non-Markdown extensions regardless of MIME type", async () => {
+		const service = new AgentSkillService(makePrisma());
+		await expect(
+			service.importMarkdown("agent-1", { userId: "creator-1" }, { name: "Test" }, [
+				file("script.ts"),
+			]),
+		).rejects.toBeInstanceOf(BadRequestException);
+	});
+
+	it("rejects non text/Markdown MIME types", async () => {
+		const service = new AgentSkillService(makePrisma());
+		await expect(
+			service.importMarkdown("agent-1", { userId: "creator-1" }, { name: "Test" }, [
+				file("SKILL.md", "# Test", "application/pdf"),
+			]),
+		).rejects.toBeInstanceOf(BadRequestException);
+	});
+
+	it("rejects invalid UTF-8 content", async () => {
+		const service = new AgentSkillService(makePrisma());
+		const invalid = file("SKILL.md");
+		invalid.buffer = Buffer.from([0xc3, 0x28]);
+		invalid.size = invalid.buffer.length;
+		await expect(
+			service.importMarkdown("agent-1", { userId: "creator-1" }, { name: "Test" }, [invalid]),
+		).rejects.toBeInstanceOf(BadRequestException);
+	});
+
+	it("rejects duplicate or unsafe resource paths", async () => {
+		const service = new AgentSkillService(makePrisma());
+		await expect(
+			service.importMarkdown("agent-1", { userId: "creator-1" }, { name: "Test" }, [
+				file("../SKILL.md"),
+			]),
+		).rejects.toBeInstanceOf(BadRequestException);
+		await expect(
+			service.importMarkdown("agent-1", { userId: "creator-1" }, { name: "Test" }, [
+				file("SKILL.md"),
+				file("SKILL.md"),
+			]),
+		).rejects.toBeInstanceOf(BadRequestException);
+	});
+
+	it("enforces agent ownership", async () => {
+		const service = new AgentSkillService(makePrisma());
+		await expect(service.list("agent-1", { userId: "other" })).rejects.toBeInstanceOf(
+			ForbiddenException,
+		);
+	});
+
+	it("reports a missing skill when deleting", async () => {
+		const service = new AgentSkillService(makePrisma());
+		await expect(
+			service.remove("agent-1", "missing", { userId: "creator-1" }),
+		).rejects.toBeInstanceOf(NotFoundException);
+	});
+});

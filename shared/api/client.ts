@@ -25,6 +25,7 @@ import type {
 	SelectMcpToolsInput,
 	UpdateMcpServerInput,
 } from "../types/mcp";
+import type { AgentSkill } from "../types/skills";
 
 export interface AgentListResponse {
 	agents: Agent[];
@@ -142,6 +143,33 @@ export function createApiClient(baseUrl: string) {
 					`/agents/${id}/chat-config`,
 					token ? withAuth(token) : undefined,
 				),
+			skills: {
+				list: (agentId: string, token: string) =>
+					fetchJson<AgentSkill[]>(`/agents/${agentId}/skills`, withAuth(token)),
+				create: (agentId: string, input: { name: string; description?: string }, token: string) =>
+					fetchJson<AgentSkill>(
+						`/agents/${agentId}/skills`,
+						withAuth(token, { method: "POST", body: JSON.stringify(input) }),
+					),
+				importMarkdown: (
+					agentId: string,
+					input: { name: string; description?: string },
+					files: File[],
+					token: string,
+				) => {
+					const form = new FormData();
+					form.append("name", input.name);
+					if (input.description) form.append("description", input.description);
+					for (const file of files)
+						form.append("files", file, file.webkitRelativePath || file.name);
+					return fetchForm<AgentSkill>(`/agents/${agentId}/skills/import`, form, token);
+				},
+				delete: (agentId: string, skillId: string, token: string) =>
+					fetchJson<void>(
+						`/agents/${agentId}/skills/${skillId}`,
+						withAuth(token, { method: "DELETE" }),
+					),
+			},
 			knowledge: {
 				list: (agentId: string, token: string) =>
 					fetchJson<AgentKnowledge[]>(`/agents/${agentId}/knowledge`, withAuth(token)),

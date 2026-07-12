@@ -8,4 +8,5 @@ export * from "./lib/constants";
 export * from "./lib/storage";
 export * from "./types";
 export * from "./types/mcp";
+export * from "./types/skills";
 export * from "./types/tools";

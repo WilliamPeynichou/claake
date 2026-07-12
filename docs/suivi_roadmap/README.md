@@ -31,6 +31,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `comptes-rendus/2026-07-09-m8-tool-calling.md` — M8 V1 : ProviderStreamEvent, ToolRegistry, Agent.tools, stream tool events, affichage web/desktop.
 - `comptes-rendus/2026-07-09-m9-embeddings-rag.md` — M9 V1 : chunks pgvector, embeddings, retrieval hybride, ingestion PDF.
 - `comptes-rendus/2026-07-11-m10-mcp.md` — M10 V1 : serveurs MCP HTTP, credentials chiffrés, review admin, ToolRegistry et UI.
+- `comptes-rendus/2026-07-11-m11-skills-markdown-resources.md` — M11 V1 : import sécurisé de ressources Markdown par fichier/dossier.
 
 ## Index plans
 
@@ -50,6 +51,7 @@ plans/AAAA-MM-JJ-sujet.md
 - `plans/2026-07-09-m8-tool-calling.md` — Plan M8 tool calling agent. **✅ V1 réalisé.**
 - `plans/2026-07-09-m9-embeddings-rag.md` — Plan M9 embeddings/RAG. **✅ V1 réalisé.**
 - `plans/2026-07-11-m10-mcp.md` — Plan M10 MCP. **✅ V1 réalisée.**
+- `plans/2026-07-11-m11-skills-markdown-resources.md` — Plan M11 import de ressources Markdown. **✅ V1 réalisée.**
 
 ## État des milestones
 
@@ -66,6 +68,6 @@ plans/AAAA-MM-JJ-sujet.md
 | 8 — Tool calling agent | ✅ 100% fonctionnel V1 fondation | ProviderStreamEvent + ToolRegistry + Agent.tools + affichage tool events + Anthropic/OpenAI natif multi-turn |
 | 9 — Embeddings et RAG | ✅ 100% fonctionnel V1 | pgvector, chunking, embeddings optionnels, PDF, retrieval vectoriel + fallback keyword |
 | 10 — MCP | ✅ 100% fonctionnel V1 | Serveurs MCP Streamable HTTP, credentials AES-256-GCM write-only, découverte/sélection, review admin, ToolRegistry figé et UI web |
-| 11 — Skills | ⚪ 0% | paquets instructions+ressources, injection contextuelle, marketplace |
+| 11 — Skills | ✅ 100% fonctionnel V1 | Skills par agent, import fichier/dossier Markdown strict et ressources persistées ; injection contextuelle, marketplace et review admin V2 |
 
-Prochain verrou recommandé : **Milestone 11 — Skills**. Prévoir aussi env staging/Supabase test pour ouverture beta réelle.
+Prochain verrou recommandé : **Skills V2** (injection, partage, marketplace/review), puis env staging/Supabase test pour ouverture beta réelle.
