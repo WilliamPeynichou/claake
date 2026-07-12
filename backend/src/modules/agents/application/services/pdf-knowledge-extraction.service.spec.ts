@@ -25,7 +25,13 @@ describe("PdfKnowledgeExtractionService", () => {
 		expect(destroy).toHaveBeenCalled();
 	});
 
-	it("uses Mistral OCR 4 when the PDF has no extractible text", async () => {
+	it("caps extracted local PDF text at the persisted knowledge limit", async () => {
+		getText.mockResolvedValue({ text: "x".repeat(200_001) });
+
+		await expect(makeService().extract(makePdf())).resolves.toHaveLength(200_000);
+	});
+
+	it("uses Mistral OCR when the PDF has no extractible text", async () => {
 		getText.mockResolvedValue({ text: "  " });
 		(global.fetch as jest.Mock).mockResolvedValue({
 			ok: true,

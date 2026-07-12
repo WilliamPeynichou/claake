@@ -35,6 +35,30 @@ describe("EmbeddingService", () => {
 		);
 	});
 
+	it("batches inputs above the provider limit while preserving their order", async () => {
+		const vector = Array(1536).fill(0.1);
+		global.fetch = jest.fn().mockImplementation(async (_url, request: RequestInit) => {
+			const input = JSON.parse(String(request.body)).input as string[];
+			return {
+				ok: true,
+				json: jest.fn().mockResolvedValue({
+					data: input.map((_, index) => ({ index, embedding: vector })),
+				}),
+			} as Response;
+		});
+		const service = new EmbeddingService(new ConfigService({ OPENAI_EMBEDDING_API_KEY: "secret" }));
+		const inputs = Array.from({ length: 101 }, (_, index) => `input-${index}`);
+
+		await expect(service.embed(inputs)).resolves.toHaveLength(101);
+		expect(global.fetch).toHaveBeenCalledTimes(2);
+		expect(
+			JSON.parse(String((global.fetch as jest.Mock).mock.calls[0][1].body)).input,
+		).toHaveLength(100);
+		expect(JSON.parse(String((global.fetch as jest.Mock).mock.calls[1][1].body)).input).toEqual([
+			"input-100",
+		]);
+	});
+
 	it("falls back to null on provider failure", async () => {
 		global.fetch = jest.fn().mockRejectedValue(new Error("offline"));
 		const service = new EmbeddingService(new ConfigService({ OPENAI_EMBEDDING_API_KEY: "secret" }));

@@ -2,7 +2,7 @@ import type { PrismaService } from "../../../../prisma/prisma.service";
 import { KnowledgeIndexService } from "./knowledge-index.service";
 
 describe("KnowledgeIndexService", () => {
-	function makeService(embeddingResult: number[][] | null = null) {
+	function makeService(embeddingResult: number[][] | null = null, chunks = ["chunk a", "chunk b"]) {
 		const tx = {
 			agentKnowledgeChunk: { deleteMany: jest.fn(), createMany: jest.fn() },
 			$executeRaw: jest.fn(),
@@ -12,7 +12,7 @@ describe("KnowledgeIndexService", () => {
 			$queryRaw: jest.fn(),
 			agentKnowledgeChunk: { deleteMany: jest.fn() },
 		} as unknown as PrismaService;
-		const chunking = { chunk: jest.fn().mockReturnValue(["chunk a", "chunk b"]) };
+		const chunking = { chunk: jest.fn().mockReturnValue(chunks) };
 		const embeddings = { embed: jest.fn().mockResolvedValue(embeddingResult) };
 		return {
 			service: new KnowledgeIndexService(prisma, chunking as never, embeddings as never),
@@ -48,7 +48,19 @@ describe("KnowledgeIndexService", () => {
 		expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
 	});
 
-	it("returns null retrieval without a query embedding", async () => {
+	it("batches vector writes for documents with more than 100 chunks", async () => {
+		const chunks = Array.from({ length: 101 }, (_, index) => `chunk ${index}`);
+		const vectors = chunks.map(() => Array(1536).fill(0.1));
+		const { service, tx } = makeService(vectors, chunks);
+
+		await service.indexDocument({ id: "k-1", agentId: "a-1", title: "Doc", content: "body" });
+		expect(tx.agentKnowledgeChunk.createMany).toHaveBeenCalledWith({
+			data: expect.arrayContaining([expect.objectContaining({ chunkIndex: 100 })]),
+		});
+		expect(tx.$executeRaw).toHaveBeenCalledTimes(2);
+	});
+
+	it("returns null when embeddings are unavailable for the query", async () => {
 		const { service, prisma } = makeService(null);
 		await expect(service.retrieve("a-1", "question")).resolves.toBeNull();
 		expect(prisma.$queryRaw).not.toHaveBeenCalled();

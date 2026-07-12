@@ -1,4 +1,5 @@
 import { IsString, MaxLength, MinLength } from "class-validator";
+import { MAX_KNOWLEDGE_CONTENT_CHARS } from "../knowledge.constants.js";
 
 export class CreateAgentKnowledgeDto {
 	@IsString()
@@ -8,6 +9,6 @@ export class CreateAgentKnowledgeDto {
 
 	@IsString()
 	@MinLength(1)
-	@MaxLength(20000)
+	@MaxLength(MAX_KNOWLEDGE_CONTENT_CHARS)
 	content!: string;
 }

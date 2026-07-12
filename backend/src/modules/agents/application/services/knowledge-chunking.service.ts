@@ -2,9 +2,8 @@ import { Injectable } from "@nestjs/common";
 
 export const KNOWLEDGE_CHUNK_SIZE = 1200;
 export const KNOWLEDGE_CHUNK_OVERLAP = 200;
-export const MAX_KNOWLEDGE_CHUNKS = 100;
 
-/** Deterministic paragraph-aware chunking, bounded for cost and prompt safety. */
+/** Deterministic paragraph-aware chunking. Long documents are preserved; embedding requests are batched separately. */
 @Injectable()
 export class KnowledgeChunkingService {
 	chunk(text: string): string[] {
@@ -16,7 +15,7 @@ export class KnowledgeChunkingService {
 
 		const chunks: string[] = [];
 		let start = 0;
-		while (start < normalized.length && chunks.length < MAX_KNOWLEDGE_CHUNKS) {
+		while (start < normalized.length) {
 			let end = Math.min(start + KNOWLEDGE_CHUNK_SIZE, normalized.length);
 			if (end < normalized.length) {
 				const paragraphBreak = normalized.lastIndexOf("\n\n", end);

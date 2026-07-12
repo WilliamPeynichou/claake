@@ -45,23 +45,28 @@ export class KnowledgeIndexService {
 			if (records.length === 0) return;
 			await tx.agentKnowledgeChunk.createMany({ data: records });
 			if (!vectors) return;
-			const rows = records.flatMap((record, index) => {
-				const vector = vectors[index];
-				return vector ? [Prisma.sql`(${record.id}, ${this.vectorLiteral(vector)}::vector)`] : [];
-			});
-			if (rows.length === 0) return;
-			// Single batched statement keeps the interactive transaction well under Prisma's timeout.
-			await tx.$executeRaw(
-				Prisma.sql`UPDATE "agent_knowledge_chunks" AS c
-				SET "embedding" = v."embedding"
-				FROM (VALUES ${Prisma.join(rows)}) AS v("id", "embedding")
-				WHERE c."id" = v."id"`,
-			);
+			for (const batch of this.batch(records, 100)) {
+				const rows = batch.flatMap((record) => {
+					const vector = vectors[record.chunkIndex];
+					return vector ? [Prisma.sql`(${record.id}, ${this.vectorLiteral(vector)}::vector)`] : [];
+				});
+				if (rows.length === 0) continue;
+				await tx.$executeRaw(
+					Prisma.sql`UPDATE "agent_knowledge_chunks" AS c
+					SET "embedding" = v."embedding"
+					FROM (VALUES ${Prisma.join(rows)}) AS v("id", "embedding")
+					WHERE c."id" = v."id"`,
+				);
+			}
 		});
 	}
 
-	async removeDocument(knowledgeId: string): Promise<void> {
-		await this.prisma.agentKnowledgeChunk.deleteMany({ where: { knowledgeId } });
+	private batch<T>(items: T[], size: number): T[][] {
+		const batches: T[][] = [];
+		for (let start = 0; start < items.length; start += size) {
+			batches.push(items.slice(start, start + size));
+		}
+		return batches;
 	}
 
 	async retrieve(

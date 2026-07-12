@@ -4,7 +4,7 @@ import { ConfigService } from "@nestjs/config";
 export const EMBEDDING_DIMENSIONS = 1536;
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const EMBEDDING_TIMEOUT_MS = 15_000;
-const MAX_EMBEDDING_INPUTS = 100;
+export const MAX_EMBEDDING_INPUTS = 100;
 
 @Injectable()
 export class EmbeddingService {
@@ -21,10 +21,17 @@ export class EmbeddingService {
 		if (inputs.length === 0) return [];
 		const apiKey = this.config.get<string>("OPENAI_EMBEDDING_API_KEY");
 		if (!apiKey) return null;
-		if (inputs.length > MAX_EMBEDDING_INPUTS) {
-			throw new Error(`Embedding batch exceeds ${MAX_EMBEDDING_INPUTS} inputs`);
+		const batches = this.batch(inputs, MAX_EMBEDDING_INPUTS);
+		const embeddings: number[][] = [];
+		for (const batch of batches) {
+			const result = await this.embedBatch(batch, apiKey);
+			if (!result) return null;
+			embeddings.push(...result);
 		}
+		return embeddings;
+	}
 
+	private async embedBatch(inputs: string[], apiKey: string): Promise<number[][] | null> {
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), EMBEDDING_TIMEOUT_MS);
 		try {
@@ -61,5 +68,13 @@ export class EmbeddingService {
 		} finally {
 			clearTimeout(timeout);
 		}
+	}
+
+	private batch<T>(items: T[], size: number): T[][] {
+		const batches: T[][] = [];
+		for (let start = 0; start < items.length; start += size) {
+			batches.push(items.slice(start, start + size));
+		}
+		return batches;
 	}
 }

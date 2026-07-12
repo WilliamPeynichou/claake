@@ -2,8 +2,8 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PDFParse } from "pdf-parse";
 import { validateUploadFile } from "../../../uploads/application/upload-file.validator.js";
+import { MAX_KNOWLEDGE_CONTENT_CHARS } from "../knowledge.constants.js";
 
-const MAX_EXTRACTED_PDF_CHARS = 200_000;
 const MISTRAL_OCR_MODEL = "mistral-ocr-latest";
 const MISTRAL_OCR_TIMEOUT_MS = 30_000;
 
@@ -27,7 +27,7 @@ export class PdfKnowledgeExtractionService {
 		try {
 			const result = await parser.getText();
 			const text = this.normalizeText(result.text);
-			if (text) return text.slice(0, MAX_EXTRACTED_PDF_CHARS);
+			if (text) return text.slice(0, MAX_KNOWLEDGE_CONTENT_CHARS);
 		} catch (error) {
 			this.logger.warn(
 				`Local PDF extraction failed: ${error instanceof Error ? error.message : "unknown"}`,
@@ -75,7 +75,7 @@ export class PdfKnowledgeExtractionService {
 			if (!text) {
 				throw new Error("Mistral OCR returned no text");
 			}
-			return text.slice(0, MAX_EXTRACTED_PDF_CHARS);
+			return text.slice(0, MAX_KNOWLEDGE_CONTENT_CHARS);
 		} catch (error) {
 			this.logger.warn(
 				`Mistral OCR unavailable: ${error instanceof Error ? error.message : "unknown"}`,

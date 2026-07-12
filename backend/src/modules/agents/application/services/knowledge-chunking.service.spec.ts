@@ -20,8 +20,9 @@ describe("KnowledgeChunkingService", () => {
 		expect(chunks.at(-1)).toContain("Phrase 299 document");
 	});
 
-	it("caps abusive documents at 100 chunks", () => {
+	it("keeps all chunks for a document that spans more than the former 100-chunk limit", () => {
 		const chunks = service.chunk("x ".repeat(100_000));
-		expect(chunks).toHaveLength(100);
+		expect(chunks.length).toBeGreaterThan(100);
+		expect(chunks.at(-1)).toContain("x");
 	});
 });
