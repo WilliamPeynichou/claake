@@ -6,6 +6,7 @@ import {
 	NotFoundException,
 } from "@nestjs/common";
 import { AgentKnowledgeService } from "../../../agents/application/services/agent-knowledge.service.js";
+import { AgentSkillContextService } from "../../../agents/application/services/agent-skill-context.service.js";
 import {
 	AGENT_REPOSITORY,
 	type AgentRepositoryPort,
@@ -28,6 +29,7 @@ import { ToolRegistryService } from "../services/tool-registry.service.js";
 function buildQualitySystemPrompt(
 	agent: NonNullable<Awaited<ReturnType<AgentRepositoryPort["findById"]>>>,
 	knowledgeContext?: string | null,
+	skillContext?: string | null,
 ): string | null {
 	const sections: string[] = [];
 	const basePrompt = agent.systemPrompt ?? agent.longDescription;
@@ -44,6 +46,9 @@ function buildQualitySystemPrompt(
 	if (knowledgeContext) {
 		sections.push(`Base de connaissances:\n${knowledgeContext}`);
 	}
+	if (skillContext) {
+		sections.push(`Skills pertinents:\n${skillContext}`);
+	}
 	return sections.length ? sections.join("\n\n") : null;
 }
 
@@ -56,6 +61,7 @@ export class SendMessageUseCase {
 		private readonly strategyResolver: ExecutionStrategyResolver,
 		private readonly quotaService: ChatQuotaService,
 		private readonly knowledgeService: AgentKnowledgeService,
+		private readonly skillContextService: AgentSkillContextService,
 		private readonly observability: ChatObservabilityService,
 		private readonly toolRegistry: ToolRegistryService,
 	) {}
@@ -134,6 +140,7 @@ export class SendMessageUseCase {
 		// Resolve execution strategy for this agent
 		const { provider, extraParams } = await this.strategyResolver.resolve(agent, userId);
 		const knowledgeContext = await this.knowledgeService.buildKnowledgeContext(agent.id, content);
+		const skillContext = await this.skillContextService.buildSkillContext(agent.id, content);
 
 		const model = agent.models[0] ?? "claude-sonnet-4-20250514";
 		const providerName = provider.constructor.name;
@@ -159,7 +166,7 @@ export class SendMessageUseCase {
 
 		const streamInput = {
 			model,
-			systemPrompt: buildQualitySystemPrompt(agent, knowledgeContext),
+			systemPrompt: buildQualitySystemPrompt(agent, knowledgeContext, skillContext),
 			messages: formattedHistory,
 			maxTokens: 4096,
 			attachments: attachments.length > 0 ? attachments : undefined,

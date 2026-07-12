@@ -6,6 +6,7 @@ import { RolesGuard } from "../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../common/guards/supabase-auth.guard.js";
 import { AgentKnowledgeService } from "./application/services/agent-knowledge.service.js";
 import { AgentSkillService } from "./application/services/agent-skill.service.js";
+import { AgentSkillContextService } from "./application/services/agent-skill-context.service.js";
 import { EmbeddingService } from "./application/services/embedding.service.js";
 import { KnowledgeChunkingService } from "./application/services/knowledge-chunking.service.js";
 import { KnowledgeIndexService } from "./application/services/knowledge-index.service.js";
@@ -50,8 +51,15 @@ import { PrismaAgentRepository } from "./infrastructure/repositories/prisma-agen
 		KnowledgeIndexService,
 		PdfKnowledgeExtractionService,
 		AgentSkillService,
+		AgentSkillContextService,
 		{ provide: AGENT_REPOSITORY, useClass: PrismaAgentRepository },
 	],
-	exports: [AGENT_REPOSITORY, AgentKnowledgeService, AgentSkillService, KnowledgeIndexService],
+	exports: [
+		AGENT_REPOSITORY,
+		AgentKnowledgeService,
+		AgentSkillService,
+		AgentSkillContextService,
+		KnowledgeIndexService,
+	],
 })
 export class AgentModule {}

@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { AgentKnowledgeService } from "../../../agents/application/services/agent-knowledge.service";
+import { AgentSkillContextService } from "../../../agents/application/services/agent-skill-context.service";
 import { AgentEntity } from "../../../agents/domain/entities/agent.entity";
 import { AGENT_REPOSITORY } from "../../../agents/domain/ports/agent.repository.port";
 import { ChatSessionEntity } from "../../domain/entities/chat-session.entity";
@@ -141,6 +142,10 @@ describe("SendMessageUseCase", () => {
 				ChatQuotaService,
 				{ provide: ChatObservabilityService, useValue: mockObservability },
 				{ provide: ToolRegistryService, useValue: mockToolRegistry },
+				{
+					provide: AgentSkillContextService,
+					useValue: { buildSkillContext: jest.fn().mockResolvedValue(null) },
+				},
 				{
 					provide: AgentKnowledgeService,
 					useValue: { buildKnowledgeContext: jest.fn().mockResolvedValue(null) },
@@ -335,6 +340,34 @@ describe("SendMessageUseCase", () => {
 			expect.objectContaining({
 				systemPrompt: expect.stringContaining("Format de sortie attendu"),
 			}),
+		);
+	});
+
+	it("injecte les skills sélectionnés dans le system prompt", async () => {
+		mockChatRepo.findById.mockResolvedValue(makeSession());
+		mockAgentRepo.findById.mockResolvedValue(makeAgent());
+		const skillContext = "## Skill: Juridique\nFichier: clause.md\n\nUne clause utile";
+		const module = await Test.createTestingModule({
+			providers: [
+				SendMessageUseCase,
+				{ provide: CHAT_SESSION_REPOSITORY, useValue: mockChatRepo },
+				{ provide: AGENT_REPOSITORY, useValue: mockAgentRepo },
+				{ provide: EXECUTION_STRATEGY_RESOLVER, useValue: mockStrategyResolver },
+				ChatQuotaService,
+				{ provide: ChatObservabilityService, useValue: mockObservability },
+				{ provide: ToolRegistryService, useValue: mockToolRegistry },
+				{ provide: AgentKnowledgeService, useValue: { buildKnowledgeContext: jest.fn() } },
+				{
+					provide: AgentSkillContextService,
+					useValue: { buildSkillContext: jest.fn().mockResolvedValue(skillContext) },
+				},
+			],
+		}).compile();
+
+		await module.get(SendMessageUseCase).execute("session-1", "user-1", "Question");
+
+		expect(mockProvider.streamText).toHaveBeenCalledWith(
+			expect.objectContaining({ systemPrompt: expect.stringContaining("Skills pertinents") }),
 		);
 	});
 
