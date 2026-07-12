@@ -4,7 +4,14 @@ import { AgentSkillService } from "./agent-skill.service";
 
 function makePrisma(overrides: Record<string, unknown> = {}) {
 	return {
-		agent: { findUnique: jest.fn().mockResolvedValue({ creatorId: "creator-1" }) },
+		agent: { findUnique: jest.fn().mockResolvedValue({ creatorId: "creator-1", tools: [] }) },
+		agentSkillLink: {
+			count: jest.fn().mockResolvedValue(0),
+			findMany: jest.fn().mockResolvedValue([]),
+			deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+			upsert: jest.fn(),
+		},
+		mcpTool: { findMany: jest.fn().mockResolvedValue([]) },
 		agentSkill: {
 			count: jest.fn().mockResolvedValue(0),
 			create: jest.fn().mockImplementation(({ data }) =>
@@ -86,7 +93,7 @@ describe("AgentSkillService", () => {
 
 	it("rejects creation and import once the per-agent skill quota is reached", async () => {
 		const prisma = makePrisma();
-		(prisma.agentSkill.count as jest.Mock).mockResolvedValue(30);
+		(prisma.agentSkillLink.count as jest.Mock).mockResolvedValue(30);
 		const service = new AgentSkillService(prisma);
 		await expect(
 			service.create("agent-1", { userId: "creator-1" }, { name: "Test" }),
@@ -139,10 +146,10 @@ describe("AgentSkillService", () => {
 		);
 	});
 
-	it("reports a missing skill when deleting", async () => {
+	it("reports a missing skill when detaching", async () => {
 		const service = new AgentSkillService(makePrisma());
 		await expect(
-			service.remove("agent-1", "missing", { userId: "creator-1" }),
+			service.detach("agent-1", "missing", { userId: "creator-1" }),
 		).rejects.toBeInstanceOf(NotFoundException);
 	});
 });

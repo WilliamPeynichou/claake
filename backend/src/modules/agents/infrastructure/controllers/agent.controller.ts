@@ -210,7 +210,7 @@ export class AgentController {
 		@Param("skillId") skillId: string,
 		@Req() req: { user: RequestUser },
 	) {
-		await this.skills.remove(id, skillId, { userId: req.user.id, role: req.user.role });
+		await this.skills.detach(id, skillId, { userId: req.user.id, role: req.user.role });
 	}
 	@UseGuards(SupabaseAuthGuard)
 	async listKnowledge(@Param("id") id: string, @Req() req: { user: RequestUser }) {

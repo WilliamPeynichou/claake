@@ -128,6 +128,7 @@ model User {
 
   ownedTeams    Team[]         @relation("TeamOwner")
   agents        Agent[]
+  skills        AgentSkill[]
   purchases     Purchase[]
   subscriptions Subscription[]
   reviews       Review[]
@@ -226,7 +227,7 @@ model Agent {
   knowledge        AgentKnowledge[]
   knowledgeChunks AgentKnowledgeChunk[]
   mcpServers      McpServer[]
-  skills          AgentSkill[]
+  skills          AgentSkillLink[]
 
   @@index([slug])
   @@index([creatorId])
@@ -575,17 +576,32 @@ model UploadedFile {
 }
 
 model AgentSkill {
-  id          String   @id @default(uuid())
-  agentId     String   @map("agent_id")
-  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  resources   AgentSkillResource[]
+  id           String   @id @default(uuid())
+  creatorId    String   @map("creator_id")
+  creator      User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  dependencies Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  resources    AgentSkillResource[]
+  links        AgentSkillLink[]
 
-  @@index([agentId])
+  @@index([creatorId])
   @@map("agent_skills")
+}
+
+model AgentSkillLink {
+  id        String     @id @default(uuid())
+  skillId   String     @map("skill_id")
+  skill     AgentSkill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  agentId   String     @map("agent_id")
+  agent     Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@unique([skillId, agentId])
+  @@index([agentId])
+  @@map("agent_skill_links")
 }
 
 model AgentSkillResource {

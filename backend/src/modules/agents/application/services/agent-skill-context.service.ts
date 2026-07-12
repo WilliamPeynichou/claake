@@ -16,11 +16,12 @@ export class AgentSkillContextService {
 	constructor(private readonly prisma: PrismaService) {}
 
 	async buildSkillContext(agentId: string, query?: string): Promise<string | null> {
-		const skills = await this.prisma.agentSkill.findMany({
+		const links = await this.prisma.agentSkillLink.findMany({
 			where: { agentId },
-			include: { resources: { orderBy: { path: "asc" } } },
+			include: { skill: { include: { resources: { orderBy: { path: "asc" } } } } },
 			orderBy: { createdAt: "asc" },
 		});
+		const skills = links.map((link) => link.skill);
 		if (skills.length === 0) return null;
 
 		const terms = this.tokenize(query ?? "");

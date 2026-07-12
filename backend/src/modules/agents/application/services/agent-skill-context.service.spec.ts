@@ -3,7 +3,7 @@ import { AgentSkillContextService } from "./agent-skill-context.service";
 
 function makePrisma(skills: unknown[]) {
 	return {
-		agentSkill: { findMany: jest.fn().mockResolvedValue(skills) },
+		agentSkillLink: { findMany: jest.fn().mockResolvedValue(skills.map((skill) => ({ skill }))) },
 	} as unknown as PrismaService;
 }
 
