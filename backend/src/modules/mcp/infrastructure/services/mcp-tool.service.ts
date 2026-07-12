@@ -14,6 +14,7 @@ import {
 	type PreparedMcpTool,
 } from "../../domain/ports/mcp-tool.port.js";
 import { McpHttpClient, type McpTransportCredentials } from "../transport/mcp-http.client.js";
+import { McpCircuitBreakerService } from "./mcp-circuit-breaker.service.js";
 
 const MAX_MCP_TOOL_RESULT_CHARS = 20_000;
 
@@ -24,6 +25,7 @@ export class McpToolService implements McpToolPort {
 		@Inject(MCP_SERVER_REPOSITORY) private readonly repository: McpServerRepositoryPort,
 		@Inject(ENCRYPTION_SERVICE) private readonly encryption: EncryptionServicePort,
 		private readonly transport: McpHttpClient,
+		private readonly circuitBreaker: McpCircuitBreakerService,
 	) {}
 
 	async prepareTools(agentId: string): Promise<PreparedMcpTool[]> {
@@ -35,6 +37,7 @@ export class McpToolService implements McpToolPort {
 				server.tools
 					.filter((tool) => tool.isSelected)
 					.map((tool) => ({
+						serverId: server.id,
 						definition: {
 							name: this.alias(server.id, tool.name, usedAliases),
 							description: tool.description ?? `MCP tool ${tool.name}`,
@@ -46,6 +49,7 @@ export class McpToolService implements McpToolPort {
 	}
 
 	private async execute(serverId: string, toolName: string, input: unknown): Promise<unknown> {
+		this.circuitBreaker.assertAvailable(serverId);
 		const server = await this.repository.findById(serverId);
 		const tool = server?.tools.find((item) => item.name === toolName && item.isSelected);
 		if (!server || !tool || server.reviewStatus !== "APPROVED" || !server.isActive) {
@@ -54,12 +58,18 @@ export class McpToolService implements McpToolPort {
 		if (!input || typeof input !== "object" || Array.isArray(input)) {
 			throw new Error("MCP tool input must be an object");
 		}
-		const result = await this.transport.callTool(
-			{ url: server.url, credentials: this.credentials(server) },
-			tool.name,
-			input as Record<string, unknown>,
-		);
-		return this.boundResult(result);
+		try {
+			const result = await this.transport.callTool(
+				{ url: server.url, credentials: this.credentials(server) },
+				tool.name,
+				input as Record<string, unknown>,
+			);
+			this.circuitBreaker.recordSuccess(serverId);
+			return this.boundResult(result);
+		} catch (error) {
+			this.circuitBreaker.recordFailure(serverId);
+			throw error;
+		}
 	}
 
 	/** Deterministic per prepare(): tools are sorted by name; collisions get a numeric suffix. */

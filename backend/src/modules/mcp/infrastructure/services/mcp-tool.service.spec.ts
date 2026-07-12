@@ -1,3 +1,4 @@
+import { McpCircuitBreakerService } from "./mcp-circuit-breaker.service.js";
 import { McpToolService } from "./mcp-tool.service";
 
 describe("McpToolService", () => {
@@ -7,7 +8,13 @@ describe("McpToolService", () => {
 	};
 	const encryption = { decrypt: jest.fn().mockReturnValue('{"Authorization":"Bearer secret"}') };
 	const transport = { callTool: jest.fn() };
-	const service = new McpToolService(repository as never, encryption as never, transport as never);
+	const circuitBreaker = new McpCircuitBreakerService();
+	const service = new McpToolService(
+		repository as never,
+		encryption as never,
+		transport as never,
+		circuitBreaker,
+	);
 
 	beforeEach(() => jest.clearAllMocks());
 
@@ -73,6 +80,22 @@ describe("McpToolService", () => {
 			"search",
 			{ query: "contract" },
 		);
+	});
+
+	it("opens the circuit after three transport failures and blocks further calls", async () => {
+		const active = server({ id: "server-cb", tools: [tool({ isSelected: true })] });
+		repository.findByAgent.mockResolvedValue([active]);
+		repository.findById.mockResolvedValue(active);
+		transport.callTool.mockRejectedValue(new Error("MCP endpoint returned HTTP 503"));
+		const [prepared] = await service.prepareTools("agent-1");
+
+		for (let attempt = 0; attempt < 3; attempt++) {
+			await expect(prepared?.execute({ query: "x" })).rejects.toThrow("HTTP 503");
+		}
+		await expect(prepared?.execute({ query: "x" })).rejects.toThrow(
+			"MCP server is temporarily unavailable",
+		);
+		expect(transport.callTool).toHaveBeenCalledTimes(3);
 	});
 });
 

@@ -73,6 +73,28 @@ describe("ToolRegistryService", () => {
 		expect(mcpExecute).not.toHaveBeenCalled();
 	});
 
+	it("applique le quota MCP dédié après trois appels MCP", async () => {
+		const mcpExecute = jest.fn().mockResolvedValue({ ok: true });
+		const agent = makeAgent([]);
+		service = new ToolRegistryService(knowledgeService as any, {
+			prepareTools: jest.fn().mockResolvedValue([
+				{
+					definition: { name: "mcp_tool", description: "MCP", inputSchema: {} },
+					execute: mcpExecute,
+				},
+			]),
+		});
+		const catalogue = await service.prepare(agent, makeContext(agent));
+
+		await catalogue.execute("mcp_tool", {}, 0);
+		await catalogue.execute("mcp_tool", {}, 1);
+		await catalogue.execute("mcp_tool", {}, 2);
+		await expect(catalogue.execute("mcp_tool", {}, 3)).rejects.toThrow(
+			"MCP tool call quota exceeded for this message",
+		);
+		expect(mcpExecute).toHaveBeenCalledTimes(3);
+	});
+
 	it("exposes enabled tool definitions only", () => {
 		const definitions = service.getDefinitions(
 			makeAgent([

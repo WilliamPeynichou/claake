@@ -3,6 +3,7 @@ import type { ProviderToolDefinition } from "../../../chat/domain/ports/ai-provi
 export const MCP_TOOL_PORT = Symbol("MCP_TOOL_PORT");
 
 export interface PreparedMcpTool {
+	serverId: string;
 	definition: ProviderToolDefinition;
 	execute(input: unknown): Promise<unknown>;
 }

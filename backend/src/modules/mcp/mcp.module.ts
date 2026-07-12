@@ -8,6 +8,7 @@ import { MCP_TOOL_PORT } from "./domain/ports/mcp-tool.port.js";
 import { AdminMcpController } from "./infrastructure/controllers/admin-mcp.controller.js";
 import { McpServerController } from "./infrastructure/controllers/mcp-server.controller.js";
 import { PrismaMcpServerRepository } from "./infrastructure/repositories/prisma-mcp-server.repository.js";
+import { McpCircuitBreakerService } from "./infrastructure/services/mcp-circuit-breaker.service.js";
 import { McpToolService } from "./infrastructure/services/mcp-tool.service.js";
 import { McpHttpClient } from "./infrastructure/transport/mcp-http.client.js";
 
@@ -18,6 +19,7 @@ import { McpHttpClient } from "./infrastructure/transport/mcp-http.client.js";
 		SupabaseAuthGuard,
 		RolesGuard,
 		McpHttpClient,
+		McpCircuitBreakerService,
 		McpServerService,
 		McpToolService,
 		{ provide: MCP_TOOL_PORT, useExisting: McpToolService },

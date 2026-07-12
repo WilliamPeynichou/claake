@@ -12,6 +12,7 @@ import {
 import type { ProviderToolDefinition } from "../../domain/ports/ai-provider.port.js";
 
 const MAX_TOOL_CALLS_PER_MESSAGE = 5;
+const MAX_MCP_TOOL_CALLS_PER_MESSAGE = 3;
 const FETCH_TIMEOUT_MS = 5000;
 const FETCH_MAX_CHARS = 20_000;
 
@@ -60,10 +61,14 @@ export class ToolRegistryService {
 		const frozenDefinitions = Object.freeze(
 			definitions.map((definition) => Object.freeze(definition)),
 		) as ProviderToolDefinition[];
+		let mcpToolCalls = 0;
 		return Object.freeze({
 			definitions: frozenDefinitions,
 			execute: (name: string, input: unknown, callIndex: number) =>
-				this.executePrepared(toolsByName, name, input, context, callIndex),
+				this.executePrepared(toolsByName, name, input, context, callIndex, () => {
+					mcpToolCalls++;
+					return mcpToolCalls;
+				}),
 		});
 	}
 
@@ -85,13 +90,20 @@ export class ToolRegistryService {
 		input: unknown,
 		context: ToolExecutionContext,
 		callIndex: number,
+		nextMcpCallCount: () => number,
 	): Promise<unknown> {
 		if (callIndex >= MAX_TOOL_CALLS_PER_MESSAGE) {
 			throw new BadRequestException("Tool call quota exceeded for this message");
 		}
 		const tool = toolsByName.get(name);
 		if (!tool) throw new BadRequestException(`Tool ${name} is not in the prepared catalogue`);
-		if ("definition" in tool) return tool.execute(input);
+		if ("definition" in tool) {
+			// Dedicated MCP quota: remote calls are slower and riskier than built-ins.
+			if (nextMcpCallCount() > MAX_MCP_TOOL_CALLS_PER_MESSAGE) {
+				throw new BadRequestException("MCP tool call quota exceeded for this message");
+			}
+			return tool.execute(input);
+		}
 		return this.executeAndObserve(tool, name, input, context);
 	}
 
