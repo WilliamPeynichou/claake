@@ -79,7 +79,7 @@ function expandIpv6(address: string): number[] | null {
 
 function ipv6StartsWith(address: string, prefixGroups: number[], prefixBits: number): boolean {
 	const groups = expandIpv6(address);
-	if (!groups || groups.length !== 8) return false;
+	if (groups?.length !== 8) return false;
 	let remaining = prefixBits;
 	for (let index = 0; index < 8 && remaining > 0; index++) {
 		const bits = Math.min(16, remaining);

@@ -22,7 +22,7 @@ const prisma = new PrismaClient();
 // Réplique de AesEncryptionService — même algo AES-256-GCM
 function encrypt(plaintext: string): string {
 	const hexKey = process.env.ENCRYPTION_KEY;
-	if (!hexKey || hexKey.length !== 64) {
+	if (hexKey?.length !== 64) {
 		throw new Error("ENCRYPTION_KEY manquante ou invalide dans .env (doit être 64 chars hex)");
 	}
 	const key = Buffer.from(hexKey, "hex");

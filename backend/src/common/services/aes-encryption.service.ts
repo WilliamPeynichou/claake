@@ -18,7 +18,7 @@ export class AesEncryptionService implements EncryptionServicePort {
 
 	constructor(config: ConfigService) {
 		const currentKey = config.get<string>("ENCRYPTION_KEY");
-		if (!currentKey || currentKey.length !== 64) {
+		if (currentKey?.length !== 64) {
 			throw new Error("ENCRYPTION_KEY must be a 64-char hex string (32 bytes)");
 		}
 		this.currentKeyId = config.get<string>("ENCRYPTION_KEY_ID") ?? "v1";
