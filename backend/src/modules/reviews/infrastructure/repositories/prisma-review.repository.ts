@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import type { Review } from "@prisma/client";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
 import { ReviewEntity } from "../../domain/entities/review.entity.js";
 import type { ReviewRepositoryPort } from "../../domain/ports/review.repository.port.js";
@@ -7,7 +8,7 @@ import type { ReviewRepositoryPort } from "../../domain/ports/review.repository.
 export class PrismaReviewRepository implements ReviewRepositoryPort {
 	constructor(private readonly prisma: PrismaService) {}
 
-	private toEntity(raw: any & { user?: { displayName: string | null } }): ReviewEntity {
+	private toEntity(raw: Review & { user?: { displayName: string | null } }): ReviewEntity {
 		return new ReviewEntity(
 			raw.id,
 			raw.userId,

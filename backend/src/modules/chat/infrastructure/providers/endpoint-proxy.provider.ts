@@ -13,20 +13,8 @@ const MAX_RESPONSE_SIZE = 10 * 1024 * 1024; // 10MB
 const TIMEOUT_MS = 60_000;
 const GENERIC_VENDOR_ERROR = "External AI endpoint is currently unavailable";
 
-// Formats that use the OpenAI-compatible chat/completions API
-const OPENAI_COMPATIBLE_FORMATS = new Set([
-	"openai",
-	"mistral",
-	"deepseek",
-	"groq",
-	"xai",
-	"perplexity",
-	"meta",
-	"together",
-	"fireworks",
-	"huggingface",
-	"claake",
-]);
+// Formats that use the OpenAI-compatible chat/completions API:
+// openai, mistral, deepseek, groq, xai, perplexity, meta, together, fireworks, huggingface, claake
 
 type OpenAIContentPart =
 	| { type: "text"; text: string }
@@ -36,6 +24,16 @@ type AnthropicContentBlock =
 	| { type: "text"; text: string }
 	| { type: "image"; source: { type: "url"; url: string } }
 	| { type: "document"; source: { type: "url"; url: string } };
+
+type StreamTextParamsWithEndpoint = StreamTextParams & { endpointFormat?: string };
+
+type ProxiedStreamParams = StreamTextParams & { baseUrl: string };
+
+type VendorStreamChunk = {
+	type?: string;
+	delta?: { type?: string; text?: string };
+	choices?: Array<{ delta?: { content?: string } }>;
+};
 
 function buildOpenAIContent(text: string, attachments: FileAttachment[]): OpenAIContentPart[] {
 	const parts: OpenAIContentPart[] = [];
@@ -79,8 +77,9 @@ export class EndpointProxyProvider implements AIProviderPort {
 			throw new Error("No endpoint URL provided for proxy provider");
 		}
 
-		const endpointFormat = ((params as any).endpointFormat as string)?.toLowerCase() ?? "openai";
-		const parsedBaseUrl = await assertPublicHttpUrl(params.baseUrl!);
+		const endpointFormat =
+			(params as StreamTextParamsWithEndpoint).endpointFormat?.toLowerCase() ?? "openai";
+		const parsedBaseUrl = await assertPublicHttpUrl(params.baseUrl);
 		const { url, init } = this.buildRequest(
 			{ ...params, baseUrl: parsedBaseUrl.toString() },
 			endpointFormat,
@@ -132,7 +131,10 @@ export class EndpointProxyProvider implements AIProviderPort {
 	}
 
 	private async *parseStandardSSE(res: Response, format: string): AsyncIterable<string> {
-		const reader = res.body!.getReader();
+		if (!res.body) {
+			throw new Error(GENERIC_VENDOR_ERROR);
+		}
+		const reader = res.body.getReader();
 		const decoder = new TextDecoder();
 		let buffer = "";
 		let totalSize = 0;
@@ -157,7 +159,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 					if (data === "[DONE]") return;
 
 					try {
-						const parsed = JSON.parse(data);
+						const parsed = JSON.parse(data) as VendorStreamChunk;
 						const text = this.extractText(parsed, format);
 						if (text) yield text;
 					} catch {
@@ -188,7 +190,10 @@ export class EndpointProxyProvider implements AIProviderPort {
 	}
 
 	private async *parseCohereSSE(res: Response): AsyncIterable<string> {
-		const reader = res.body!.getReader();
+		if (!res.body) {
+			throw new Error(GENERIC_VENDOR_ERROR);
+		}
+		const reader = res.body.getReader();
 		const decoder = new TextDecoder();
 		let buffer = "";
 		let totalSize = 0;
@@ -230,7 +235,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 	}
 
 	private buildRequest(
-		params: StreamTextParams,
+		params: ProxiedStreamParams,
 		format: string,
 	): { url: string; init: RequestInit } {
 		if (format === "anthropic") {
@@ -246,7 +251,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		return this.buildOpenAIRequest(params);
 	}
 
-	private buildAnthropicRequest(params: StreamTextParams): { url: string; init: RequestInit } {
+	private buildAnthropicRequest(params: ProxiedStreamParams): { url: string; init: RequestInit } {
 		const messages = params.messages.map((m, idx) => {
 			const isLastUserMessage = m.role === "user" && idx === params.messages.length - 1;
 			if (isLastUserMessage && params.attachments?.length) {
@@ -272,7 +277,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		}
 
 		return {
-			url: params.baseUrl!,
+			url: params.baseUrl,
 			init: {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -281,7 +286,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		};
 	}
 
-	private buildGoogleRequest(params: StreamTextParams): { url: string; init: RequestInit } {
+	private buildGoogleRequest(params: ProxiedStreamParams): { url: string; init: RequestInit } {
 		const contents = params.messages.map((m) => ({
 			role: m.role === "assistant" ? "model" : "user",
 			parts: [{ text: m.content }],
@@ -296,7 +301,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		}
 
 		return {
-			url: params.baseUrl!,
+			url: params.baseUrl,
 			init: {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -305,7 +310,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		};
 	}
 
-	private buildCohereRequest(params: StreamTextParams): { url: string; init: RequestInit } {
+	private buildCohereRequest(params: ProxiedStreamParams): { url: string; init: RequestInit } {
 		const messages: Array<{ role: string; content: string }> = [];
 		if (params.systemPrompt) {
 			messages.push({ role: "system", content: params.systemPrompt });
@@ -318,7 +323,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		);
 
 		return {
-			url: params.baseUrl!,
+			url: params.baseUrl,
 			init: {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -332,7 +337,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		};
 	}
 
-	private buildOpenAIRequest(params: StreamTextParams): { url: string; init: RequestInit } {
+	private buildOpenAIRequest(params: ProxiedStreamParams): { url: string; init: RequestInit } {
 		const messages: Array<{ role: string; content: string | OpenAIContentPart[] }> = [];
 		if (params.systemPrompt) {
 			messages.push({ role: "system", content: params.systemPrompt });
@@ -350,7 +355,7 @@ export class EndpointProxyProvider implements AIProviderPort {
 		});
 
 		return {
-			url: params.baseUrl!,
+			url: params.baseUrl,
 			init: {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -364,10 +369,10 @@ export class EndpointProxyProvider implements AIProviderPort {
 		};
 	}
 
-	private extractText(parsed: any, format: string): string | null {
+	private extractText(parsed: VendorStreamChunk, format: string): string | null {
 		if (format === "anthropic") {
 			if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
-				return parsed.delta.text;
+				return parsed.delta.text ?? null;
 			}
 			return null;
 		}

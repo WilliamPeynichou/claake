@@ -7,7 +7,11 @@ import {
 	PAYMENT_REPOSITORY,
 	type PaymentRepositoryPort,
 } from "../../domain/ports/payment.repository.port.js";
-import { STRIPE_SERVICE, type StripeServicePort } from "../../domain/ports/stripe.port.js";
+import {
+	STRIPE_SERVICE,
+	type StripeCheckoutSessionData,
+	type StripeServicePort,
+} from "../../domain/ports/stripe.port.js";
 
 @Injectable()
 export class HandleWebhookUseCase {
@@ -36,7 +40,7 @@ export class HandleWebhookUseCase {
 		return { received: true };
 	}
 
-	private async handleCheckoutSessionCompleted(session: Record<string, any>): Promise<void> {
+	private async handleCheckoutSessionCompleted(session: StripeCheckoutSessionData): Promise<void> {
 		if (session.payment_status !== "paid") {
 			this.logger.warn(`Ignoring unpaid checkout session id=${session.id}`);
 			return;
@@ -91,7 +95,7 @@ export class HandleWebhookUseCase {
 		}
 	}
 
-	private extractStripePaymentId(session: Record<string, any>): string | null {
+	private extractStripePaymentId(session: StripeCheckoutSessionData): string | null {
 		if (typeof session.payment_intent === "string") return session.payment_intent;
 		if (session.payment_intent && typeof session.payment_intent.id === "string") {
 			return session.payment_intent.id;

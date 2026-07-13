@@ -4,6 +4,7 @@ import { Roles } from "../../../../common/decorators/roles.decorator.js";
 import { AdminPermissionGuard } from "../../../../common/guards/admin-permission.guard.js";
 import { RolesGuard } from "../../../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
+import type { AuthenticatedRequest } from "../../../../common/types/authenticated-request.type.js";
 import { GetAdminStatsUseCase } from "../../application/usecases/get-admin-stats.usecase.js";
 import { GetDashboardStatsUseCase } from "../../application/usecases/get-dashboard-stats.usecase.js";
 
@@ -16,7 +17,7 @@ export class StatsController {
 
 	@Get("dashboard")
 	@UseGuards(SupabaseAuthGuard)
-	async dashboard(@Req() req: any) {
+	async dashboard(@Req() req: AuthenticatedRequest) {
 		return this.getDashboardStats.execute(req.user.id);
 	}
 

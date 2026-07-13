@@ -1,17 +1,26 @@
-# Milestone 12 — Consolidation, Skills V2 et hardening MCP
+# Phase A (roadmap ouverture publique) — Lint strict et bloquant
+
+Branche : `feat/phase-a-lint-bloquant`
 
 ## Plan
 
-- [x] 1. Injecter les ressources Skills V2 dans le contexte de chat avec bornes et tests.
-- [ ] 2. Consolider les dettes locales M9 réalisables et leurs tests.
-- [ ] 3. Ajouter le quota MCP dédié par message et le circuit breaker par serveur.
-- [ ] 4. Vérifier les tests, le lint et le build backend ; documenter les limites staging/réseau.
+- [x] 1. Overrides Biome : autoriser `any`/non-null dans fichiers de test uniquement.
+- [x] 2. Corriger warnings auto-fixables (imports/variables inutilisés, useTemplate).
+- [x] 3. Corriger `noExplicitAny` backend (~50, typage req/Prisma JSON).
+- [x] 4. Corriger `noNonNullAssertion` backend (~20).
+- [x] 5. Corriger warnings frontend (noImgElement, any, unused).
+- [x] 6. Rendre lint bloquant : `--error-on-warnings` dans script racine (CI l'utilise déjà).
+- [x] 7. Vérifier : lint 0 warning, tests backend, builds.
 
 ## Review
 
-- Skills V2 : sélection locale par mots-clés sur skill/ressources, ordre stable en cas d'égalité, maximum 3 skills et 6 ressources.
-- Défense en profondeur : les ressources invalides (chemins absolus/traversal, vide, NUL) sont ignorées à la lecture ; contexte limité à 6 000 caractères et 2 000 par ressource.
-- Injection backend dans le prompt système (`Skills pertinents`) sans migration Prisma ni dépendance staging/Supabase.
-- Vérifié : tests ciblés `agent-skill-context` + `send-message` (28/28) et Biome ciblé OK (avertissements `any` préexistants dans le test chat).
-- `npm run build` reste bloqué par deux erreurs TypeScript MCP préexistantes/en cours de lot M10 (`executePrepared` arité et `serverId` manquant).
-
+- 164 warnings + 2 infos Biome → 0 diagnostic sur 447 fichiers.
+- `biome.json` : overrides tests (`*.spec/*.test/test/e2e`) désactivant `noExplicitAny` et
+  `noNonNullAssertion` — légitime pour doubles de test ; règles inchangées sur le code source.
+- Backend : contrôleurs typés `AuthenticatedRequest`, JSON Prisma via types générés,
+  providers SSE typés (`AnthropicStreamEvent`/`OpenAiStreamEvent`), Stripe
+  `StripeCheckoutSessionData` typé (port + service + webhook), non-null remplacés par gardes
+  explicites (`public-url.ts`, `aes-encryption`, `endpoint-proxy`).
+- `npm run lint` = `biome check --error-on-warnings .` → tout warning casse la CI (step Lint existant).
+- Vérifié : lint 0 warning ; `tsc --noEmit` backend src propre (6 erreurs specs préexistantes,
+  identiques sur main) ; 277 tests backend passent ; `web-build` + `api-build` OK ; tsc web propre.

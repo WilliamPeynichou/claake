@@ -1,7 +1,10 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import Stripe from "stripe";
-import type { StripeServicePort } from "../../domain/ports/stripe.port.js";
+import type {
+	StripeCheckoutSessionData,
+	StripeServicePort,
+} from "../../domain/ports/stripe.port.js";
 
 @Injectable()
 export class StripeService implements StripeServicePort {
@@ -10,7 +13,7 @@ export class StripeService implements StripeServicePort {
 
 	constructor(private readonly config: ConfigService) {
 		this.stripe = new Stripe(this.config.getOrThrow<string>("STRIPE_SECRET_KEY"), {
-			apiVersion: "2025-04-30.basil" as any,
+			apiVersion: "2025-04-30.basil" as Stripe.StripeConfig["apiVersion"],
 		});
 		this.webhookSecret = this.config.getOrThrow<string>("STRIPE_WEBHOOK_SECRET");
 	}
@@ -60,16 +63,23 @@ export class StripeService implements StripeServicePort {
 		};
 
 		const session = await this.stripe.checkout.sessions.create(sessionParams);
-		return { url: session.url! };
+		if (!session.url) {
+			throw new BadRequestException("Stripe checkout session has no URL");
+		}
+		return { url: session.url };
 	}
 
 	async constructWebhookEvent(
 		rawBody: Buffer,
 		signature: string,
-	): Promise<{ id: string; type: string; data: Record<string, any> }> {
+	): Promise<{ id: string; type: string; data: StripeCheckoutSessionData }> {
 		try {
 			const event = this.stripe.webhooks.constructEvent(rawBody, signature, this.webhookSecret);
-			return { id: event.id, type: event.type, data: event.data.object as Record<string, any> };
+			return {
+				id: event.id,
+				type: event.type,
+				data: event.data.object as StripeCheckoutSessionData,
+			};
 		} catch {
 			throw new BadRequestException("Invalid webhook signature");
 		}

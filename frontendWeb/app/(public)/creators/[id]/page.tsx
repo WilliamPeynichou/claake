@@ -4,7 +4,6 @@ import { ArrowLeft, Bot, ExternalLink, Github, Globe, Linkedin, Star, User } fro
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AgentCard } from "@/components/agents/agent-card";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 

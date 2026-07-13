@@ -29,7 +29,7 @@ describe("ChatSessionEntity", () => {
 			const longMsg = "A".repeat(80);
 			const title = ChatSessionEntity.generateTitle(longMsg);
 			expect(title.length).toBe(50);
-			expect(title).toBe("A".repeat(47) + "...");
+			expect(title).toBe(`${"A".repeat(47)}...`);
 		});
 
 		it("trims whitespace", () => {

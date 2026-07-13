@@ -45,7 +45,7 @@ export default function SettingsPage() {
 				{
 					display_name: fullName || null,
 					bio: bio || null,
-				} as any,
+				},
 				token,
 			);
 			setMessage("Profil mis à jour avec succès.");

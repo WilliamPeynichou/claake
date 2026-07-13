@@ -34,6 +34,21 @@ type TurnEvent =
 	| { kind: "tool_call"; id: string; name: string; argumentsJson: string }
 	| { kind: "stop"; finishReason: string | null };
 
+/** Minimal shape of OpenAI SSE stream events we consume. */
+type OpenAiStreamEvent = {
+	choices?: Array<{
+		delta?: {
+			content?: string;
+			tool_calls?: Array<{
+				index?: number;
+				id?: unknown;
+				function?: { name?: unknown; arguments?: unknown };
+			}>;
+		};
+		finish_reason?: unknown;
+	}>;
+};
+
 function buildMultimodalContent(text: string, attachments: FileAttachment[]): OpenAIContentPart[] {
 	const parts: OpenAIContentPart[] = [];
 	for (const attachment of attachments) {
@@ -188,12 +203,12 @@ export class OpenAIProvider implements AIProviderPort {
 			throw new Error("OpenAI provider unavailable");
 		}
 
-		if (!res.ok) {
+		if (!res.ok || !res.body) {
 			clearTimeout(timeout);
 			throw new Error("OpenAI provider unavailable");
 		}
 
-		const reader = res.body!.getReader();
+		const reader = res.body.getReader();
 		const decoder = new TextDecoder();
 		let buffer = "";
 		let totalSize = 0;
@@ -239,7 +254,7 @@ export class OpenAIProvider implements AIProviderPort {
 						return;
 					}
 
-					let parsed: Record<string, any>;
+					let parsed: OpenAiStreamEvent;
 					try {
 						parsed = JSON.parse(data);
 					} catch {

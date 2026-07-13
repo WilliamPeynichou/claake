@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText, Loader2, Trash2, Upload } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api-config";
@@ -171,9 +172,12 @@ export function FileUploader({
 							className="flex items-center gap-3 rounded-md border border-border/60 bg-card p-3"
 						>
 							{f.type === "IMAGE" ? (
-								<img
+								<Image
 									src={f.url}
 									alt={f.fileName}
+									width={40}
+									height={40}
+									unoptimized
 									className="h-10 w-10 rounded object-cover border border-border/40"
 								/>
 							) : (

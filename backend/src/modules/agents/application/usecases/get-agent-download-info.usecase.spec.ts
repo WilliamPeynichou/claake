@@ -1,6 +1,5 @@
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { AgentEntity } from "../../domain/entities/agent.entity";
-import { AGENT_REPOSITORY } from "../../domain/ports/agent.repository.port";
 import { GetAgentDownloadInfoUseCase } from "./get-agent-download-info.usecase";
 
 const repo = {

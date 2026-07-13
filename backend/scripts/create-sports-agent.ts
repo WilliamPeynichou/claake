@@ -12,7 +12,7 @@
 
 import { createCipheriv, randomBytes } from "node:crypto";
 import * as path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { type Prisma, PrismaClient } from "@prisma/client";
 import * as dotenv from "dotenv";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -134,7 +134,7 @@ Langue : réponds toujours dans la langue de l'utilisateur.`,
 			sellerApiKeyEncrypted: encryptedKey,
 			sellerApiProvider: "anthropic",
 			creatorId: creator.id,
-		} as any,
+		} satisfies Prisma.AgentUncheckedCreateInput,
 	});
 
 	console.log("\n✅ Agent créé avec succès !");

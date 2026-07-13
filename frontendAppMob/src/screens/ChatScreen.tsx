@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Animated,
 	KeyboardAvoidingView,
@@ -21,7 +21,6 @@ import { BRAND, fonts } from "../theme/brand";
 import { useTheme } from "../theme/ThemeContext";
 
 function TypingIndicator() {
-	const { dark, c } = useTheme();
 	const firstDot = useRef(new Animated.Value(0)).current;
 	const secondDot = useRef(new Animated.Value(0)).current;
 	const thirdDot = useRef(new Animated.Value(0)).current;
@@ -117,7 +116,7 @@ function MessageBubble({ msg, index }: { msg: Message; index: number }) {
 }
 
 function ChatListView({ onPickAgent }: { onPickAgent: (id: string) => void }) {
-	const { dark, c } = useTheme();
+	const { c } = useTheme();
 
 	return (
 		<ScrollView
@@ -179,7 +178,7 @@ function ChatListView({ onPickAgent }: { onPickAgent: (id: string) => void }) {
 }
 
 function ChatConversationView({ agentId, onBack }: { agentId: string; onBack: () => void }) {
-	const { dark, c } = useTheme();
+	const { c } = useTheme();
 	const agent = MOCK_AGENTS.find((a) => a.id === agentId);
 	const [msgs, setMsgs] = useState<Message[]>(SAMPLE_THREAD);
 	const [input, setInput] = useState("");
