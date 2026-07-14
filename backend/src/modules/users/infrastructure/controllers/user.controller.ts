@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
+import { RATE_LIMITS } from "../../../../common/config/rate-limits.js";
 import { RequirePermission } from "../../../../common/decorators/admin-permission.decorator.js";
 import { CurrentUser } from "../../../../common/decorators/current-user.decorator.js";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
@@ -72,12 +73,13 @@ export class AuthController {
 	}
 
 	@Post("api-keys")
-	@Throttle({ default: { ttl: 60_000, limit: 5 } })
+	@Throttle(RATE_LIMITS.apiKeyMutation)
 	async addApiKey(@Req() req: AuthenticatedRequest, @Body() body: AddApiKeyDto) {
 		return this.manageApiKeys.addKey(req.user.id, body.provider, body.label, body.key);
 	}
 
 	@Delete("api-keys/:id")
+	@Throttle(RATE_LIMITS.apiKeyMutation)
 	async removeApiKey(@Req() req: AuthenticatedRequest, @Param("id") keyId: string) {
 		await this.manageApiKeys.removeKey(req.user.id, keyId);
 		return { deleted: true };

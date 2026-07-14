@@ -1,26 +1,23 @@
-# Phase A (roadmap ouverture publique) — Lint strict et bloquant
+# Phase B — Open redirect et rate limiting ciblé
 
-Branche : `feat/phase-a-lint-bloquant`
+Branche : `fix/phase-b-open-redirect-rate-limit`
 
 ## Plan
 
-- [x] 1. Overrides Biome : autoriser `any`/non-null dans fichiers de test uniquement.
-- [x] 2. Corriger warnings auto-fixables (imports/variables inutilisés, useTemplate).
-- [x] 3. Corriger `noExplicitAny` backend (~50, typage req/Prisma JSON).
-- [x] 4. Corriger `noNonNullAssertion` backend (~20).
-- [x] 5. Corriger warnings frontend (noImgElement, any, unused).
-- [x] 6. Rendre lint bloquant : `--error-on-warnings` dans script racine (CI l'utilise déjà).
-- [x] 7. Vérifier : lint 0 warning, tests backend, builds.
+- [x] Ajouter tests unitaires exhaustifs à `safeRedirectPath` (open redirect encodé inclus).
+- [x] Auditer les quotas ciblés déjà présents (chat, coûts IA, upload, paiement, agents, clés API).
+- [x] Fermer les routes sensibles non limitées : webhook, onboarding Stripe, suppression clé API.
+- [x] Centraliser les profils de throttling pour éviter les valeurs divergentes.
+- [x] Vérifier lint, tests backend, tsc/build web.
 
 ## Review
 
-- 164 warnings + 2 infos Biome → 0 diagnostic sur 447 fichiers.
-- `biome.json` : overrides tests (`*.spec/*.test/test/e2e`) désactivant `noExplicitAny` et
-  `noNonNullAssertion` — légitime pour doubles de test ; règles inchangées sur le code source.
-- Backend : contrôleurs typés `AuthenticatedRequest`, JSON Prisma via types générés,
-  providers SSE typés (`AnthropicStreamEvent`/`OpenAiStreamEvent`), Stripe
-  `StripeCheckoutSessionData` typé (port + service + webhook), non-null remplacés par gardes
-  explicites (`public-url.ts`, `aes-encryption`, `endpoint-proxy`).
-- `npm run lint` = `biome check --error-on-warnings .` → tout warning casse la CI (step Lint existant).
-- Vérifié : lint 0 warning ; `tsc --noEmit` backend src propre (6 erreurs specs préexistantes,
-  identiques sur main) ; 277 tests backend passent ; `web-build` + `api-build` OK ; tsc web propre.
+- Open redirect : implémentation existante déjà sûre (origine locale + allowlist stricte des chemins) ;
+  5 tests couvrent URL absolue, `//`, encodage `%2f/%5c`, slash inverse, chemin hors allowlist.
+- Profils sensibles centralisés dans `RATE_LIMITS` : chat (10/min), upload (20/min), checkout
+  (10/min), webhook Stripe (120/min), onboarding Stripe et mutations de clés API (5/min).
+- Trous fermés : webhook n'est plus `SkipThrottle`, onboarding et suppression de clé désormais limités.
+- Défense en profondeur existante confirmée : `ChatQuotaService` persistant par utilisateur
+  (20/min, 300/jour, prompt 12k), quotas MCP/tool-calls par message, agents/import/reindex déjà limités.
+- 7 tests de métadonnées garantissent que les routes sensibles conservent leur profil.
+- Vérifié : 46 suites / 290 tests backend, 5 tests safe redirect, lint vert, builds API/web verts.

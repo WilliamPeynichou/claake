@@ -15,6 +15,7 @@ import {
 import { Throttle } from "@nestjs/throttler";
 import type { UserRole } from "@prisma/client";
 import type { Request, Response } from "express";
+import { RATE_LIMITS } from "../../../../common/config/rate-limits.js";
 import { SkipTransform } from "../../../../common/decorators/skip-transform.decorator.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
@@ -51,7 +52,7 @@ export class ChatController {
 	) {}
 
 	@Post("sessions")
-	@Throttle({ default: { ttl: 60_000, limit: 20 } })
+	@Throttle(RATE_LIMITS.chatSessionCreate)
 	async create(@Body() dto: CreateSessionDto, @Req() req: AuthenticatedRequest) {
 		const session = await this.createSession.execute(
 			dto.agent_id,
@@ -90,7 +91,7 @@ export class ChatController {
 	}
 
 	@Post("sessions/:id/messages")
-	@Throttle({ default: { ttl: 60_000, limit: 10 } })
+	@Throttle(RATE_LIMITS.chatMessage)
 	@SkipTransform()
 	async sendMsg(
 		@Param("id") id: string,
