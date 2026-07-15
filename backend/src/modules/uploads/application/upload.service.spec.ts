@@ -109,7 +109,7 @@ describe("UploadService — validation et isolation des fichiers", () => {
 		const storage = createStorage();
 		const prisma = createPrisma();
 		const service = new UploadService(prisma as any, storage as any);
-		const pngBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+		const pngBuffer = PNG;
 
 		const record = await service.upload(
 			createFile({ buffer: pngBuffer, mimetype: "image/png", originalname: "safe.png" }),
@@ -135,8 +135,11 @@ describe("UploadService — validation et isolation des fichiers", () => {
 		expect(record.url).toContain("/object/sign/");
 	});
 
-	const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
-	const PDF = Buffer.from("%PDF-1.4\n1 0 obj\n<< >>\nendobj\n");
+	const PNG = Buffer.from(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+		"base64",
+	);
+	const PDF = Buffer.from("%PDF-1.4\n1 0 obj\n<< >>\nendobj\n%%EOF\n");
 
 	function prismaWithSessionAgent(capabilities: Record<string, unknown> | null) {
 		return createPrisma({
@@ -147,6 +150,66 @@ describe("UploadService — validation et isolation des fichiers", () => {
 			},
 		});
 	}
+
+	it("supprime l'objet privé si la persistance DB échoue", async () => {
+		const storage = createStorage();
+		const databaseError = new Error("database unavailable");
+		const prisma = createPrisma({
+			uploadedFile: {
+				create: jest.fn().mockRejectedValue(databaseError),
+			},
+		});
+		const service = new UploadService(prisma as any, storage as any);
+
+		await expect(
+			service.upload(
+				createFile({ buffer: PNG, mimetype: "image/png", originalname: "safe.png" }),
+				"user-1",
+				{},
+			),
+		).rejects.toBe(databaseError);
+
+		const storagePath = storage.uploadPrivateObject.mock.calls[0]?.[0];
+		expect(storage.removePrivateObjects).toHaveBeenCalledWith([storagePath]);
+	});
+
+	it("refuse les PDF avec actions actives", async () => {
+		const storage = createStorage();
+		const service = new UploadService(createPrisma() as any, storage as any);
+		const activePdf = Buffer.from("%PDF-1.4\n1 0 obj\n<< /OpenAction 2 0 R >>\nendobj\n%%EOF\n");
+
+		await expect(
+			service.upload(
+				createFile({
+					buffer: activePdf,
+					mimetype: "application/pdf",
+					originalname: "active.pdf",
+				}),
+				"user-1",
+				{},
+			),
+		).rejects.toBeInstanceOf(BadRequestException);
+		expect(storage.uploadPrivateObject).not.toHaveBeenCalled();
+	});
+
+	it("refuse un fichier tronqué même si son en-tête ressemble à une image", async () => {
+		const storage = createStorage();
+		const service = new UploadService(createPrisma() as any, storage as any);
+		const truncatedPng = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+		await expect(
+			service.upload(
+				createFile({
+					buffer: truncatedPng,
+					mimetype: "image/png",
+					originalname: "truncated.png",
+				}),
+				"user-1",
+				{},
+			),
+		).rejects.toBeInstanceOf(BadRequestException);
+		expect(storage.uploadPrivateObject).not.toHaveBeenCalled();
+	});
 
 	it("refuse une image si l'agent ne supporte pas les images", async () => {
 		const storage = createStorage();

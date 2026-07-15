@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { uploadAgentConfigFile, uploadAgentImage } from "@/lib/supabase/storage";
+import { uploadAgentImage } from "@/lib/supabase/storage";
 import { useAgentBuilderForm } from "./agent-builder.reducer";
 import { buildCreateAgentPayload, slugify } from "./lib/build-agent-payload";
 import { parseAgentJson } from "./lib/parse-agent-json";
@@ -127,18 +127,7 @@ export function CreateAgentFlow() {
 				}
 			}
 
-			let configUrl: string | undefined;
-			if (agentJsonFile) {
-				try {
-					configUrl = await uploadAgentConfigFile(agentJsonFile, slug, user.id);
-				} catch (err) {
-					warnings.push(
-						`Le fichier .agentjson n'a pas pu être uploadé : ${err instanceof Error ? err.message : "erreur inconnue"}`,
-					);
-				}
-			}
-
-			const payload = buildCreateAgentPayload(form, { imageUrl, configUrl });
+			const payload = buildCreateAgentPayload(form, { imageUrl });
 			const result = await apiClient.agents.create(payload, token);
 
 			setCreatedAgentId(result.id);

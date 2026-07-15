@@ -94,7 +94,7 @@ function makeService(apiKey?: string): PdfKnowledgeExtractionService {
 }
 
 function makePdf(): Express.Multer.File {
-	const buffer = Buffer.from("%PDF-1.4\n1 0 obj\n<< >>\nendobj\n");
+	const buffer = Buffer.from("%PDF-1.4\n1 0 obj\n<< >>\nendobj\n%%EOF\n");
 	return {
 		fieldname: "file",
 		originalname: "doc.pdf",

@@ -1,13 +1,15 @@
 import { extname } from "node:path";
 import { BadRequestException } from "@nestjs/common";
 
+import fileType = require("file-type");
+
 export type ValidatedUploadFile = {
 	mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "application/pdf";
 	extension: ".jpg" | ".jpeg" | ".png" | ".webp" | ".gif" | ".pdf";
 	type: "IMAGE" | "DOCUMENT";
 };
 
-const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+export const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS_BY_MIME: Record<ValidatedUploadFile["mimeType"], string[]> = {
 	"image/jpeg": [".jpg", ".jpeg"],
@@ -18,19 +20,23 @@ const ALLOWED_EXTENSIONS_BY_MIME: Record<ValidatedUploadFile["mimeType"], string
 };
 
 export function validateUploadFile(file: Express.Multer.File): ValidatedUploadFile {
-	if (file.size > MAX_SIZE_BYTES) {
-		throw new BadRequestException("Fichier trop volumineux (max 10 Mo).");
-	}
 	if (!file.buffer || file.buffer.length === 0) {
 		throw new BadRequestException("Fichier vide ou illisible.");
 	}
-
-	const detectedMimeType = detectMimeType(file.buffer);
-	if (!detectedMimeType) {
-		throw new BadRequestException("Type de fichier non supporté.");
+	if (file.size > MAX_UPLOAD_SIZE_BYTES || file.buffer.length > MAX_UPLOAD_SIZE_BYTES) {
+		throw new BadRequestException("Fichier trop volumineux (max 10 Mo).");
 	}
 
-	if (file.mimetype !== detectedMimeType) {
+	const detected = fileType(file.buffer);
+	if (!detected || !isAllowedMimeType(detected.mime)) {
+		throw new BadRequestException("Type de fichier non supporté.");
+	}
+	const detectedMimeType = detected.mime;
+	if (!hasValidContainerStructure(file.buffer, detectedMimeType)) {
+		throw new BadRequestException("Fichier tronqué ou illisible.");
+	}
+
+	if (file.mimetype.toLowerCase() !== detectedMimeType) {
 		throw new BadRequestException("Type MIME incohérent avec le contenu du fichier.");
 	}
 
@@ -50,41 +56,29 @@ export function validateUploadFile(file: Express.Multer.File): ValidatedUploadFi
 	};
 }
 
-function detectMimeType(buffer: Buffer): ValidatedUploadFile["mimeType"] | null {
-	if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-		return "image/jpeg";
+function isAllowedMimeType(mime: string): mime is ValidatedUploadFile["mimeType"] {
+	return Object.hasOwn(ALLOWED_EXTENSIONS_BY_MIME, mime);
+}
+
+function hasValidContainerStructure(
+	buffer: Buffer,
+	mimeType: ValidatedUploadFile["mimeType"],
+): boolean {
+	switch (mimeType) {
+		case "image/jpeg":
+			return buffer.length >= 4 && buffer.subarray(-2).equals(Buffer.from([0xff, 0xd9]));
+		case "image/png":
+			return buffer.length >= 20 && buffer.subarray(-8, -4).toString("ascii") === "IEND";
+		case "image/gif":
+			return buffer.length >= 14 && buffer.at(-1) === 0x3b;
+		case "image/webp": {
+			if (buffer.length < 20) return false;
+			const declaredSize = buffer.readUInt32LE(4) + 8;
+			return declaredSize <= buffer.length;
+		}
+		case "application/pdf":
+			return buffer.length >= 12 && /%%EOF\s*$/i.test(buffer.subarray(-1024).toString("latin1"));
 	}
-	if (
-		buffer.length >= 8 &&
-		buffer[0] === 0x89 &&
-		buffer[1] === 0x50 &&
-		buffer[2] === 0x4e &&
-		buffer[3] === 0x47 &&
-		buffer[4] === 0x0d &&
-		buffer[5] === 0x0a &&
-		buffer[6] === 0x1a &&
-		buffer[7] === 0x0a
-	) {
-		return "image/png";
-	}
-	if (
-		buffer.length >= 12 &&
-		buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
-		buffer.subarray(8, 12).toString("ascii") === "WEBP"
-	) {
-		return "image/webp";
-	}
-	if (
-		buffer.length >= 6 &&
-		(buffer.subarray(0, 6).toString("ascii") === "GIF87a" ||
-			buffer.subarray(0, 6).toString("ascii") === "GIF89a")
-	) {
-		return "image/gif";
-	}
-	if (buffer.length >= 5 && buffer.subarray(0, 5).toString("ascii") === "%PDF-") {
-		return "application/pdf";
-	}
-	return null;
 }
 
 function containsPdfActiveContent(buffer: Buffer): boolean {

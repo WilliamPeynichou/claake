@@ -5,7 +5,7 @@
 --
 -- Buckets:
 --   agent-images          — public read, authenticated write namespaced by user_id
---   agent-files           — public config files only; authenticated write namespaced by user_id
+--   agent-files           — private legacy config files; no new direct browser uploads
 --   agent-files-private   — private runtime uploads served by short-lived signed URLs from backend
 --
 -- Path conventions:
@@ -54,10 +54,9 @@ USING (
 -- BUCKET: agent-files
 -- ----------------------------------------------------------------------------
 
--- Anyone can read public agent config files only. Runtime uploads must use agent-files-private.
-CREATE POLICY "agent-files: public read"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'agent-files');
+-- No public read: .agentjson may contain sensitive prompts/configuration.
+-- New browser flows parse it locally and do not persist it. Legacy objects stay private.
+DROP POLICY IF EXISTS "agent-files: public read" ON storage.objects;
 
 -- Authenticated users can insert into their own namespace (flux A: {user_id}/...)
 CREATE POLICY "agent-files: owner insert"

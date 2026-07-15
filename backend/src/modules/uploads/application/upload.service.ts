@@ -43,19 +43,32 @@ export class UploadService {
 			throw new BadRequestException("Erreur lors de l'enregistrement du fichier.");
 		}
 
-		const record = await this.prisma.uploadedFile.create({
-			data: {
-				type: validatedFile.type,
-				url: storagePath,
-				fileName: file.originalname,
-				mimeType: validatedFile.mimeType,
-				size: file.size,
-				userId,
-				agentId: opts.agentId ?? null,
-				sessionId: opts.sessionId ?? null,
-				messageId: opts.messageId ?? null,
-			},
-		});
+		let record: Awaited<ReturnType<PrismaService["uploadedFile"]["create"]>>;
+		try {
+			record = await this.prisma.uploadedFile.create({
+				data: {
+					type: validatedFile.type,
+					url: storagePath,
+					fileName: file.originalname,
+					mimeType: validatedFile.mimeType,
+					size: file.buffer.length,
+					userId,
+					agentId: opts.agentId ?? null,
+					sessionId: opts.sessionId ?? null,
+					messageId: opts.messageId ?? null,
+				},
+			});
+		} catch (error) {
+			// Storage write succeeded but DB persistence failed: remove the orphan immediately.
+			try {
+				await this.storage.removePrivateObjects([storagePath]);
+			} catch (cleanupError) {
+				this.logger.error(
+					`Orphan upload cleanup failed path=${storagePath}: ${cleanupError instanceof Error ? cleanupError.message : "unknown"}`,
+				);
+			}
+			throw error;
+		}
 
 		return this.withSignedUrl(record);
 	}

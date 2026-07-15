@@ -42,7 +42,6 @@ function derived(form: AgentBuilderForm) {
 
 interface CreateOptions {
 	imageUrl?: string;
-	configUrl?: string;
 }
 
 /** Construit le payload de création d'agent (brouillon). */
@@ -74,7 +73,7 @@ export function buildCreateAgentPayload(
 			form.cloudStrategy === "SELLER_API_KEY" ? form.sellerApiProvider || undefined : undefined,
 		docker_image: d.isLocalCapable ? form.dockerImage || undefined : undefined,
 		download_url: d.isLocalCapable ? form.downloadUrl || undefined : undefined,
-		config_url: options.configUrl || undefined,
+		config_url: undefined,
 		system_prompt: form.systemPrompt || undefined,
 		welcome_message: form.welcomeMessage || undefined,
 		suggested_prompts: d.suggestedPrompts.length ? d.suggestedPrompts : undefined,
@@ -104,7 +103,7 @@ export function buildUpdateAgentPayload(
 		models: [form.model],
 		mode: form.mode,
 		image_url: options.imageUrl ?? undefined,
-		config_url: options.configUrl ?? undefined,
+		config_url: undefined,
 		system_prompt: form.systemPrompt || undefined,
 		welcome_message: form.welcomeMessage || undefined,
 		suggested_prompts: d.suggestedPrompts,

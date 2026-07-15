@@ -1,23 +1,30 @@
-# Phase B — Open redirect et rate limiting ciblé
+# Phase B — Uploads privés et validation réelle
 
-Branche : `fix/phase-b-open-redirect-rate-limit`
+Branche : `fix/phase-b-private-uploads`
 
 ## Plan
 
-- [x] Ajouter tests unitaires exhaustifs à `safeRedirectPath` (open redirect encodé inclus).
-- [x] Auditer les quotas ciblés déjà présents (chat, coûts IA, upload, paiement, agents, clés API).
-- [x] Fermer les routes sensibles non limitées : webhook, onboarding Stripe, suppression clé API.
-- [x] Centraliser les profils de throttling pour éviter les valeurs divergentes.
-- [x] Vérifier lint, tests backend, tsc/build web.
+- [x] Auditer les flux runtime et agents/config.
+- [x] Utiliser détection magic bytes maintenue (`file-type`) + validation de structure/fin de fichier.
+- [x] Garder runtime dans bucket privé, URLs signées ≤ 5 minutes, chemins stricts.
+- [x] Ajouter migration Supabase idempotente : bucket privé, MIME/taille, aucune policy publique.
+- [x] Supprimer upload public `.agentjson` (parsing local seulement) et privatiser bucket legacy.
+- [x] Nettoyer objet Storage si écriture DB échoue.
+- [x] Vérifier tests, lint, audit et builds.
 
 ## Review
 
-- Open redirect : implémentation existante déjà sûre (origine locale + allowlist stricte des chemins) ;
-  5 tests couvrent URL absolue, `//`, encodage `%2f/%5c`, slash inverse, chemin hors allowlist.
-- Profils sensibles centralisés dans `RATE_LIMITS` : chat (10/min), upload (20/min), checkout
-  (10/min), webhook Stripe (120/min), onboarding Stripe et mutations de clés API (5/min).
-- Trous fermés : webhook n'est plus `SkipThrottle`, onboarding et suppression de clé désormais limités.
-- Défense en profondeur existante confirmée : `ChatQuotaService` persistant par utilisateur
-  (20/min, 300/jour, prompt 12k), quotas MCP/tool-calls par message, agents/import/reindex déjà limités.
-- 7 tests de métadonnées garantissent que les routes sensibles conservent leur profil.
-- Vérifié : 46 suites / 290 tests backend, 5 tests safe redirect, lint vert, builds API/web verts.
+- Runtime : bucket privé `agent-files-private`, aucune policy client, URLs signées ≤ 300 s,
+  validation stricte des chemins avant upload/signature/suppression.
+- Migration Supabase idempotente créée : bucket non public, 10 Mio, allowlist MIME ; retire policies
+  publiques et privatise le bucket `.agentjson` legacy.
+- Validation : `file-type` non vulnérable + cohérence MIME/extension + structure/terminaison réelle ;
+  PDF actif et fichiers tronqués refusés.
+- Cohérence Storage/DB : suppression compensatoire si création DB échoue ; taille persistée depuis
+  buffer réel, erreurs Storage delete propagées.
+- `.agentjson` : parsing local pour hydrater le formulaire, plus aucun upload/public URL ; images
+  marketplace restent publiques car assets d'affichage volontaires.
+- Limite assumée : pas d'AV/CDR disponible ; formats réduits à images/PDF, non exécutés. Procédure
+  quarantaine documentée avant toute extension de formats.
+- Vérifié : 46 suites / 293 tests backend, lint vert, audit high/critical vert (10 moderate Expo
+  acceptées), builds API et web verts.
