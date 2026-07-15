@@ -1,28 +1,28 @@
-# Phase B — Durcissement clients web/desktop
+# Phase B — Gestion et rotation des secrets
 
-Branche : `fix/phase-b-client-hardening`
+Branche : `fix/phase-b-secrets-management`
 
 ## Plan
 
-- [x] Auditer fallbacks API localhost web et desktop.
-- [x] Centraliser validation des URLs API/Supabase desktop ; valeurs obligatoires.
-- [x] Interdire HTTP, credentials et localhost dans les builds desktop production.
-- [x] Aligner types upload desktop avec allowlist backend.
-- [x] Déclarer capability Tauri minimale sans permission IPC/plugin système.
-- [x] Ajouter CSP Tauri, prototype gelé et serveur dev lié à 127.0.0.1.
-- [x] Vérifier lint, builds web/desktop, schéma/config Tauri et Rust.
+- [x] Vérifier que fichiers env réels sont ignorés et non trackés, sans lire leurs valeurs.
+- [x] Renforcer scanner local/CI (fournisseurs, clés privées, affectations sensibles).
+- [x] Bloquer tout fichier env réel suivi par Git.
+- [x] Corriger placeholders CI desktop pour respecter HTTPS/non-local production.
+- [x] Documenter stockage, rotation, révocation, validation et incident.
+- [x] Fournir checklist de rotation staging/prod sans secret en repo.
+- [x] Vérifier scanner, lint, tests/builds concernés.
 
 ## Review
 
-- Web : aucun fallback API localhost dans runtime ; `NEXT_PUBLIC_API_URL` obligatoire, HTTPS et
-  non-local en production (déjà en place, confirmé).
-- Desktop : validation centralisée de `VITE_API_URL` et `VITE_SUPABASE_URL` ; URL valide sans
-  credentials, HTTPS/non-local en production ; anon key obligatoire.
-- Vite valide les variables au début du build (pas seulement au chargement runtime) : builds
-  localhost/manquants échouent avant génération d'artefacts.
-- Tauri : capability explicite `main-no-system-access` avec zéro permission IPC/plugin ; aucun
-  plugin shell/fs/http ; CSP stricte, `object-src/frame-src/base-uri none`, prototype gelé.
-- Dev desktop lié à `127.0.0.1`; upload desktop aligné avec backend (retrait `text/plain`).
-- Dette préexistante réparée : `app.title` invalide en Tauri 2 et icône obligatoire absente.
-- Vérifié : lint vert, builds desktop/web production verts, build négatif localhost/missing env
-  échoue, `cargo check` vert.
+- Fichiers env réels confirmés ignorés/non trackés ; permissions locales passées à `0600` sans
+  lire ni modifier leurs valeurs.
+- Scanner étendu : Stripe, Supabase JWT, GitHub/OpenAI, clés privées, DB avec credentials, clé AES,
+  affectations de variables sensibles et `.npmrc`. Scope = fichiers trackés + non ignorés.
+- Gate négatif prouvé avec fixture Stripe éphémère : scan échoue et nomme le fichier/type, jamais
+  la valeur. Gate positif repo : vert.
+- Procédure complète ajoutée : inventaire, secret manager, séparation staging/prod, rotation 90 j,
+  P0-02 immédiat, incident et rotation AES keyring.
+- CI desktop corrigée avec placeholders HTTPS non locaux, compatible avec hardening Vite.
+- Vérifié : `security:check` vert (10 moderate Expo acceptées), lint vert, build desktop CI vert.
+- Blocage externe restant : rotation/révocation effective doit être cochée par opérateur disposant
+  des accès Supabase/Stripe/OpenAI/Mistral/OAuth ; aucune fausse déclaration de clôture P0-02.
