@@ -1,30 +1,28 @@
-# Phase B — Uploads privés et validation réelle
+# Phase B — Durcissement clients web/desktop
 
-Branche : `fix/phase-b-private-uploads`
+Branche : `fix/phase-b-client-hardening`
 
 ## Plan
 
-- [x] Auditer les flux runtime et agents/config.
-- [x] Utiliser détection magic bytes maintenue (`file-type`) + validation de structure/fin de fichier.
-- [x] Garder runtime dans bucket privé, URLs signées ≤ 5 minutes, chemins stricts.
-- [x] Ajouter migration Supabase idempotente : bucket privé, MIME/taille, aucune policy publique.
-- [x] Supprimer upload public `.agentjson` (parsing local seulement) et privatiser bucket legacy.
-- [x] Nettoyer objet Storage si écriture DB échoue.
-- [x] Vérifier tests, lint, audit et builds.
+- [x] Auditer fallbacks API localhost web et desktop.
+- [x] Centraliser validation des URLs API/Supabase desktop ; valeurs obligatoires.
+- [x] Interdire HTTP, credentials et localhost dans les builds desktop production.
+- [x] Aligner types upload desktop avec allowlist backend.
+- [x] Déclarer capability Tauri minimale sans permission IPC/plugin système.
+- [x] Ajouter CSP Tauri, prototype gelé et serveur dev lié à 127.0.0.1.
+- [x] Vérifier lint, builds web/desktop, schéma/config Tauri et Rust.
 
 ## Review
 
-- Runtime : bucket privé `agent-files-private`, aucune policy client, URLs signées ≤ 300 s,
-  validation stricte des chemins avant upload/signature/suppression.
-- Migration Supabase idempotente créée : bucket non public, 10 Mio, allowlist MIME ; retire policies
-  publiques et privatise le bucket `.agentjson` legacy.
-- Validation : `file-type` non vulnérable + cohérence MIME/extension + structure/terminaison réelle ;
-  PDF actif et fichiers tronqués refusés.
-- Cohérence Storage/DB : suppression compensatoire si création DB échoue ; taille persistée depuis
-  buffer réel, erreurs Storage delete propagées.
-- `.agentjson` : parsing local pour hydrater le formulaire, plus aucun upload/public URL ; images
-  marketplace restent publiques car assets d'affichage volontaires.
-- Limite assumée : pas d'AV/CDR disponible ; formats réduits à images/PDF, non exécutés. Procédure
-  quarantaine documentée avant toute extension de formats.
-- Vérifié : 46 suites / 293 tests backend, lint vert, audit high/critical vert (10 moderate Expo
-  acceptées), builds API et web verts.
+- Web : aucun fallback API localhost dans runtime ; `NEXT_PUBLIC_API_URL` obligatoire, HTTPS et
+  non-local en production (déjà en place, confirmé).
+- Desktop : validation centralisée de `VITE_API_URL` et `VITE_SUPABASE_URL` ; URL valide sans
+  credentials, HTTPS/non-local en production ; anon key obligatoire.
+- Vite valide les variables au début du build (pas seulement au chargement runtime) : builds
+  localhost/manquants échouent avant génération d'artefacts.
+- Tauri : capability explicite `main-no-system-access` avec zéro permission IPC/plugin ; aucun
+  plugin shell/fs/http ; CSP stricte, `object-src/frame-src/base-uri none`, prototype gelé.
+- Dev desktop lié à `127.0.0.1`; upload desktop aligné avec backend (retrait `text/plain`).
+- Dette préexistante réparée : `app.title` invalide en Tauri 2 et icône obligatoire absente.
+- Vérifié : lint vert, builds desktop/web production verts, build négatif localhost/missing env
+  échoue, `cargo check` vert.
