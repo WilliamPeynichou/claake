@@ -253,13 +253,19 @@ describe("MVP agent flow (e2e)", () => {
 		};
 		const activityLog = { log: jest.fn() };
 		const knowledgeService = { buildKnowledgeContext: jest.fn().mockResolvedValue(null) };
+		const skillContextService = { buildSkillContext: jest.fn().mockResolvedValue(null) };
 		const observability = {
 			recordMessageStarted: jest.fn(),
 			recordProviderSuccess: jest.fn(),
 			recordProviderError: jest.fn(),
 			recordAssistantMessageSaved: jest.fn(),
 		};
-		const toolRegistry = { getDefinitions: jest.fn().mockReturnValue([]), execute: jest.fn() };
+		const toolRegistry = {
+			prepare: jest.fn().mockResolvedValue({
+				definitions: [],
+				execute: jest.fn(),
+			}),
+		};
 
 		const createAgent = new CreateAgentUseCase(
 			agentRepo as never,
@@ -276,6 +282,7 @@ describe("MVP agent flow (e2e)", () => {
 			strategyResolver as never,
 			quotaService as never,
 			knowledgeService as never,
+			skillContextService as never,
 			observability as never,
 			toolRegistry as never,
 		);
@@ -311,6 +318,7 @@ describe("MVP agent flow (e2e)", () => {
 		const draftSession = await createSession.execute(created.id, "creator-1", true, "USER");
 		await sendMessage.execute(draftSession.id, "creator-1", "Test draft", "TEXT", [], [], "USER");
 		expect(knowledgeService.buildKnowledgeContext).toHaveBeenCalledWith(created.id, "Test draft");
+		expect(skillContextService.buildSkillContext).toHaveBeenCalledWith(created.id, "Test draft");
 		expect(observability.recordMessageStarted).toHaveBeenCalled();
 		expect(strategyResolver.resolve).toHaveBeenCalledTimes(1);
 

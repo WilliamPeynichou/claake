@@ -5,19 +5,43 @@
 	"identifier": "com.claake.app",
 	"build": {
 		"frontendDist": "../dist",
-		"devUrl": "http://localhost:5173",
+		"devUrl": "http://127.0.0.1:5173",
 		"beforeDevCommand": "npm run dev",
 		"beforeBuildCommand": "npm run build"
 	},
 	"app": {
-		"title": "Claake",
 		"windows": [
 			{
+				"label": "main",
 				"title": "Claake",
 				"width": 1200,
 				"height": 800,
 				"resizable": true
 			}
-		]
+		],
+		"security": {
+			"capabilities": ["main-no-system-access"],
+			"csp": {
+				"default-src": "'self' customprotocol: asset:",
+				"connect-src": "'self' ipc: http://ipc.localhost https: wss:",
+				"img-src": "'self' asset: http://asset.localhost blob: data: https:",
+				"style-src": "'self' 'unsafe-inline'",
+				"font-src": "'self' data:",
+				"object-src": "'none'",
+				"base-uri": "'none'",
+				"frame-src": "'none'"
+			},
+			"devCsp": {
+				"default-src": "'self' customprotocol: asset:",
+				"connect-src": "'self' ipc: http://ipc.localhost http://127.0.0.1:* ws://127.0.0.1:* https: wss:",
+				"img-src": "'self' asset: http://asset.localhost blob: data: http://127.0.0.1:* https:",
+				"style-src": "'self' 'unsafe-inline'",
+				"font-src": "'self' data:",
+				"object-src": "'none'",
+				"base-uri": "'none'",
+				"frame-src": "'none'"
+			},
+			"freezePrototype": true
+		}
 	}
 }

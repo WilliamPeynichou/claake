@@ -130,8 +130,7 @@ function baseParams(
 }
 
 function streamResponse(payloads: unknown[]): Response {
-	const body =
-		payloads.map((payload) => `data: ${JSON.stringify(payload)}\n\n`).join("") + "data: [DONE]\n\n";
+	const body = `${payloads.map((payload) => `data: ${JSON.stringify(payload)}\n\n`).join("")}data: [DONE]\n\n`;
 	return {
 		ok: true,
 		body: new ReadableStream({

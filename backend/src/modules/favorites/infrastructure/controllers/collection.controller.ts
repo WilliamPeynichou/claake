@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
+import type { AuthenticatedRequest } from "../../../../common/types/authenticated-request.type.js";
 import { CreateCollectionDto } from "../../application/dtos/create-collection.dto.js";
 import { UpdateCollectionDto } from "../../application/dtos/update-collection.dto.js";
 import { AddAgentToCollectionUseCase } from "../../application/usecases/add-agent-to-collection.usecase.js";
@@ -24,27 +25,31 @@ export class CollectionController {
 	) {}
 
 	@Post()
-	async create(@Body() dto: CreateCollectionDto, @Req() req: any) {
+	async create(@Body() dto: CreateCollectionDto, @Req() req: AuthenticatedRequest) {
 		return this.createCollection.execute(dto, req.user.id);
 	}
 
 	@Get()
-	async list(@Req() req: any) {
+	async list(@Req() req: AuthenticatedRequest) {
 		return this.listCollections.execute(req.user.id);
 	}
 
 	@Get(":id")
-	async findOne(@Param("id") id: string, @Req() req: any) {
+	async findOne(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
 		return this.getCollection.execute(id, req.user.id);
 	}
 
 	@Patch(":id")
-	async update(@Param("id") id: string, @Body() dto: UpdateCollectionDto, @Req() req: any) {
+	async update(
+		@Param("id") id: string,
+		@Body() dto: UpdateCollectionDto,
+		@Req() req: AuthenticatedRequest,
+	) {
 		return this.updateCollection.execute(id, dto, req.user.id);
 	}
 
 	@Delete(":id")
-	async remove(@Param("id") id: string, @Req() req: any) {
+	async remove(@Param("id") id: string, @Req() req: AuthenticatedRequest) {
 		return this.deleteCollection.execute(id, req.user.id);
 	}
 
@@ -52,7 +57,7 @@ export class CollectionController {
 	async addAgentToCollection(
 		@Param("id") id: string,
 		@Param("agentId") agentId: string,
-		@Req() req: any,
+		@Req() req: AuthenticatedRequest,
 	) {
 		return this.addAgent.execute(id, agentId, req.user.id);
 	}
@@ -61,7 +66,7 @@ export class CollectionController {
 	async removeAgentFromCollection(
 		@Param("id") id: string,
 		@Param("agentId") agentId: string,
-		@Req() req: any,
+		@Req() req: AuthenticatedRequest,
 	) {
 		return this.removeAgent.execute(id, agentId, req.user.id);
 	}

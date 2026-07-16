@@ -9,7 +9,7 @@ import { useTheme } from "../theme/ThemeContext";
 type RowProps = { label: string; value: string; last?: boolean };
 
 function Row({ label, value, last }: RowProps) {
-	const { dark, c } = useTheme();
+	const { c } = useTheme();
 	return (
 		<View style={[styles.row, !last && { borderBottomWidth: 1, borderBottomColor: c.border }]}>
 			<Text style={{ fontFamily: fonts.sans, fontSize: 14, color: c.ink }}>{label}</Text>

@@ -21,6 +21,7 @@ export class UploadStorageService {
 		buffer: Buffer,
 		contentType: string,
 	): Promise<void> {
+		this.assertValidStoragePath(storagePath);
 		const { error } = await this.supabase.storage
 			.from(PRIVATE_UPLOADS_BUCKET)
 			.upload(storagePath, buffer, {
@@ -35,13 +36,19 @@ export class UploadStorageService {
 
 	async removePrivateObjects(storagePaths: string[]): Promise<void> {
 		if (storagePaths.length === 0) return;
-		await this.supabase.storage.from(PRIVATE_UPLOADS_BUCKET).remove(storagePaths);
+		for (const storagePath of storagePaths) this.assertValidStoragePath(storagePath);
+		const { error } = await this.supabase.storage.from(PRIVATE_UPLOADS_BUCKET).remove(storagePaths);
+		if (error) throw error;
 	}
 
 	async createSignedUrl(
 		storagePath: string,
 		expiresInSeconds = SIGNED_UPLOAD_URL_TTL_SECONDS,
 	): Promise<string> {
+		this.assertValidStoragePath(storagePath);
+		if (!Number.isInteger(expiresInSeconds) || expiresInSeconds < 1 || expiresInSeconds > 300) {
+			throw new Error("Invalid signed URL expiry");
+		}
 		const { data, error } = await this.supabase.storage
 			.from(PRIVATE_UPLOADS_BUCKET)
 			.createSignedUrl(storagePath, expiresInSeconds);
@@ -51,5 +58,15 @@ export class UploadStorageService {
 		}
 
 		return data.signedUrl;
+	}
+
+	private assertValidStoragePath(storagePath: string): void {
+		if (
+			!/^uploads\/[0-9a-f-]+\/(?:[0-9a-f-]+|unattached)\/[0-9a-f-]+\.(?:jpg|jpeg|png|webp|gif|pdf)$/i.test(
+				storagePath,
+			)
+		) {
+			throw new Error("Invalid private upload storage path");
+		}
 	}
 }

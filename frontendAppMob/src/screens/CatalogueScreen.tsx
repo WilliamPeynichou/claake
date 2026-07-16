@@ -13,7 +13,6 @@ import { useTheme } from "../theme/ThemeContext";
 type Props = { onAgentPress: (id: string) => void };
 
 function FeaturedHero({ agent, onPress }: { agent: Agent; onPress: () => void }) {
-	const { c } = useTheme();
 	return (
 		<Pressable onPress={onPress} style={styles.hero}>
 			<LinearGradient

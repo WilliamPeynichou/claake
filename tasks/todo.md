@@ -1,17 +1,31 @@
-# Milestone 12 — Consolidation, Skills V2 et hardening MCP
+# Phase A — Gates CI et artefact de déploiement
+
+Branche : `fix/phase-a-ci-deployment-gates`
 
 ## Plan
 
-- [x] 1. Injecter les ressources Skills V2 dans le contexte de chat avec bornes et tests.
-- [ ] 2. Consolider les dettes locales M9 réalisables et leurs tests.
-- [ ] 3. Ajouter le quota MCP dédié par message et le circuit breaker par serveur.
-- [ ] 4. Vérifier les tests, le lint et le build backend ; documenter les limites staging/réseau.
+- [x] Réparer le test E2E backend cassé par `AgentSkillContextService`.
+- [x] Réduire et sécuriser le contexte Docker avec `.dockerignore`.
+- [x] Aligner l'image backend sur Node 22 et supprimer le build silencieusement ignoré.
+- [x] Ajouter les typechecks autonomes `shared` et mobile aux scripts/CI.
+- [x] Tester les migrations Prisma sur PostgreSQL 16 + pgvector vierge en CI.
+- [x] Construire l'image backend en CI et prouver son démarrage via `/health`.
+- [x] Conserver les artefacts Playwright lors d'un échec.
+- [x] Lancer lint, tests, typechecks, migrations, build Docker et smoke.
+- [x] Documenter les résultats.
 
 ## Review
 
-- Skills V2 : sélection locale par mots-clés sur skill/ressources, ordre stable en cas d'égalité, maximum 3 skills et 6 ressources.
-- Défense en profondeur : les ressources invalides (chemins absolus/traversal, vide, NUL) sont ignorées à la lecture ; contexte limité à 6 000 caractères et 2 000 par ressource.
-- Injection backend dans le prompt système (`Skills pertinents`) sans migration Prisma ni dépendance staging/Supabase.
-- Vérifié : tests ciblés `agent-skill-context` + `send-message` (28/28) et Biome ciblé OK (avertissements `any` préexistants dans le test chat).
-- `npm run build` reste bloqué par deux erreurs TypeScript MCP préexistantes/en cours de lot M10 (`executePrepared` arité et `serverId` manquant).
-
+- E2E backend réaligné avec `AgentSkillContextService` et `ToolRegistryService.prepare`.
+- Job CI `deployment-artifact` : base pgvector vierge, 14 migrations, statut Prisma, build image,
+  démarrage et smoke `/health`.
+- `.dockerignore` réduit contexte observé d'environ 4,6 Go à 1,45 Mo et exclut fichiers env réels.
+- Image Node 22, dépendances de production prunées, chemin runtime corrigé vers
+  `dist/src/main.js` après détection par smoke réel.
+- `shared` et mobile ont maintenant un typecheck autonome bloquant en CI.
+- Rapport Playwright uploadé uniquement en échec, rétention sept jours.
+- Preuves : 49 suites/303 tests unitaires, E2E 1/1, lint, typechecks, security check, build API,
+  14 migrations sur DB vierge, build Docker et `/health` verts.
+- Exécution GitHub Actions sur push/PR et staging distant restent à confirmer ; aucun secret requis
+  ou ajouté par ce bloc.
+- Détails : `docs/suivi_roadmap/phase-a-gates-ci-artefact-backend.md`.

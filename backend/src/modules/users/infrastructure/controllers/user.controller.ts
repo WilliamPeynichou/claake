@@ -1,11 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
+import { RATE_LIMITS } from "../../../../common/config/rate-limits.js";
 import { RequirePermission } from "../../../../common/decorators/admin-permission.decorator.js";
 import { CurrentUser } from "../../../../common/decorators/current-user.decorator.js";
 import { Roles } from "../../../../common/decorators/roles.decorator.js";
 import { AdminPermissionGuard } from "../../../../common/guards/admin-permission.guard.js";
 import { RolesGuard } from "../../../../common/guards/roles.guard.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
+import type { AuthenticatedRequest } from "../../../../common/types/authenticated-request.type.js";
 import { AddApiKeyDto } from "../../application/dtos/add-api-key.dto.js";
 import { UpdateProfileDto } from "../../application/dtos/update-profile.dto.js";
 import { UpdateRoleDto } from "../../application/dtos/update-role.dto.js";
@@ -53,12 +55,12 @@ export class AuthController {
 	) {}
 
 	@Get("profile")
-	async profile(@Req() req: any) {
+	async profile(@Req() req: AuthenticatedRequest) {
 		return this.getUserProfile.execute(req.user.id);
 	}
 
 	@Patch("profile")
-	async updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto) {
+	async updateProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateProfileDto) {
 		return this.updateUserProfile.execute(req.user.id, {
 			displayName: dto.display_name,
 			bio: dto.bio,
@@ -66,18 +68,19 @@ export class AuthController {
 	}
 
 	@Get("api-keys")
-	async listApiKeys(@Req() req: any) {
+	async listApiKeys(@Req() req: AuthenticatedRequest) {
 		return this.manageApiKeys.listKeys(req.user.id);
 	}
 
 	@Post("api-keys")
-	@Throttle({ default: { ttl: 60_000, limit: 5 } })
-	async addApiKey(@Req() req: any, @Body() body: AddApiKeyDto) {
+	@Throttle(RATE_LIMITS.apiKeyMutation)
+	async addApiKey(@Req() req: AuthenticatedRequest, @Body() body: AddApiKeyDto) {
 		return this.manageApiKeys.addKey(req.user.id, body.provider, body.label, body.key);
 	}
 
 	@Delete("api-keys/:id")
-	async removeApiKey(@Req() req: any, @Param("id") keyId: string) {
+	@Throttle(RATE_LIMITS.apiKeyMutation)
+	async removeApiKey(@Req() req: AuthenticatedRequest, @Param("id") keyId: string) {
 		await this.manageApiKeys.removeKey(req.user.id, keyId);
 		return { deleted: true };
 	}

@@ -2,6 +2,7 @@
 
 import type { Agent } from "@claake/shared";
 import { Bot, Download, Star } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { FavoriteButton } from "@/components/agents/favorite-button";
 import { Badge } from "@/components/ui/badge";
@@ -21,9 +22,12 @@ export function AgentCard({ agent }: AgentCardProps) {
 				<CardHeader className="pb-3">
 					<div className="flex items-start justify-between">
 						{agent.image_url ? (
-							<img
+							<Image
 								src={agent.image_url}
 								alt={agent.name}
+								width={48}
+								height={48}
+								unoptimized
 								className="h-12 w-12 object-cover border border-border/60"
 							/>
 						) : (

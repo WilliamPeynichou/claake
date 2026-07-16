@@ -30,6 +30,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Shared and mobile typechecks
+        run: npm run typecheck
+
       - name: Backend unit tests
         run: npm -w @claake/backend run test -- --runInBand
 
@@ -56,12 +59,106 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
           NEXT_PUBLIC_API_URL: http://127.0.0.1:3999
 
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontendWeb/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Desktop build
         run: npm run desktop-build
         env:
-          VITE_SUPABASE_URL: http://localhost:54321
+          VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
-          VITE_API_URL: http://localhost:3001
+          VITE_API_URL: https://api.example.com
+
+  deployment-artifact:
+    name: Migrations and backend image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: claake_ci
+          POSTGRES_USER: claake
+          POSTGRES_PASSWORD: claake_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U claake -d claake_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: claake_ci
+      PGUSER: claake
+      PGPASSWORD: claake_ci_password
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy migrations on clean database
+        run: |
+          scheme=postgresql
+          export DATABASE_URL="${scheme}://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}"
+          npm -w @claake/backend run prisma:migrate:prod
+
+      - name: Check migration status
+        run: |
+          scheme=postgresql
+          export DATABASE_URL="${scheme}://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}"
+          npm -w @claake/backend exec prisma migrate status
+
+      - name: Build backend image
+        run: docker build --file backend/Dockerfile --tag claake-backend:ci .
+
+      - name: Start backend image
+        run: |
+          scheme=postgresql
+          database_url="${scheme}://${PGUSER}:${PGPASSWORD}@host.docker.internal:${PGPORT}/${PGDATABASE}"
+          encryption_key="$(printf '0%.0s' {1..64})"
+          docker run --detach --name claake-backend \
+            --add-host host.docker.internal:host-gateway \
+            --publish 3001:3001 \
+            --env NODE_ENV=development \
+            --env DATABASE_URL="$database_url" \
+            --env SUPABASE_URL=http://host.docker.internal:54321 \
+            --env SUPABASE_ANON_KEY=ci-anon-key \
+            --env SUPABASE_SERVICE_ROLE_KEY=ci-service-role-key \
+            --env ENCRYPTION_KEY="$encryption_key" \
+            claake-backend:ci
+
+      - name: Smoke backend health
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3001/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs claake-backend
+          exit 1
+
+      - name: Show backend logs on failure
+        if: failure()
+        run: docker logs claake-backend 2>&1 || true
 
   security:
     name: Security gates

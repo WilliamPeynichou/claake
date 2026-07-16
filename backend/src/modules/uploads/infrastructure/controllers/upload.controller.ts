@@ -17,6 +17,7 @@ import { Throttle } from "@nestjs/throttler";
 import type { UserRole } from "@prisma/client";
 import type { Request } from "express";
 import { memoryStorage } from "multer";
+import { RATE_LIMITS } from "../../../../common/config/rate-limits.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
 import { UploadService } from "../../application/upload.service.js";
 
@@ -33,7 +34,7 @@ export class UploadController {
 	constructor(private readonly uploadService: UploadService) {}
 
 	@Post()
-	@Throttle({ default: { limit: 20, ttl: 60_000 } })
+	@Throttle(RATE_LIMITS.upload)
 	@UseInterceptors(
 		FileInterceptor("file", {
 			storage: memoryStorage(),

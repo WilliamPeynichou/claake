@@ -18,7 +18,7 @@ export class AesEncryptionService implements EncryptionServicePort {
 
 	constructor(config: ConfigService) {
 		const currentKey = config.get<string>("ENCRYPTION_KEY");
-		if (!currentKey || currentKey.length !== 64) {
+		if (currentKey?.length !== 64) {
 			throw new Error("ENCRYPTION_KEY must be a 64-char hex string (32 bytes)");
 		}
 		this.currentKeyId = config.get<string>("ENCRYPTION_KEY_ID") ?? "v1";
@@ -37,7 +37,7 @@ export class AesEncryptionService implements EncryptionServicePort {
 	}
 
 	encrypt(plaintext: string): string {
-		const key = this.keys.get(this.currentKeyId)!;
+		const key = this.getCurrentKey();
 		const iv = randomBytes(12);
 		const cipher = createCipheriv("aes-256-gcm", key, iv);
 		const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
@@ -67,8 +67,16 @@ export class AesEncryptionService implements EncryptionServicePort {
 
 	private decryptLegacy(encrypted: string): string {
 		const [ivB64, tagB64, dataB64] = encrypted.split(":");
-		const key = this.keys.get(this.currentKeyId)!;
+		const key = this.getCurrentKey();
 		return this.decryptWithKey(key, ivB64, tagB64, dataB64);
+	}
+
+	private getCurrentKey(): Buffer {
+		const key = this.keys.get(this.currentKeyId);
+		if (!key) {
+			throw new Error(`Encryption key ${this.currentKeyId} is not available`);
+		}
+		return key;
 	}
 
 	private decryptWithKey(key: Buffer, ivB64: string, tagB64: string, dataB64: string): string {

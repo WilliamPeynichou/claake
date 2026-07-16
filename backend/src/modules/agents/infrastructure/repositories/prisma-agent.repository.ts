@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { Prisma } from "@prisma/client";
+import type { $Enums, Prisma } from "@prisma/client";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
 import type { AgentEntity } from "../../domain/entities/agent.entity.js";
 import type {
@@ -35,11 +35,11 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		}
 
 		if (params.pricingModel) {
-			where.pricingModel = params.pricingModel.toUpperCase() as any;
+			where.pricingModel = params.pricingModel.toUpperCase() as $Enums.PricingModel;
 		}
 
 		if (params.mode) {
-			where.mode = params.mode.toUpperCase() as any;
+			where.mode = params.mode.toUpperCase() as $Enums.ExecutionMode;
 		}
 
 		if (params.minRating !== undefined && params.minRating > 0) {
@@ -101,37 +101,41 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 	}
 
 	async create(data: Partial<AgentEntity>): Promise<AgentEntity> {
+		const { name, slug, description, category, creatorId } = data;
+		if (!name || !slug || !description || !category || !creatorId) {
+			throw new Error("Missing required agent fields");
+		}
 		const agent = await this.prisma.agent.create({
 			data: {
-				name: data.name!,
-				slug: data.slug!,
-				description: data.description!,
+				name,
+				slug,
+				description,
 				longDescription: data.longDescription,
-				category: data.category!,
+				category,
 				tags: data.tags ?? [],
 				models: data.models ?? ["claude-sonnet-4-20250514"],
-				mode: (data.mode as any) ?? "CLOUD",
+				mode: (data.mode as $Enums.ExecutionMode | undefined) ?? "CLOUD",
 				configUrl: data.configUrl,
 				imageUrl: data.imageUrl,
 				systemPrompt: data.systemPrompt,
 				welcomeMessage: data.welcomeMessage,
 				suggestedPrompts: data.suggestedPrompts ?? [],
 				limitations: data.limitations ?? [],
-				modelSettings: (data.modelSettings as any) ?? undefined,
-				capabilities: (data.capabilities as any) ?? undefined,
-				variables: (data.variables as any) ?? undefined,
-				fewShotExamples: (data.fewShotExamples as any) ?? undefined,
+				modelSettings: (data.modelSettings as Prisma.InputJsonValue | undefined) ?? undefined,
+				capabilities: (data.capabilities as Prisma.InputJsonValue | undefined) ?? undefined,
+				variables: (data.variables as Prisma.InputJsonValue | undefined) ?? undefined,
+				fewShotExamples: (data.fewShotExamples as Prisma.InputJsonValue | undefined) ?? undefined,
 				outputFormat: data.outputFormat,
 				qualityChecklist: data.qualityChecklist ?? [],
-				tools: (data.tools as any) ?? undefined,
-				pricingModel: (data.pricingModel as any) ?? "FREE",
+				tools: (data.tools as unknown as Prisma.InputJsonValue | undefined) ?? undefined,
+				pricingModel: (data.pricingModel as $Enums.PricingModel | undefined) ?? "FREE",
 				price: data.price ?? 0,
 				creditCost: data.creditCost ?? 1,
-				permissions: (data.permissions as any) ?? undefined,
-				creatorId: data.creatorId!,
-				cloudStrategy: (data.cloudStrategy as any) ?? undefined,
+				permissions: (data.permissions as Prisma.InputJsonValue | undefined) ?? undefined,
+				creatorId,
+				cloudStrategy: (data.cloudStrategy as $Enums.CloudStrategy | undefined) ?? undefined,
 				endpointUrl: data.endpointUrl,
-				endpointFormat: (data.endpointFormat as any) ?? undefined,
+				endpointFormat: (data.endpointFormat as $Enums.EndpointFormat | undefined) ?? undefined,
 				sellerApiKeyEncrypted: data.sellerApiKeyEncrypted,
 				sellerApiProvider: data.sellerApiProvider,
 				requiredUserProvider: data.requiredUserProvider,
@@ -144,7 +148,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 	}
 
 	async update(id: string, data: Partial<AgentEntity>): Promise<AgentEntity> {
-		const updateData: any = {};
+		const updateData: Prisma.AgentUncheckedUpdateInput = {};
 		if (data.name !== undefined) updateData.name = data.name;
 		if (data.slug !== undefined) updateData.slug = data.slug;
 		if (data.description !== undefined) updateData.description = data.description;
@@ -152,24 +156,31 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		if (data.category !== undefined) updateData.category = data.category;
 		if (data.tags !== undefined) updateData.tags = data.tags;
 		if (data.models !== undefined) updateData.models = data.models;
-		if (data.mode !== undefined) updateData.mode = data.mode;
+		if (data.mode !== undefined) updateData.mode = data.mode as $Enums.ExecutionMode;
 		if (data.configUrl !== undefined) updateData.configUrl = data.configUrl;
 		if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
 		if (data.systemPrompt !== undefined) updateData.systemPrompt = data.systemPrompt;
 		if (data.welcomeMessage !== undefined) updateData.welcomeMessage = data.welcomeMessage;
 		if (data.suggestedPrompts !== undefined) updateData.suggestedPrompts = data.suggestedPrompts;
 		if (data.limitations !== undefined) updateData.limitations = data.limitations;
-		if (data.modelSettings !== undefined) updateData.modelSettings = data.modelSettings;
-		if (data.capabilities !== undefined) updateData.capabilities = data.capabilities;
-		if (data.variables !== undefined) updateData.variables = data.variables;
-		if (data.fewShotExamples !== undefined) updateData.fewShotExamples = data.fewShotExamples;
+		if (data.modelSettings !== undefined)
+			updateData.modelSettings = data.modelSettings as Prisma.InputJsonValue;
+		if (data.capabilities !== undefined)
+			updateData.capabilities = data.capabilities as Prisma.InputJsonValue;
+		if (data.variables !== undefined)
+			updateData.variables = data.variables as Prisma.InputJsonValue;
+		if (data.fewShotExamples !== undefined)
+			updateData.fewShotExamples = data.fewShotExamples as Prisma.InputJsonValue;
 		if (data.outputFormat !== undefined) updateData.outputFormat = data.outputFormat;
 		if (data.qualityChecklist !== undefined) updateData.qualityChecklist = data.qualityChecklist;
-		if (data.tools !== undefined) updateData.tools = data.tools;
-		if (data.pricingModel !== undefined) updateData.pricingModel = data.pricingModel;
-		if (data.cloudStrategy !== undefined) updateData.cloudStrategy = data.cloudStrategy;
+		if (data.tools !== undefined) updateData.tools = data.tools as unknown as Prisma.InputJsonValue;
+		if (data.pricingModel !== undefined)
+			updateData.pricingModel = data.pricingModel as $Enums.PricingModel;
+		if (data.cloudStrategy !== undefined)
+			updateData.cloudStrategy = data.cloudStrategy as $Enums.CloudStrategy;
 		if (data.endpointUrl !== undefined) updateData.endpointUrl = data.endpointUrl;
-		if (data.endpointFormat !== undefined) updateData.endpointFormat = data.endpointFormat;
+		if (data.endpointFormat !== undefined)
+			updateData.endpointFormat = data.endpointFormat as $Enums.EndpointFormat;
 		if (data.sellerApiKeyEncrypted !== undefined)
 			updateData.sellerApiKeyEncrypted = data.sellerApiKeyEncrypted;
 		if (data.sellerApiProvider !== undefined) updateData.sellerApiProvider = data.sellerApiProvider;
@@ -220,7 +231,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 		await this.prisma.agent.update({
 			where: { id },
 			data: {
-				status: status as any,
+				status: status as $Enums.AgentStatus,
 			},
 		});
 
@@ -233,7 +244,7 @@ export class PrismaAgentRepository implements AgentRepositoryPort {
 			if (latestVersion) {
 				await this.prisma.agentVersion.update({
 					where: { id: latestVersion.id },
-					data: { securityScanStatus: scanStatus as any },
+					data: { securityScanStatus: scanStatus as $Enums.SecurityScanStatus },
 				});
 			}
 		}

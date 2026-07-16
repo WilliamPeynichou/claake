@@ -35,13 +35,9 @@ function makeService(server = baseServer) {
 	};
 	const transport = { listTools: jest.fn(), callTool: jest.fn(), initialize: jest.fn() };
 	const service = new McpServerService(
-		// biome-ignore lint/suspicious/noExplicitAny: test doubles
 		repository as any,
-		// biome-ignore lint/suspicious/noExplicitAny: test doubles
 		encryption as any,
-		// biome-ignore lint/suspicious/noExplicitAny: test doubles
 		prisma as any,
-		// biome-ignore lint/suspicious/noExplicitAny: test doubles
 		transport as any,
 	);
 	return { service, repository, encryption };

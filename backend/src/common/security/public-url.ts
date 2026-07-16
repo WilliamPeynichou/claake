@@ -28,6 +28,14 @@ function isIpv4InCidr(address: string, base: string, prefix: number): boolean {
 	return (addressNumber & mask) === (baseNumber & mask);
 }
 
+function expandKnownIpv6(address: string): number[] {
+	const expanded = expandIpv6(address);
+	if (!expanded) {
+		throw new Error(`Invalid built-in IPv6 prefix: ${address}`);
+	}
+	return expanded;
+}
+
 function expandIpv6(address: string): number[] | null {
 	const zoneIndex = address.indexOf("%");
 	const cleanAddress = (zoneIndex >= 0 ? address.slice(0, zoneIndex) : address).toLowerCase();
@@ -71,7 +79,7 @@ function expandIpv6(address: string): number[] | null {
 
 function ipv6StartsWith(address: string, prefixGroups: number[], prefixBits: number): boolean {
 	const groups = expandIpv6(address);
-	if (!groups || groups.length !== 8) return false;
+	if (groups?.length !== 8) return false;
 	let remaining = prefixBits;
 	for (let index = 0; index < 8 && remaining > 0; index++) {
 		const bits = Math.min(16, remaining);
@@ -107,14 +115,14 @@ export function isBlockedIpAddress(address: string): boolean {
 	if (family === 6) {
 		if (normalized === "::" || normalized === "::1") return true;
 		const blockedIpv6Ranges = [
-			[expandIpv6("::ffff:0:0")!, 96],
-			[expandIpv6("64:ff9b::")!, 96],
-			[expandIpv6("100::")!, 64],
-			[expandIpv6("2001::")!, 32],
-			[expandIpv6("2001:db8::")!, 32],
-			[expandIpv6("fc00::")!, 7],
-			[expandIpv6("fe80::")!, 10],
-			[expandIpv6("ff00::")!, 8],
+			[expandKnownIpv6("::ffff:0:0"), 96],
+			[expandKnownIpv6("64:ff9b::"), 96],
+			[expandKnownIpv6("100::"), 64],
+			[expandKnownIpv6("2001::"), 32],
+			[expandKnownIpv6("2001:db8::"), 32],
+			[expandKnownIpv6("fc00::"), 7],
+			[expandKnownIpv6("fe80::"), 10],
+			[expandKnownIpv6("ff00::"), 8],
 		] satisfies Array<[number[], number]>;
 		return blockedIpv6Ranges.some(([prefixGroups, prefix]) =>
 			ipv6StartsWith(normalized, prefixGroups, prefix),

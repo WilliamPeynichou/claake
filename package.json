@@ -17,10 +17,11 @@
 		"web-build": "npm -w @claake/frontend-web run build",
 		"api-build": "npm -w @claake/backend run build",
 		"desktop-build": "npm -w @claake/frontend-app run build",
+		"typecheck": "npm -w @claake/shared run typecheck && npm -w @claake/frontend-app-mob run typecheck",
 		"web-e2e": "npm -w @claake/frontend-web run test:e2e",
 		"pake-dev": "node Pake/dist/cli.js http://localhost:3000/chat --name Claake --hide-title-bar --new-window --width 1200 --height 800 --identifier com.claake.chat",
 		"pake-build": "node Pake/dist/cli.js https://claake.com/chat --name Claake --hide-title-bar --new-window --width 1200 --height 800 --icon frontendWeb/public/logoClaakeGreen.png --identifier com.claake.chat",
-		"lint": "biome check .",
+		"lint": "biome check --error-on-warnings .",
 		"lint-fix": "biome check --fix .",
 		"format": "biome format --write .",
 		"audit:high": "npm audit --omit=dev --workspaces --include-workspace-root --audit-level=high",
@@ -42,6 +43,6 @@
 		"ws": "8.21.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.6"
+		"@biomejs/biome": "2.5.3"
 	}
 }

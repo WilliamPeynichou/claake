@@ -1,18 +1,24 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import Stripe from "stripe";
-import type { StripeServicePort } from "../../domain/ports/stripe.port.js";
+import type {
+	StripeCheckoutSessionData,
+	StripeServicePort,
+} from "../../domain/ports/stripe.port.js";
 
 @Injectable()
 export class StripeService implements StripeServicePort {
-	private readonly stripe: Stripe;
-	private readonly webhookSecret: string;
+	private readonly stripe: Stripe | null;
+	private readonly webhookSecret: string | null;
 
 	constructor(private readonly config: ConfigService) {
-		this.stripe = new Stripe(this.config.getOrThrow<string>("STRIPE_SECRET_KEY"), {
-			apiVersion: "2025-04-30.basil" as any,
-		});
-		this.webhookSecret = this.config.getOrThrow<string>("STRIPE_WEBHOOK_SECRET");
+		const secretKey = this.config.get<string>("STRIPE_SECRET_KEY");
+		this.webhookSecret = this.config.get<string>("STRIPE_WEBHOOK_SECRET") || null;
+		this.stripe = secretKey
+			? new Stripe(secretKey, {
+					apiVersion: "2025-04-30.basil" as Stripe.StripeConfig["apiVersion"],
+				})
+			: null;
 	}
 
 	async createCheckoutSession(params: {
@@ -59,24 +65,35 @@ export class StripeService implements StripeServicePort {
 				: undefined,
 		};
 
-		const session = await this.stripe.checkout.sessions.create(sessionParams);
-		return { url: session.url! };
+		const session = await this.requireStripe().checkout.sessions.create(sessionParams);
+		if (!session.url) {
+			throw new BadRequestException("Stripe checkout session has no URL");
+		}
+		return { url: session.url };
 	}
 
 	async constructWebhookEvent(
 		rawBody: Buffer,
 		signature: string,
-	): Promise<{ id: string; type: string; data: Record<string, any> }> {
+	): Promise<{ id: string; type: string; data: StripeCheckoutSessionData }> {
+		const stripe = this.requireStripe();
+		if (!this.webhookSecret) {
+			throw new ServiceUnavailableException("Stripe webhook is not configured");
+		}
 		try {
-			const event = this.stripe.webhooks.constructEvent(rawBody, signature, this.webhookSecret);
-			return { id: event.id, type: event.type, data: event.data.object as Record<string, any> };
+			const event = stripe.webhooks.constructEvent(rawBody, signature, this.webhookSecret);
+			return {
+				id: event.id,
+				type: event.type,
+				data: event.data.object as StripeCheckoutSessionData,
+			};
 		} catch {
 			throw new BadRequestException("Invalid webhook signature");
 		}
 	}
 
 	async createConnectAccount(email: string): Promise<{ accountId: string }> {
-		const account = await this.stripe.accounts.create({
+		const account = await this.requireStripe().accounts.create({
 			type: "express",
 			email,
 			capabilities: {
@@ -88,7 +105,7 @@ export class StripeService implements StripeServicePort {
 	}
 
 	async createAccountLink(accountId: string, returnUrl: string): Promise<{ url: string }> {
-		const link = await this.stripe.accountLinks.create({
+		const link = await this.requireStripe().accountLinks.create({
 			account: accountId,
 			refresh_url: returnUrl,
 			return_url: returnUrl,
@@ -98,7 +115,14 @@ export class StripeService implements StripeServicePort {
 	}
 
 	async getAccountStatus(accountId: string): Promise<{ details_submitted: boolean }> {
-		const account = await this.stripe.accounts.retrieve(accountId);
+		const account = await this.requireStripe().accounts.retrieve(accountId);
 		return { details_submitted: account.details_submitted ?? false };
+	}
+
+	private requireStripe(): Stripe {
+		if (!this.stripe) {
+			throw new ServiceUnavailableException("Stripe is not configured");
+		}
+		return this.stripe;
 	}
 }

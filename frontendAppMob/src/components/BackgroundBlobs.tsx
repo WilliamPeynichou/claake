@@ -113,7 +113,7 @@ const BLOBS: BlobConfig[] = [
 export function BackgroundBlobs() {
 	return (
 		<View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-			{BLOBS.map((b, i) => (
+			{BLOBS.map((b) => (
 				<Blob key={b.topPct} {...b} />
 			))}
 		</View>

@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { ClaakeMark } from "../components/ClaakeMark";
 import { Droplet } from "../components/Droplet";
@@ -7,7 +7,7 @@ import { Glass } from "../components/Glass";
 import { StarIcon } from "../components/Icons";
 import { MOCK_AGENTS } from "../data/mock";
 import { useFav } from "../state/FavContext";
-import { BRAND, fonts, radius } from "../theme/brand";
+import { BRAND, fonts } from "../theme/brand";
 import { useTheme } from "../theme/ThemeContext";
 
 type Props = { onAgentPress: (id: string) => void };
@@ -22,7 +22,7 @@ function AgentGridCard({
 	agent: (typeof MOCK_AGENTS)[0];
 	onPress: () => void;
 }) {
-	const { dark, c } = useTheme();
+	const { c } = useTheme();
 	return (
 		<Pressable onPress={onPress} style={styles.gridItem}>
 			<Glass strong borderRadius={22} style={styles.gridCard}>

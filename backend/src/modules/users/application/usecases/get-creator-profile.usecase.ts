@@ -31,7 +31,7 @@ export class GetCreatorProfileUseCase {
 				? agents.reduce((sum, a) => sum + a.rating * a.reviewCount, 0) / (totalReviews || 1)
 				: 0;
 
-		const portfolioLinks = (user as any).portfolioLinks ?? [];
+		const portfolioLinks = user.portfolioLinks ?? [];
 
 		return {
 			id: user.id,

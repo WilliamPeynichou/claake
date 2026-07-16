@@ -49,7 +49,7 @@ export function ChatInputDA({
 	const accept = capabilities
 		? [
 				...(capabilities.images ? ["image/jpeg", "image/png", "image/webp"] : []),
-				...(capabilities.files ? ["application/pdf", "text/plain"] : []),
+				...(capabilities.files ? ["application/pdf"] : []),
 			].join(",")
 		: "image/jpeg,image/png,image/webp,application/pdf";
 

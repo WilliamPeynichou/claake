@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { FileUploader } from "@/components/uploads";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { uploadAgentConfigFile, uploadAgentImage } from "@/lib/supabase/storage";
+import { uploadAgentImage } from "@/lib/supabase/storage";
 import { KnowledgeManager } from "../knowledge";
 import { McpManager } from "../mcp/mcp-manager";
 import { SkillManager } from "../skills";
@@ -22,6 +22,7 @@ import { useAgentBuilderForm } from "./agent-builder.reducer";
 import type { SetField } from "./agent-builder.types";
 import { agentToForm } from "./lib/agent-to-form";
 import { buildUpdateAgentPayload } from "./lib/build-agent-payload";
+import { parseAgentJson } from "./lib/parse-agent-json";
 import { BehaviorStep } from "./steps/behavior-step";
 import { ExecutionStep } from "./steps/execution-step";
 import { MetadataStep } from "./steps/metadata-step";
@@ -101,11 +102,18 @@ export function EditAgentFlow() {
 		setSuccess(false);
 	}
 
-	function handleConfigFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+	async function handleConfigFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
-		setConfigFile(file);
-		setError(null);
+		try {
+			const patch = parseAgentJson(await file.text());
+			hydrate(patch);
+			setConfigFile(file);
+			setError(null);
+		} catch {
+			setConfigFile(null);
+			setError("Fichier .agentjson invalide.");
+		}
 	}
 
 	async function handleSave() {
@@ -119,10 +127,7 @@ export function EditAgentFlow() {
 			let imageUrl: string | undefined;
 			if (imageFile) imageUrl = await uploadAgentImage(imageFile, agent.slug, user.id);
 
-			let configUrl: string | undefined;
-			if (configFile) configUrl = await uploadAgentConfigFile(configFile, agent.slug, user.id);
-
-			const payload = buildUpdateAgentPayload(form, { imageUrl, configUrl });
+			const payload = buildUpdateAgentPayload(form, { imageUrl });
 			await apiClient.agents.update(agent.id, payload, token);
 
 			setSuccess(true);

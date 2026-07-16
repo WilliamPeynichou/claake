@@ -10,9 +10,11 @@ import {
 	Req,
 	UseGuards,
 } from "@nestjs/common";
-import { SkipThrottle, Throttle } from "@nestjs/throttler";
+import { Throttle } from "@nestjs/throttler";
+import { RATE_LIMITS } from "../../../../common/config/rate-limits.js";
 import { SkipTransform } from "../../../../common/decorators/skip-transform.decorator.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
+import type { AuthenticatedRequest } from "../../../../common/types/authenticated-request.type.js";
 import {
 	USER_REPOSITORY,
 	type UserRepositoryPort,
@@ -38,14 +40,14 @@ export class PaymentController {
 	) {}
 
 	@Post("checkout")
-	@Throttle({ default: { limit: 10, ttl: 60_000 } })
+	@Throttle(RATE_LIMITS.paymentCheckout)
 	@UseGuards(SupabaseAuthGuard)
-	async checkout(@Body() dto: CheckoutRequestDto, @Req() req: any) {
+	async checkout(@Body() dto: CheckoutRequestDto, @Req() req: AuthenticatedRequest) {
 		return this.createCheckout.execute(dto.agent_id, req.user.id);
 	}
 
 	@Post("webhook")
-	@SkipThrottle()
+	@Throttle(RATE_LIMITS.paymentWebhook)
 	@SkipTransform()
 	async webhook(@RawBody() rawBody: Buffer, @Headers("stripe-signature") signature: string) {
 		return this.handleWebhook.execute(rawBody, signature);
@@ -53,25 +55,26 @@ export class PaymentController {
 
 	@Get("purchases")
 	@UseGuards(SupabaseAuthGuard)
-	async purchases(@Req() req: any) {
+	async purchases(@Req() req: AuthenticatedRequest) {
 		return this.listPurchases.execute(req.user.id);
 	}
 
 	@Get("access/:agentId")
 	@UseGuards(SupabaseAuthGuard)
-	async access(@Param("agentId") agentId: string, @Req() req: any) {
+	async access(@Param("agentId") agentId: string, @Req() req: AuthenticatedRequest) {
 		return this.checkAccess.execute(agentId, req.user.id);
 	}
 
 	@Post("connect/onboard")
+	@Throttle(RATE_LIMITS.stripeOnboarding)
 	@UseGuards(SupabaseAuthGuard)
-	async connectOnboard(@Req() req: any) {
+	async connectOnboard(@Req() req: AuthenticatedRequest) {
 		return this.createConnectAccount.execute(req.user.id);
 	}
 
 	@Get("connect/status")
 	@UseGuards(SupabaseAuthGuard)
-	async connectStatus(@Req() req: any) {
+	async connectStatus(@Req() req: AuthenticatedRequest) {
 		const user = await this.userRepo.findById(req.user.id);
 		if (!user?.stripeAccountId) {
 			return { connected: false, details_submitted: false };

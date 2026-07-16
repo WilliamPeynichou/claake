@@ -43,8 +43,8 @@ export function ReviewForm({ agentId, onReviewCreated }: ReviewFormProps) {
 			);
 			setSuccess(true);
 			onReviewCreated?.();
-		} catch (err: any) {
-			setError(err.message ?? "Erreur lors de la soumission");
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Erreur lors de la soumission");
 		} finally {
 			setSubmitting(false);
 		}

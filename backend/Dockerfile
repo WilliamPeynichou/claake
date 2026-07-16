@@ -1,5 +1,5 @@
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -21,12 +21,12 @@ COPY backend/ ./backend/
 # Generate Prisma client
 RUN npm run prisma:generate --workspace=@claake/backend
 
-# Build shared then backend
-RUN npm run build --workspace=@claake/shared 2>/dev/null || true
+# Build backend, then remove development-only dependencies
 RUN npm run build --workspace=@claake/backend
+RUN npm prune --omit=dev --workspaces --include-workspace-root
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
-FROM node:20-slim AS runtime
+FROM node:22-slim AS runtime
 
 WORKDIR /app
 
@@ -34,13 +34,8 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 
 ENV NODE_ENV=production
 
-# Copy workspace manifests
-COPY package.json package-lock.json ./
-COPY shared/package.json ./shared/
-COPY backend/package.json ./backend/
-
-# Install production deps only
-RUN npm ci --workspace=shared --workspace=backend --include-workspace-root --omit=dev
+# Copy production dependencies from the tested build stage
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy shared source (needed at runtime via workspace resolution)
 COPY shared/ ./shared/
@@ -56,4 +51,4 @@ EXPOSE 3001
 
 WORKDIR /app/backend
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

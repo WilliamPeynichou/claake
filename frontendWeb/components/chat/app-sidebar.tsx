@@ -132,9 +132,12 @@ export function AppSidebar({
 									}}
 								>
 									{agent.image_url ? (
-										<img
+										<Image
 											src={agent.image_url}
 											alt={agent.name}
+											width={24}
+											height={24}
+											unoptimized
 											className="h-6 w-6 shrink-0 object-cover"
 											style={{ borderRadius: "3px" }}
 										/>

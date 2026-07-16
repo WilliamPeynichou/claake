@@ -6,10 +6,7 @@ import { AnthropicProvider } from "../../infrastructure/providers/anthropic.prov
 import { EndpointProxyProvider } from "../../infrastructure/providers/endpoint-proxy.provider";
 import { MockProvider } from "../../infrastructure/providers/mock.provider";
 import { OpenAIProvider } from "../../infrastructure/providers/openai.provider";
-import {
-	EXECUTION_STRATEGY_RESOLVER,
-	ExecutionStrategyResolver,
-} from "./execution-strategy.resolver";
+import { ExecutionStrategyResolver } from "./execution-strategy.resolver";
 import { MANAGE_API_KEYS_USE_CASE } from "./manage-api-keys.port";
 
 const mockAnthropic = { streamText: jest.fn() };

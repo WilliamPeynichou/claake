@@ -26,6 +26,13 @@ type TurnEvent =
 	| { kind: "tool_use"; id: string; name: string; input: unknown }
 	| { kind: "stop"; stopReason: string | null };
 
+/** Minimal shape of Anthropic SSE stream events we consume. */
+type AnthropicStreamEvent = {
+	type?: string;
+	delta?: { type?: string; text?: string; partial_json?: string; stop_reason?: unknown };
+	content_block?: { type?: string; id?: unknown; name?: unknown };
+};
+
 function buildAttachmentBlocks(attachments: FileAttachment[]): AnthropicContentBlock[] {
 	return attachments.map((a) => {
 		if (a.type === "document") {
@@ -168,12 +175,12 @@ export class AnthropicProvider implements AIProviderPort {
 			throw new Error("Anthropic provider unavailable");
 		}
 
-		if (!res.ok) {
+		if (!res.ok || !res.body) {
 			clearTimeout(timeout);
 			throw new Error("Anthropic provider unavailable");
 		}
 
-		const reader = res.body!.getReader();
+		const reader = res.body.getReader();
 		const decoder = new TextDecoder();
 		let buffer = "";
 		let totalSize = 0;
@@ -203,7 +210,7 @@ export class AnthropicProvider implements AIProviderPort {
 						return;
 					}
 
-					let parsed: Record<string, any>;
+					let parsed: AnthropicStreamEvent;
 					try {
 						parsed = JSON.parse(data);
 					} catch {
@@ -211,7 +218,7 @@ export class AnthropicProvider implements AIProviderPort {
 					}
 
 					if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
-						yield { kind: "text", delta: parsed.delta.text };
+						yield { kind: "text", delta: parsed.delta.text ?? "" };
 					} else if (
 						parsed.type === "content_block_start" &&
 						parsed.content_block?.type === "tool_use"

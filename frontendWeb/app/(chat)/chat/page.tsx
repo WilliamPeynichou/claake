@@ -1,6 +1,7 @@
 "use client";
 
 import type { Agent } from "@claake/shared";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api";
@@ -8,7 +9,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function ChatHomePage() {
 	const router = useRouter();
-	const { token, loading: authLoading } = useAuth();
+	const { loading: authLoading } = useAuth();
 	const [agents, setAgents] = useState<Agent[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [search, setSearch] = useState("");
@@ -111,9 +112,12 @@ export default function ChatHomePage() {
 						}}
 					>
 						{agent.image_url ? (
-							<img
+							<Image
 								src={agent.image_url}
 								alt={agent.name}
+								width={36}
+								height={36}
+								unoptimized
 								className="h-9 w-9 shrink-0 object-cover"
 								style={{ borderRadius: "4px" }}
 							/>

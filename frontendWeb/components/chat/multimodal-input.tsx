@@ -2,6 +2,7 @@
 
 import type { Agent } from "@claake/shared";
 import { FileText, Loader2, Paperclip, Send, Square, X } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api-config";
 
@@ -171,7 +172,14 @@ export function MultimodalInput({
 								}}
 							>
 								{f.isImage && f.previewUrl ? (
-									<img src={f.previewUrl} alt={f.name} className="h-4 w-4 object-cover rounded" />
+									<Image
+										src={f.previewUrl}
+										alt={f.name}
+										width={16}
+										height={16}
+										unoptimized
+										className="h-4 w-4 object-cover rounded"
+									/>
 								) : (
 									<FileText className="h-3.5 w-3.5" style={{ color: "#a09a8a" }} />
 								)}

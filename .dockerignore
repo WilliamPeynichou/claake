@@ -1,0 +1,49 @@
+# Version control and local configuration
+.git
+.gitignore
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# Dependencies and package-manager caches
+node_modules
+**/node_modules
+.npm
+**/.npm
+
+# Build outputs and caches
+.next
+**/.next
+dist
+**/dist
+build
+**/build
+coverage
+**/coverage
+*.tsbuildinfo
+**/.turbo
+**/.cache
+
+# Tests and reports
+playwright-report
+**/playwright-report
+test-results
+**/test-results
+
+# Desktop/mobile artifacts
+frontendApp/src-tauri/target
+frontendAppMob/.expo
+frontendAppMob/.expo-shared
+
+# Editor, OS, logs and unrelated local tooling
+.vscode
+.idea
+.DS_Store
+*.log
+.claakecode
+.codex
+ClaakePresentation
+skills
