@@ -8,6 +8,10 @@ import { LoggingInterceptor } from "./common/interceptors/logging.interceptor.js
 import { ResponseTransformInterceptor } from "./common/interceptors/response-transform.interceptor.js";
 import { SanitizeInterceptor } from "./common/interceptors/sanitize.interceptor.js";
 
+declare global {
+	var PhusionPassenger: unknown;
+}
+
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule, {
 		rawBody: true,
@@ -78,7 +82,8 @@ async function bootstrap() {
 		new ResponseTransformInterceptor(reflector),
 	);
 
-	const port = process.env.PORT ?? 3001;
+	const port =
+		typeof globalThis.PhusionPassenger !== "undefined" ? "passenger" : (process.env.PORT ?? 3001);
 	await app.listen(port);
 }
 bootstrap();

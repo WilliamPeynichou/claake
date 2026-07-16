@@ -27,10 +27,14 @@ Phase A — infra staging + CI
 
 Objectif : environnement reproductible hors machine locale, CI verte.
 
-- [ ] Créer projet **Supabase staging** : clés/URLs séparées, secrets en CI (jamais en repo).
-- [ ] Configurer `backend` staging : `.env` distinct, `DATABASE_URL`, clés Stripe test.
-- [ ] Configurer `frontendWeb` staging : `NEXT_PUBLIC_SUPABASE_URL`, URL API.
-- [ ] Configurer `frontendApp` desktop : endpoint staging au lieu du fallback localhost.
+- [ ] Créer projet **Supabase staging** séparé ; projet existant lié temporairement, secrets GitHub
+      configurés, séparation staging/prod toujours obligatoire avant ouverture.
+- [x] Configurer `backend` staging : artefact Passenger + workflow o2Switch prêts ; variables runtime,
+      accès SSH et clés Stripe test restent à injecter côté opérateur.
+- [x] Configurer `frontendWeb` staging : build Next standalone + workflow o2Switch prêts ; domaine
+      HTTPS et URL API restent à créer côté opérateur.
+- [x] Configurer `frontendApp` desktop : endpoint staging validé par environnement ; URL finale reste
+      à injecter après création du sous-domaine API.
 - [x] Débloquer la collecte de pages Next et le **build production complet en CI** ; gates locaux
       complétés par migrations vierges + build/smoke image backend, exécution GitHub à confirmer.
 - [ ] Corriger `npm run lint` (actuellement en échec) et le rendre bloquant en CI.
