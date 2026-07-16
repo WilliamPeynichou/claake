@@ -31,7 +31,8 @@ Objectif : environnement reproductible hors machine locale, CI verte.
 - [ ] Configurer `backend` staging : `.env` distinct, `DATABASE_URL`, clés Stripe test.
 - [ ] Configurer `frontendWeb` staging : `NEXT_PUBLIC_SUPABASE_URL`, URL API.
 - [ ] Configurer `frontendApp` desktop : endpoint staging au lieu du fallback localhost.
-- [ ] Débloquer la collecte de pages Next et le **build production complet en CI**.
+- [x] Débloquer la collecte de pages Next et le **build production complet en CI** ; gates locaux
+      complétés par migrations vierges + build/smoke image backend, exécution GitHub à confirmer.
 - [ ] Corriger `npm run lint` (actuellement en échec) et le rendre bloquant en CI.
 
 Critère : `main` déployable en staging par pipeline, CI verte (lint + tests + builds).

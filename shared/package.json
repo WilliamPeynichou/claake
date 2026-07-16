@@ -2,10 +2,16 @@
 	"name": "@claake/shared",
 	"version": "0.1.0",
 	"private": true,
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
 	"main": "index.ts",
 	"types": "index.ts",
 	"exports": {
 		".": "./index.ts",
 		"./hooks": "./hooks/index.ts"
+	},
+	"devDependencies": {
+		"typescript": "^5.7.3"
 	}
 }
