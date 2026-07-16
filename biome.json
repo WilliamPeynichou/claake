@@ -70,6 +70,7 @@
 			"!!**/*.config.ts",
 			"!!**/components/ui",
 			"!!**/.claude",
+			"!!supabase/.temp",
 			"!!**/dist",
 			"!!Pake",
 			"!!skills",

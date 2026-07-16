@@ -1,0 +1,139 @@
+name: Deploy staging to o2Switch
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: staging-o2switch
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy Passenger apps
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate staging configuration
+        env:
+          O2SWITCH_HOST: ${{ secrets.O2SWITCH_HOST }}
+          O2SWITCH_USER: ${{ secrets.O2SWITCH_USER }}
+          O2SWITCH_SSH_KEY: ${{ secrets.O2SWITCH_SSH_KEY }}
+          O2SWITCH_KNOWN_HOSTS: ${{ secrets.O2SWITCH_KNOWN_HOSTS }}
+          O2SWITCH_WEB_ROOT: ${{ vars.O2SWITCH_WEB_ROOT }}
+          O2SWITCH_API_ROOT: ${{ vars.O2SWITCH_API_ROOT }}
+          WEB_URL: ${{ vars.WEB_URL }}
+        run: |
+          missing=0
+          for name in \
+            NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_API_URL \
+            O2SWITCH_HOST O2SWITCH_USER O2SWITCH_SSH_KEY O2SWITCH_KNOWN_HOSTS \
+            O2SWITCH_WEB_ROOT O2SWITCH_API_ROOT WEB_URL; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not configured in GitHub Environment staging"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm -w @claake/backend run prisma:generate
+
+      - name: Build web and backend
+        run: |
+          npm run web-build
+          npm run api-build
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p artifacts/web/frontendWeb/.next artifacts/api/backend artifacts/api/shared
+          cp -a frontendWeb/.next/standalone/. artifacts/web/
+          cp -a frontendWeb/.next/static artifacts/web/frontendWeb/.next/static
+          cp -a frontendWeb/public artifacts/web/frontendWeb/public
+
+          cp package.json package-lock.json artifacts/api/
+          cp backend/package.json artifacts/api/backend/
+          cp -a backend/dist backend/prisma artifacts/api/backend/
+          cp -a shared/. artifacts/api/shared/
+
+          tar -C artifacts/web -czf web.tgz .
+          tar -C artifacts/api -czf api.tgz .
+
+      - name: Configure SSH
+        env:
+          O2SWITCH_SSH_KEY: ${{ secrets.O2SWITCH_SSH_KEY }}
+          O2SWITCH_KNOWN_HOSTS: ${{ secrets.O2SWITCH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$O2SWITCH_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$O2SWITCH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload release artifacts
+        env:
+          O2SWITCH_HOST: ${{ secrets.O2SWITCH_HOST }}
+          O2SWITCH_USER: ${{ secrets.O2SWITCH_USER }}
+        run: scp web.tgz api.tgz "$O2SWITCH_USER@$O2SWITCH_HOST:~/"
+
+      - name: Activate release
+        env:
+          O2SWITCH_HOST: ${{ secrets.O2SWITCH_HOST }}
+          O2SWITCH_USER: ${{ secrets.O2SWITCH_USER }}
+          O2SWITCH_WEB_ROOT: ${{ vars.O2SWITCH_WEB_ROOT }}
+          O2SWITCH_API_ROOT: ${{ vars.O2SWITCH_API_ROOT }}
+          RELEASE_ID: ${{ github.sha }}
+        run: |
+          ssh "$O2SWITCH_USER@$O2SWITCH_HOST" \
+            "O2SWITCH_WEB_ROOT='$O2SWITCH_WEB_ROOT' O2SWITCH_API_ROOT='$O2SWITCH_API_ROOT' RELEASE_ID='$RELEASE_ID' bash -s" <<'REMOTE'
+          set -euo pipefail
+          web_release="$O2SWITCH_WEB_ROOT/releases/$RELEASE_ID"
+          api_release="$O2SWITCH_API_ROOT/releases/$RELEASE_ID"
+          mkdir -p "$web_release" "$api_release"
+          tar -C "$web_release" -xzf ~/web.tgz
+          tar -C "$api_release" -xzf ~/api.tgz
+          cd "$api_release"
+          npm ci --omit=dev --workspace=shared --workspace=backend --include-workspace-root
+          ln -sfn "$web_release" "$O2SWITCH_WEB_ROOT/current.new"
+          ln -sfn "$api_release" "$O2SWITCH_API_ROOT/current.new"
+          mv -Tf "$O2SWITCH_WEB_ROOT/current.new" "$O2SWITCH_WEB_ROOT/current"
+          mv -Tf "$O2SWITCH_API_ROOT/current.new" "$O2SWITCH_API_ROOT/current"
+          mkdir -p "$O2SWITCH_WEB_ROOT/current/frontendWeb/tmp" "$O2SWITCH_API_ROOT/current/backend/tmp"
+          touch "$O2SWITCH_WEB_ROOT/current/frontendWeb/tmp/restart.txt"
+          touch "$O2SWITCH_API_ROOT/current/backend/tmp/restart.txt"
+          rm -f ~/web.tgz ~/api.tgz
+          REMOTE
+
+      - name: Smoke deployed services
+        env:
+          WEB_URL: ${{ vars.WEB_URL }}
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          for attempt in {1..30}; do
+            web_status="$(curl --silent --output /dev/null --write-out '%{http_code}' "$WEB_URL")"
+            api_status="$(curl --silent --output /dev/null --write-out '%{http_code}' "$API_URL/health")"
+            if [ "$web_status" = 200 ] && [ "$api_status" = 200 ]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Staging smoke failed"
+          exit 1

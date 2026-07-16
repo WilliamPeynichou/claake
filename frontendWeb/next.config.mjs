@@ -24,6 +24,7 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+	output: "standalone",
 	transpilePackages: ["@claake/shared"],
 
 	async headers() {
