@@ -18,6 +18,7 @@ import type { Request, Response } from "express";
 import { RATE_LIMITS } from "../../../../common/config/rate-limits.js";
 import { SkipTransform } from "../../../../common/decorators/skip-transform.decorator.js";
 import { SupabaseAuthGuard } from "../../../../common/guards/supabase-auth.guard.js";
+import { redactSensitive } from "../../../../common/security/redact-sensitive.js";
 import { PrismaService } from "../../../../prisma/prisma.service.js";
 import { UploadService } from "../../../uploads/application/upload.service.js";
 import { CreateSessionDto } from "../../application/dtos/create-session.dto.js";
@@ -172,7 +173,7 @@ export class ChatController {
 			res.write(`d:${JSON.stringify({ finishReason: "stop" })}\n`);
 		} catch (error) {
 			this.logger.warn(
-				`AI stream failed for session ${id}: ${error instanceof Error ? error.message : "unknown error"}`,
+				`AI stream failed for session ${id}: ${redactSensitive(error instanceof Error ? error.message : "unknown error")}`,
 			);
 			// 3: error — never expose provider/vendor details to the client
 			res.write(`3:${JSON.stringify("La réponse IA est momentanément indisponible.")}\n`);

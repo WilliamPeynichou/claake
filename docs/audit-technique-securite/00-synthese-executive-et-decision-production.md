@@ -1,5 +1,9 @@
 # Synthèse exécutive consolidée et décision de préparation production
 
+> **Mise à jour 2026-07-16 :** constats P0/P1 ci-dessous = état audit initial. Résolution et
+> acceptations : `cloture-phase-b-p0-p1.md`. Phase B code fermée ; staging, rotation fournisseur
+> et E2E live restent gates obligatoires avant beta.
+
 > Livrable consolidé du plan d’audit technique et sécuritaire.
 > Source : rapports détaillés `audit-technique-securite/01-*`, `02-*`, `03-*`, `04-*` et exploration statique/dynamique non destructive du dépôt local.
 > Aucun code applicatif ni donnée réelle n’a été modifié.
