@@ -10,6 +10,10 @@ Branche : `fix/desktop-operational-gate`
 - [ ] Rendre arrêt du streaming SSE fonctionnel.
 - [ ] Afficher erreurs de configuration chat et CTA boutique pour agents payants.
 - [ ] Ajouter tests ciblés frontend desktop.
+- [x] Ajouter workflow GitHub Actions de release desktop Windows/Linux/macOS.
+- [x] Valider version/tag et variables publiques de build sans exposer secrets.
+- [x] Publier une GitHub Release idempotente avec installateurs natifs.
+- [ ] Vérifier workflow, pousser branche et documenter déclenchement.
 - [ ] Construire package natif local et vérifier artefact installable (compilation validée,
   packaging final bloqué par limite runner 120 s).
 - [ ] Faire smoke réel avec Supabase et backend locaux.
@@ -24,4 +28,9 @@ Branche : `fix/desktop-operational-gate`
 - Preuves vertes : Biome ciblé, build NestJS, build web production, `cargo check --locked`.
 - Build release Tauri atteint `claake-desktop` sans erreur, mais commandes interrompues à 120 s par
   runner. Artefact installable et smoke E2E restent donc ouverts, sans faux PASS.
-- Détails : `docs/suivi_roadmap/gate-desktop-runtime-packaging-tauri.md`.
+- Workflow `Desktop Release` ajouté : validation tag/version/config, matrice Linux/Windows/macOS,
+  brouillon idempotent puis publication après succès complet.
+- Environnement GitHub `desktop-release` créé. Ses deux secrets et deux variables runtime restent à
+  fournir avant lancement ; aucun endpoint factice ne peut être publié.
+- `Cargo.lock` desktop désormais versionnable et dépendances Linux ajoutées au job CI desktop.
+- Runbook : `docs/releases/release-desktop-github-actions.md`.
