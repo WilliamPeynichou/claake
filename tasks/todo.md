@@ -1,31 +1,36 @@
-# Phase A — Gates CI et artefact de déploiement
+# Gate produit — Application desktop opérationnelle
 
-Branche : `fix/phase-a-ci-deployment-gates`
+Branche : `fix/desktop-operational-gate`
 
 ## Plan
 
-- [x] Réparer le test E2E backend cassé par `AgentSkillContextService`.
-- [x] Réduire et sécuriser le contexte Docker avec `.dockerignore`.
-- [x] Aligner l'image backend sur Node 22 et supprimer le build silencieusement ignoré.
-- [x] Ajouter les typechecks autonomes `shared` et mobile aux scripts/CI.
-- [x] Tester les migrations Prisma sur PostgreSQL 16 + pgvector vierge en CI.
-- [x] Construire l'image backend en CI et prouver son démarrage via `/health`.
-- [x] Conserver les artefacts Playwright lors d'un échec.
-- [x] Lancer lint, tests, typechecks, migrations, build Docker et smoke.
-- [x] Documenter les résultats.
+- [x] Corriger scripts pour lancer et construire vraie application Tauri.
+- [x] Autoriser origines desktop locales via CORS backend, sans élargir production.
+- [x] Vérifier et documenter configuration API/Supabase locale.
+- [ ] Rendre arrêt du streaming SSE fonctionnel.
+- [ ] Afficher erreurs de configuration chat et CTA boutique pour agents payants.
+- [ ] Ajouter tests ciblés frontend desktop.
+- [x] Ajouter workflow GitHub Actions de release desktop Windows/Linux/macOS.
+- [x] Valider version/tag et variables publiques de build sans exposer secrets.
+- [x] Publier une GitHub Release idempotente avec installateurs natifs.
+- [ ] Vérifier workflow, pousser branche et documenter déclenchement.
+- [ ] Construire package natif local et vérifier artefact installable (compilation validée,
+  packaging final bloqué par limite runner 120 s).
+- [ ] Faire smoke réel avec Supabase et backend locaux.
+- [x] Documenter utilisation, limites et preuves.
 
 ## Review
 
-- E2E backend réaligné avec `AgentSkillContextService` et `ToolRegistryService.prepare`.
-- Job CI `deployment-artifact` : base pgvector vierge, 14 migrations, statut Prisma, build image,
-  démarrage et smoke `/health`.
-- `.dockerignore` réduit contexte observé d'environ 4,6 Go à 1,45 Mo et exclut fichiers env réels.
-- Image Node 22, dépendances de production prunées, chemin runtime corrigé vers
-  `dist/src/main.js` après détection par smoke réel.
-- `shared` et mobile ont maintenant un typecheck autonome bloquant en CI.
-- Rapport Playwright uploadé uniquement en échec, rétention sept jours.
-- Preuves : 49 suites/303 tests unitaires, E2E 1/1, lint, typechecks, security check, build API,
-  14 migrations sur DB vierge, build Docker et `/health` verts.
-- Exécution GitHub Actions sur push/PR et staging distant restent à confirmer ; aucun secret requis
-  ou ajouté par ce bloc.
-- Détails : `docs/suivi_roadmap/phase-a-gates-ci-artefact-backend.md`.
+- Scripts racine et workspace lancent désormais Tauri réel ; scripts web internes évitent récursion.
+- CORS exact couvre `127.0.0.1`, `tauri://localhost` et `http://tauri.localhost` ; 8 tests verts.
+- `WEB_URL` production strictement validée et normalisée.
+- Matrice d'icônes native générée, identifiant bundle et noms Rust alignés sur Claake.
+- Preuves vertes : Biome ciblé, build NestJS, build web production, `cargo check --locked`.
+- Build release Tauri atteint `claake-desktop` sans erreur, mais commandes interrompues à 120 s par
+  runner. Artefact installable et smoke E2E restent donc ouverts, sans faux PASS.
+- Workflow `Desktop Release` ajouté : validation tag/version/config, matrice Linux/Windows/macOS,
+  brouillon idempotent puis publication après succès complet.
+- Environnement GitHub `desktop-release` créé. Ses deux secrets et deux variables runtime restent à
+  fournir avant lancement ; aucun endpoint factice ne peut être publié.
+- `Cargo.lock` desktop désormais versionnable et dépendances Linux ajoutées au job CI desktop.
+- Runbook : `docs/releases/release-desktop-github-actions.md`.

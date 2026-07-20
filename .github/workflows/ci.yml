@@ -68,12 +68,18 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Install desktop Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libayatana-appindicator3-dev librsvg2-dev libwebkit2gtk-4.1-dev
+
       - name: Desktop build
         run: npm run desktop-build
         env:
           VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
           VITE_API_URL: https://api.example.com
+          VITE_WEB_URL: https://example.com
 
   deployment-artifact:
     name: Migrations and backend image

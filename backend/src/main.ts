@@ -3,6 +3,7 @@ import { NestFactory, Reflector } from "@nestjs/core";
 import compression from "compression";
 import helmet from "helmet";
 import { AppModule } from "./app.module.js";
+import { createCorsOptions } from "./common/config/cors.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor.js";
 import { ResponseTransformInterceptor } from "./common/interceptors/response-transform.interceptor.js";
@@ -15,25 +16,7 @@ async function bootstrap() {
 
 	// CORS — must be first so OPTIONS preflight is handled before any other middleware
 	const isProduction = process.env.NODE_ENV === "production";
-	const productionOrigin = process.env.WEB_URL;
-	if (isProduction && !productionOrigin) {
-		throw new Error("WEB_URL is required in production for CORS");
-	}
-	app.enableCors({
-		origin: isProduction
-			? productionOrigin
-			: [
-					"http://localhost:3000",
-					"http://localhost:3001",
-					"http://localhost:5173",
-					"tauri://localhost",
-					"http://localhost:8081",
-					productionOrigin ?? "",
-				].filter(Boolean),
-		credentials: true,
-		methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
-		allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Stripe-Signature"],
-	});
+	app.enableCors(createCorsOptions(process.env));
 
 	// Compression
 	app.use(compression());

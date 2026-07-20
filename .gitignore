@@ -47,6 +47,7 @@ frontendApp/src-tauri/target/
 
 # rust
 Cargo.lock
+!frontendApp/src-tauri/Cargo.lock
 
 
 /skills

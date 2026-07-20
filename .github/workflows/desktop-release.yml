@@ -1,0 +1,208 @@
+name: Desktop Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag de release, ex. v0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release-${{ github.event.inputs.tag_name || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  prepare:
+    name: Validate release
+    runs-on: ubuntu-latest
+    environment: desktop-release
+    outputs:
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate tag and versions
+        id: release
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag_name }}
+          REF_TAG: ${{ github.ref_name }}
+        run: |
+          tag_name="${INPUT_TAG:-$REF_TAG}"
+          if [[ ! "$tag_name" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release tag: $tag_name" >&2
+            exit 1
+          fi
+
+          version="${tag_name#v}"
+          node_version="$(node -p "require('./frontendApp/package.json').version")"
+          tauri_version="$(node -p "require('./frontendApp/src-tauri/tauri.conf.json').version")"
+          cargo_version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' frontendApp/src-tauri/Cargo.toml | head -1)"
+          if [[ "$version" != "$node_version" || "$version" != "$tauri_version" || "$version" != "$cargo_version" ]]; then
+            printf 'Version mismatch: tag=%s npm=%s tauri=%s cargo=%s\n' \
+              "$version" "$node_version" "$tauri_version" "$cargo_version" >&2
+            exit 1
+          fi
+          echo "tag_name=$tag_name" >> "$GITHUB_OUTPUT"
+
+      - name: Validate public desktop configuration
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_WEB_URL: ${{ vars.VITE_WEB_URL }}
+        run: |
+          for name in VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY VITE_API_URL VITE_WEB_URL; do
+            if [[ -z "${!name}" ]]; then
+              echo "$name is missing from desktop-release environment" >&2
+              exit 1
+            fi
+          done
+          node - <<'NODE'
+          for (const name of ["VITE_SUPABASE_URL", "VITE_API_URL", "VITE_WEB_URL"]) {
+            const url = new URL(process.env[name]);
+            if (url.protocol !== "https:" || ["localhost", "127.0.0.1", "::1"].includes(url.hostname)) {
+              throw new Error(`${name} must be a public HTTPS URL`);
+            }
+          }
+          NODE
+
+      - name: Create or reuse draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ steps.release.outputs.tag_name }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Reusing release $TAG_NAME"
+          else
+            gh release create "$TAG_NAME" --draft --title "Claake $TAG_NAME" \
+              --notes "Installateurs desktop Claake pour Linux, Windows et macOS."
+          fi
+
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: prepare
+    environment: desktop-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            os: ubuntu-22.04
+            args: ""
+          - platform: windows
+            os: windows-latest
+            args: ""
+          - platform: macos
+            os: macos-latest
+            args: "--target universal-apple-darwin"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install universal macOS Rust targets
+        if: matrix.platform == 'macos'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libayatana-appindicator3-dev librsvg2-dev libwebkit2gtk-4.1-dev
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check optional macOS signing configuration
+        id: macos-signing
+        if: matrix.platform == 'macos'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          has_secrets=true
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [[ -z "${!name}" ]]; then has_secrets=false; fi
+          done
+          echo "has_secrets=$has_secrets" >> "$GITHUB_OUTPUT"
+          if [[ "$has_secrets" == false ]]; then
+            echo "::warning::Apple signing incomplete; publishing unsigned macOS bundle"
+          fi
+
+      - name: Build and publish unsigned bundles
+        if: matrix.platform != 'macos' || steps.macos-signing.outputs.has_secrets != 'true'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_WEB_URL: ${{ vars.VITE_WEB_URL }}
+        with:
+          projectPath: frontendApp
+          tagName: ${{ needs.prepare.outputs.tag_name }}
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Build, sign and publish macOS bundle
+        if: matrix.platform == 'macos' && steps.macos-signing.outputs.has_secrets == 'true'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_WEB_URL: ${{ vars.VITE_WEB_URL }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: frontendApp
+          tagName: ${{ needs.prepare.outputs.tag_name }}
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  publish:
+    name: Publish release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish completed draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ needs.prepare.outputs.tag_name }}
+        run: gh release edit "$TAG_NAME" --draft=false --latest
