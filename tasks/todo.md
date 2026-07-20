@@ -1,19 +1,19 @@
 # Gate produit — Application desktop opérationnelle
 
-Branche : `fix/desktop-operational-gate`
+Branche : `fix/desktop-chat-operational`
 
 ## Plan
 
 - [x] Corriger scripts pour lancer et construire vraie application Tauri.
 - [x] Autoriser origines desktop locales via CORS backend, sans élargir production.
 - [x] Vérifier et documenter configuration API/Supabase locale.
-- [ ] Rendre arrêt du streaming SSE fonctionnel.
-- [ ] Afficher erreurs de configuration chat et CTA boutique pour agents payants.
-- [ ] Ajouter tests ciblés frontend desktop.
+- [x] Rendre arrêt du streaming SSE fonctionnel.
+- [x] Afficher erreurs de configuration chat et CTA boutique pour agents payants.
+- [x] Ajouter tests ciblés frontend desktop.
 - [x] Ajouter workflow GitHub Actions de release desktop Windows/Linux/macOS.
 - [x] Valider version/tag et variables publiques de build sans exposer secrets.
 - [x] Publier une GitHub Release idempotente avec installateurs natifs.
-- [ ] Vérifier workflow, pousser branche et documenter déclenchement.
+- [x] Vérifier workflow, pousser branche et documenter déclenchement.
 - [ ] Construire package natif local et vérifier artefact installable (compilation validée,
   packaging final bloqué par limite runner 120 s).
 - [ ] Faire smoke réel avec Supabase et backend locaux.
@@ -33,4 +33,9 @@ Branche : `fix/desktop-operational-gate`
 - Environnement GitHub `desktop-release` créé. Ses deux secrets et deux variables runtime restent à
   fournir avant lancement ; aucun endpoint factice ne peut être publié.
 - `Cargo.lock` desktop désormais versionnable et dépendances Linux ajoutées au job CI desktop.
+- Stop SSE réel via `AbortController`, contenu partiel conservé, abort au démontage et aucun faux retry.
+- Achat agent payant via Checkout backend et navigateur système ; URL limitée à
+  `https://checkout.stripe.com/*` par validation applicative et capability Tauri.
+- Erreurs `chat-config` visibles avec action Réessayer ; accès rafraîchissable après achat.
+- Tests hook : 2/2 verts (stop utilisateur et démontage), désormais exécutés en CI.
 - Runbook : `docs/releases/release-desktop-github-actions.md`.

@@ -1,6 +1,7 @@
 import type { Agent, AgentChatConfig } from "@claake/shared";
 import { useChat } from "@claake/shared/hooks";
-import { AlertCircle, KeyRound, Loader2 } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { AlertCircle, KeyRound, Loader2, ShoppingCart } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ApiKeysPanel } from "@/components/api-keys-panel";
@@ -20,6 +21,7 @@ export function ChatPage() {
 	const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 	const [chatConfig, setChatConfig] = useState<AgentChatConfig | null>(null);
 	const [configLoading, setConfigLoading] = useState(false);
+	const [configError, setConfigError] = useState<string | null>(null);
 	const [agentsError, setAgentsError] = useState<string | null>(null);
 	const [viewMode, setViewMode] = useState<ViewMode>("chat");
 
@@ -37,9 +39,8 @@ export function ChatPage() {
 		retry,
 		canRetry,
 		loadSession,
-		createSession,
 		deleteSession,
-		refreshSessions,
+		stop,
 	} = useChat({ apiClient, token, agentId: selectedAgent?.id });
 
 	useEffect(() => {
@@ -69,11 +70,17 @@ export function ChatPage() {
 		async (agentId: string) => {
 			setConfigLoading(true);
 			setChatConfig(null);
+			setConfigError(null);
 			try {
 				const config = await apiClient.agents.chatConfig(agentId, token);
 				setChatConfig(config);
-			} catch {
+			} catch (error) {
 				setChatConfig(null);
+				setConfigError(
+					error instanceof Error
+						? error.message
+						: "Impossible de charger la configuration du chat.",
+				);
 			} finally {
 				setConfigLoading(false);
 			}
@@ -83,7 +90,10 @@ export function ChatPage() {
 
 	useEffect(() => {
 		if (selectedAgent) void loadChatConfig(selectedAgent.id);
-		else setChatConfig(null);
+		else {
+			setChatConfig(null);
+			setConfigError(null);
+		}
 	}, [loadChatConfig, selectedAgent]);
 
 	const handleSelectSession = useCallback(
@@ -104,13 +114,9 @@ export function ChatPage() {
 			setSelectedAgent(agent);
 			setSearchParams({ agent: agent.id });
 			setViewMode("chat");
-			const config = await apiClient.agents.chatConfig(agent.id, token);
-			setChatConfig(config);
-			if (!config.access.can_chat) return;
-			await createSession(agent.id);
-			await refreshSessions();
+			await loadChatConfig(agent.id);
 		},
-		[createSession, refreshSessions, setSearchParams, token],
+		[loadChatConfig, setSearchParams],
 	);
 
 	function openSettings(requiredProvider?: string | null) {
@@ -153,11 +159,22 @@ export function ChatPage() {
 						selectedAgent={selectedAgent}
 						chatConfig={chatConfig}
 						configLoading={configLoading}
+						configError={configError}
 						agentsError={agentsError}
 					/>
 
-					{selectedAgent && chatConfig && !chatConfig.access.can_chat ? (
-						<AccessState config={chatConfig} onOpenSettings={openSettings} />
+					{selectedAgent && configError ? (
+						<ConfigErrorState
+							error={configError}
+							onRetry={() => loadChatConfig(selectedAgent.id)}
+						/>
+					) : selectedAgent && chatConfig && !chatConfig.access.can_chat ? (
+						<AccessState
+							config={chatConfig}
+							token={token}
+							onOpenSettings={openSettings}
+							onRefresh={() => loadChatConfig(chatConfig.id)}
+						/>
 					) : (
 						<>
 							<ChatThread
@@ -177,7 +194,7 @@ export function ChatPage() {
 								onSend={sendMessage}
 								disabled={!selectedAgent || !chatConfig?.access.can_chat || streaming}
 								streaming={streaming}
-								stop={() => {}}
+								stop={stop}
 								token={token}
 								sessionId={sessionId}
 								agentId={selectedAgent?.id}
@@ -197,11 +214,13 @@ function DesktopChatHeader({
 	selectedAgent,
 	chatConfig,
 	configLoading,
+	configError,
 	agentsError,
 }: {
 	selectedAgent: Agent | null;
 	chatConfig: AgentChatConfig | null;
 	configLoading: boolean;
+	configError: string | null;
 	agentsError: string | null;
 }) {
 	return (
@@ -226,8 +245,14 @@ function DesktopChatHeader({
 				>
 					{selectedAgent?.name ?? "Claake Desktop"}
 				</p>
-				<p className="truncate text-xs" style={{ color: agentsError ? "#c0392b" : "#a09a8a" }}>
-					{agentsError ?? selectedAgent?.description ?? "Sélectionnez un agent pour démarrer."}
+				<p
+					className="truncate text-xs"
+					style={{ color: configError || agentsError ? "#c0392b" : "#a09a8a" }}
+				>
+					{configError ??
+						agentsError ??
+						selectedAgent?.description ??
+						"Sélectionnez un agent pour démarrer."}
 				</p>
 			</div>
 			{configLoading && <Loader2 className="h-4 w-4 animate-spin" style={{ color: "#a09a8a" }} />}
@@ -243,13 +268,63 @@ function DesktopChatHeader({
 	);
 }
 
+function ConfigErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
+	return (
+		<div className="flex flex-1 items-center justify-center p-8" style={{ background: "#faf9f5" }}>
+			<div className="max-w-md border p-6 text-center" style={{ borderColor: "#e8c4c4" }}>
+				<AlertCircle className="mx-auto h-8 w-8" style={{ color: "#c0392b" }} />
+				<h2 className="mt-4 text-xl" style={{ color: "#1e1c18" }}>
+					Configuration du chat indisponible
+				</h2>
+				<p className="mt-2 text-sm" style={{ color: "#6b6558" }}>
+					{error}
+				</p>
+				<button
+					type="button"
+					onClick={onRetry}
+					className="mt-5 border px-4 py-3 text-sm font-medium"
+					style={{ borderColor: "#2a7a44", color: "#2a7a44" }}
+				>
+					Réessayer
+				</button>
+			</div>
+		</div>
+	);
+}
+
 function AccessState({
 	config,
+	token,
 	onOpenSettings,
+	onRefresh,
 }: {
 	config: AgentChatConfig;
+	token: string;
 	onOpenSettings: (requiredProvider?: string | null) => void;
+	onRefresh: () => Promise<void>;
 }) {
+	const [checkoutLoading, setCheckoutLoading] = useState(false);
+	const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+	async function openCheckout() {
+		setCheckoutLoading(true);
+		setCheckoutError(null);
+		try {
+			const { url } = await apiClient.payments.checkout(config.id, token);
+			const checkoutUrl = new URL(url);
+			if (checkoutUrl.protocol !== "https:" || checkoutUrl.hostname !== "checkout.stripe.com") {
+				throw new Error("URL de paiement non autorisée.");
+			}
+			await openUrl(checkoutUrl.toString());
+		} catch (error) {
+			setCheckoutError(
+				error instanceof Error ? error.message : "Impossible d'ouvrir le paiement sécurisé.",
+			);
+		} finally {
+			setCheckoutLoading(false);
+		}
+	}
+
 	const reasonLabel = {
 		login_required: "Connexion requise.",
 		api_key_required: `Cet agent nécessite une clé API ${config.access.required_provider ?? "provider"}.`,
@@ -273,6 +348,32 @@ function AccessState({
 				<p className="mt-2 text-sm" style={{ color: "#6b6558" }}>
 					{reasonLabel}
 				</p>
+				{checkoutError && (
+					<p className="mt-3 text-sm" style={{ color: "#c0392b" }}>
+						{checkoutError}
+					</p>
+				)}
+				{config.access.reason === "purchase_required" && (
+					<div className="mt-5 flex flex-col items-center gap-3">
+						<button
+							type="button"
+							onClick={openCheckout}
+							disabled={checkoutLoading}
+							className="inline-flex items-center gap-2 border px-4 py-3 text-sm font-medium uppercase tracking-widest disabled:opacity-50"
+							style={{ borderColor: "#2a7a44", color: "#2a7a44" }}
+						>
+							{checkoutLoading ? (
+								<Loader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<ShoppingCart className="h-4 w-4" />
+							)}
+							Acheter cet agent
+						</button>
+						<button type="button" onClick={onRefresh} className="text-xs underline">
+							J'ai terminé l'achat
+						</button>
+					</div>
+				)}
 				{config.access.reason === "api_key_required" && (
 					<button
 						type="button"

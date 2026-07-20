@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiClient } from "../api/client";
 import type { ChatMessage, ChatSession, ChatToolEvent } from "../types";
 
+function isAbortError(error: unknown): boolean {
+	return (
+		typeof error === "object" && error !== null && "name" in error && error.name === "AbortError"
+	);
+}
+
 export interface UseChatOptions {
 	apiClient: ApiClient;
 	token: string;
@@ -25,6 +31,7 @@ export interface UseChatReturn {
 	sendMessage: () => Promise<void>;
 	retry: () => Promise<void>;
 	canRetry: boolean;
+	stop: () => void;
 	loadSession: (sessionId: string) => Promise<void>;
 	createSession: (agentId: string) => Promise<string>;
 	deleteSession: (sessionId: string) => Promise<void>;
@@ -48,6 +55,7 @@ export function useChat({
 	const [pendingFileIds, setPendingFileIds] = useState<string[]>([]);
 	const sessionIdRef = useRef(sessionId);
 	sessionIdRef.current = sessionId;
+	const abortControllerRef = useRef<AbortController | null>(null);
 	const lastPayloadRef = useRef<{ content: string; fileIds: string[] } | null>(null);
 	const [canRetry, setCanRetry] = useState(false);
 
@@ -112,12 +120,26 @@ export function useChat({
 		[apiClient, token, refreshSessions],
 	);
 
+	useEffect(() => {
+		return () => abortControllerRef.current?.abort();
+	}, []);
+
+	const stop = useCallback(() => {
+		if (!abortControllerRef.current) return;
+		abortControllerRef.current.abort();
+		abortControllerRef.current = null;
+		setStreaming(false);
+	}, []);
+
 	const runStream = useCallback(
 		async (currentSessionId: string, content: string, fileIds: string[]) => {
 			lastPayloadRef.current = { content, fileIds };
 			setStreaming(true);
 			setError(null);
 			setCanRetry(false);
+			const abortController = new AbortController();
+			abortControllerRef.current?.abort();
+			abortControllerRef.current = abortController;
 
 			// Create a placeholder assistant message for streaming
 			const assistantId = crypto.randomUUID();
@@ -135,6 +157,7 @@ export function useChat({
 					content,
 					token,
 					fileIds.length ? fileIds : undefined,
+					abortController.signal,
 				);
 
 				if (!res.ok) {
@@ -237,11 +260,25 @@ export function useChat({
 
 				await refreshSessions();
 			} catch (err) {
+				if (isAbortError(err)) {
+					setMessages((prev) =>
+						prev
+							.filter((message) => message.id !== assistantId || message.content)
+							.map((message) =>
+								message.id === assistantId
+									? { ...message, content: `${message.content}\n\n*(réponse arrêtée)*` }
+									: message,
+							),
+					);
+					setCanRetry(false);
+					return;
+				}
 				setError(err instanceof Error ? err.message : "Erreur de connexion.");
 				setCanRetry(true);
 				// Remove empty assistant message on error
 				setMessages((prev) => prev.filter((m) => m.id !== assistantId || m.content));
 			} finally {
+				if (abortControllerRef.current === abortController) abortControllerRef.current = null;
 				setStreaming(false);
 			}
 		},
@@ -306,6 +343,7 @@ export function useChat({
 		sendMessage,
 		retry,
 		canRetry,
+		stop,
 		loadSession,
 		createSession,
 		deleteSession,
