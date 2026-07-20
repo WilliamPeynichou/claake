@@ -360,7 +360,13 @@ export function createApiClient(baseUrl: string) {
 					`/chat/sessions/${sessionId}/messages?limit=${limit}&offset=${offset}`,
 					withAuth(token),
 				),
-			sendMessageSSE: (sessionId: string, content: string, token: string, fileIds?: string[]) =>
+			sendMessageSSE: (
+				sessionId: string,
+				content: string,
+				token: string,
+				fileIds?: string[],
+				signal?: AbortSignal,
+			) =>
 				fetch(`${baseUrl}/chat/sessions/${sessionId}/messages`, {
 					method: "POST",
 					headers: {
@@ -368,6 +374,7 @@ export function createApiClient(baseUrl: string) {
 						Authorization: `Bearer ${token}`,
 					},
 					body: JSON.stringify({ content, ...(fileIds?.length ? { file_ids: fileIds } : {}) }),
+					signal,
 				}),
 			uploadFile: (file: File, token: string, opts: { sessionId?: string; agentId?: string }) => {
 				const formData = new FormData();
